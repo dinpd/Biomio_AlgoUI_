@@ -1,8 +1,8 @@
-from guidata.qt.QtGui import QMainWindow, QDockWidget
+from guidata.qt.QtGui import QMainWindow
 from guidata.qt.QtCore import (Qt)
 from guidata.configtools import get_icon
 from guidata.qthelpers import create_action, add_actions, get_std_icon
-from guidata.qt.compat import getopenfilename
+from guidata.qt.compat import getopenfilename, getsavefilename
 
 from guiqwt.config import _
 from guiqwt import io
@@ -31,12 +31,13 @@ class BioWindow(QMainWindow):
         self._imanager = ImageManager(self)
         self._amanager = AlgorithmsManager(self._imanager)
         self.init_actions()
+        self.menuBar().addMenu(self._imanager.get_view().viewer_menu())
         self.menuBar().addMenu(self._amanager.algorithms_menu())
         self.init_widgets()
 
         toolbar = self.addToolBar("Image")
-        self._imanager.get_view().add_toolbar(toolbar, "default")
-        self._imanager.get_view().register_all_image_tools()
+        # self._imanager.get_view().add_toolbar(toolbar, "default")
+        # self._imanager.get_view().register_all_image_tools()
         self.setCentralWidget(self._imanager.get_view())
         self._imanager.install_ui_manager()
 
@@ -79,4 +80,10 @@ class BioWindow(QMainWindow):
             self._imanager.add_image_from_file(filename)
 
     def save_image(self):
-        pass
+        saved_in, saved_out, saved_err = sys.stdin, sys.stdout, sys.stderr
+        sys.stdout = None
+        filename, _filter = getsavefilename(self, _("Save"), "",
+                                            io.iohandler.get_filters('save'))
+        sys.stdin, sys.stdout, sys.stderr = saved_in, saved_out, saved_err
+        if filename:
+            self._imanager.save_image(filename, self._imanager.current_image_index())

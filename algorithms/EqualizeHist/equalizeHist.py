@@ -3,33 +3,50 @@ from guidata.qt.QtCore import SIGNAL
 from guidata.qt.QtCore import QObject
 from guidata.qt.QtGui import QAction
 from guidata.configtools import get_icon
-from view import ImageParam
-from features.tools import equalizeHist
+from imageproperties import ImageProperties
+from features.tools import equalizeHist, grayscale
 
 from guiqwt.config import _
 
-ACTION_TITLE = 'Action: EqualizeHist::'
+EQ_ACTION_TITLE = 'Action: EqualizeHist::'
+GR_ACTION_TITLE = 'Action: Grayscale::'
 
 class EqualizeHistPlugin(IAlgorithmPlugin, QObject):
     def set_image_manager(self, manager):
         self._imanager = manager
 
     def get_action(self, parent):
-        action = QAction(parent)
-        action.setText(_("Equalize Histogram"))
-        action.setIcon(get_icon('equalize.png'))
-        action.setShortcut("Ctrl+E")
-        self.connect(action, SIGNAL("triggered()"), self.equalize)
-        return action
+        gr_action = QAction(parent)
+        gr_action.setText(_("Grayscale"))
+        gr_action.setIcon(get_icon('grayscale.png'))
+        self.connect(gr_action, SIGNAL("triggered()"), self.slot_grayscale)
+
+        eq_action = QAction(parent)
+        eq_action.setText(_("Equalize Histogram"))
+        eq_action.setIcon(get_icon('equalize.png'))
+        self.connect(eq_action, SIGNAL("triggered()"), self.slot_equalize)
+
+        return [gr_action, eq_action]
 
     def get_interfaces(self):
         pass
 
-    def equalize(self):
+    def slot_grayscale(self):
         curr = self._imanager.current_image()
-        if (self._imanager and curr):
-            image = ImageParam()
-            image.title = ACTION_TITLE + curr.title
-            image.data = equalizeHist(curr.data)
-            image.height, image.width = image.data.shape
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(GR_ACTION_TITLE + curr.title())
+            image.data(grayscale(curr.data()))
+            image.height(curr.height())
+            image.width(curr.width())
+            self._imanager.add_image(image)
+
+    def slot_equalize(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(EQ_ACTION_TITLE + curr.title())
+            image.data(equalizeHist(curr.data()))
+            image.height(curr.height())
+            image.width(curr.width())
             self._imanager.add_image(image)

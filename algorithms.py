@@ -11,10 +11,8 @@ from ConfigParser import ConfigParser
 
 from guiqwt.config import _
 
-import cv2
 import os
 
-from view import ImageParam
 import loader
 
 PLUGIN_PLACES = ['./algorithms']
@@ -52,11 +50,12 @@ class AlgorithmsManager(QObject):
     def get_actions(self):
         for plugin_info in self._plmanager.getAllPlugins():
             if plugin_info.is_activated:
-                action = plugin_info.plugin_object.get_action(self._menu)
-                if (action and isinstance(action, QAction)):
-                    self._menu.addAction(action)
-                if (action and isinstance(action, QMenu)):
-                    self._menu.addMenu(action)
+                actions = plugin_info.plugin_object.get_action(self._menu)
+                for action in actions:
+                    if (action and isinstance(action, QAction)):
+                        self._menu.addAction(action)
+                    if (action and isinstance(action, QMenu)):
+                        self._menu.addMenu(action)
 
     def get_widgets(self):
         for plugin_info in self._plmanager.getAllPlugins():
