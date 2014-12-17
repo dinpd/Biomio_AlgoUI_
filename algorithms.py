@@ -13,8 +13,6 @@ from guiqwt.config import _
 
 import os
 
-import loader
-
 PLUGIN_PLACES = ['./algorithms']
 
 
