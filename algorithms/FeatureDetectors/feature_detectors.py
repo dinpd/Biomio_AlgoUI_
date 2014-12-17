@@ -7,7 +7,7 @@ from guidata.qt.QtGui import (QAction, QMenu,
                               QDoubleValidator, QIntValidator)
 from guidata.qt.QtCore import QObject
 from guidata.configtools import get_icon
-from view import ImageParam
+from imageproperties import ImageProperties
 from features.detectors import BRISKDetector, ORBDetector, ImageFeatures
 from features.tools import paintKeypoints, grayscale
 
@@ -32,6 +32,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
 
         detector_menu.addAction(self.add_brisk_action(detector_menu))
         detector_menu.addAction(self.add_orb_action(detector_menu))
+        print detector_menu
         return [detector_menu]
 
     def get_interfaces(self):
@@ -77,17 +78,18 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
     def brisk(self):
         curr = self._imanager.current_image()
         if (self._imanager and curr):
-            image = ImageParam()
-            image.title = ACTION_TITLE % 'BRISK' + curr.title
+            image = ImageProperties()
+            image.title(str(ACTION_TITLE % 'BRISK' + curr.title()))
             detector = BRISKDetector(thresh=int(self._thresh_line_edit.text()),
                                      octaves=int(self._octaves_line_edit.text()),
                                      scale=float(self._pattern_scale_line_edit.text()))
             fea = ImageFeatures()
-            fea.image(curr.data)
-            keypoints = detector.detect(curr.data)
+            fea.image(curr.data())
+            keypoints = detector.detect(curr.data())
             fea.keypoints(keypoints)
-            image.data = grayscale(paintKeypoints(fea))
-            image.height, image.width = image.data.shape
+            image.data(paintKeypoints(fea))
+            image.height(curr.height())
+            image.width(curr.width())
             self._imanager.add_image(image)
 
     def add_orb_action(self, parent):
@@ -130,15 +132,16 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
     def orb(self):
         curr = self._imanager.current_image()
         if (self._imanager and curr):
-            image = ImageParam()
-            image.title = ACTION_TITLE % 'ORB' + curr.title
+            image = ImageProperties()
+            image.title(ACTION_TITLE % 'ORB' + curr.title())
             detector = ORBDetector(features=int(self._features_line_edit.text()),
                                    scale=float(self._scale_line_edit.text()),
                                    levels=int(self._levels_line_edit.text()))
             fea = ImageFeatures()
-            fea.image(curr.data)
-            keypoints = detector.detect(curr.data)
+            fea.image(curr.data())
+            keypoints = detector.detect(curr.data())
             fea.keypoints(keypoints)
-            image.data = grayscale(paintKeypoints(fea))
-            image.height, image.width = image.data.shape
+            image.data(paintKeypoints(fea))
+            image.height(curr.height())
+            image.width(curr.width())
             self._imanager.add_image(image)
