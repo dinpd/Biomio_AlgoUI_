@@ -75,13 +75,24 @@ def drawImage(image):
     plt.imshow(image)
     plt.show()
 
+def saveKeypoints(filename, features):
+    """
+    Tools
+    Simple wrapper for save image with keypoints.
+
+    :param filename: Name of saving image file.
+    :param features: Image features container.
+    """
+    out = cv2.drawKeypoints(features.image(), features.keypoints())
+    print cv2.imwrite(filename, out)
+
 
 def drawKeypoints(features):
     """
     Tools
     Simple wrapper for OpenCV cv2.drawKeypoints(...) function.
 
-    :param features: image features container.
+    :param features: Image features container.
     """
     out = cv2.drawKeypoints(features.image(), features.keypoints())
     plt.imshow(out)
@@ -93,7 +104,7 @@ def paintKeypoints(features):
     Tools
     Simple wrapper for OpenCV cv2.drawKeypoints(...) function.
 
-    :param features: image features container.
+    :param features: Image features container.
     :return: numpy.ndarray image with image keypoints.
     """
     return cv2.drawKeypoints(features.image(), features.keypoints())

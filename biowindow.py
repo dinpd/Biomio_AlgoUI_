@@ -66,7 +66,7 @@ class BioWindow(QMainWindow):
     def init_widgets(self):
         widgets = self._amanager.algorithms_settings()
         for widget in widgets:
-            if (widget):
+            if widget:
                 self.addDockWidget(Qt.DockWidgetArea(1), widget)
 
 

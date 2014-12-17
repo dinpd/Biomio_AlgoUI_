@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''
+"""
 gabor_threads.py
 =========
 Sample demonstrates:
@@ -9,12 +9,13 @@ Sample demonstrates:
 Usage
 -----
 gabor_threads.py [image filename]
-'''
+"""
 
 import numpy as np
 import cv2
 from multiprocessing.pool import ThreadPool
 import tools
+
 
 def build_filters():
     filters = []
@@ -25,6 +26,7 @@ def build_filters():
         filters.append(kern)
     return filters
 
+
 def process(img, filters):
     accum = np.zeros_like(img)
     for kern in filters:
@@ -32,11 +34,13 @@ def process(img, filters):
         np.maximum(accum, fimg, accum)
     return accum
 
+
 def process_kernel(img, filter_kernel):
     accum = np.zeros_like(img)
     fimg = cv2.filter2D(img, cv2.CV_8UC3, filter_kernel)
     np.maximum(accum, fimg, accum)
     return accum
+
 
 def process_threaded(img, filters, threadn = 8):
     accum = np.zeros_like(img)

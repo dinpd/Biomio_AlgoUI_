@@ -1,9 +1,8 @@
-from guidata.qt.QtGui import (QWidget, QDockWidget, QListWidget,
+from guidata.qt.QtGui import (QWidget,
                               QGraphicsView, QGraphicsScene,
                               QPixmap, QImage,
                               QHBoxLayout,
                               QAction, QKeySequence, QMenu)
-from guidata.qt.QtCore import QObject
 from guidata.qt.QtCore import (Qt, SIGNAL, pyqtSlot)
 
 from guiqwt.config import _
@@ -22,52 +21,6 @@ def imageOpenCv2ToQImage(cv_img):
         cv_img2 = cv2.cvtColor(cv_img, cv2.COLOR_GRAY2RGB)
     bytesPerLine = 3 * width
     return QImage(cv_img2.data, width, height, bytesPerLine, QImage.Format_RGB888)
-
-class ImageViewerManager(QObject):
-    def __init__(self, parent):
-        QObject.__init__(self, parent)
-        self._imagelist = None
-        self._imagedocks = None
-        self.imagewidget()
-
-        self._images = [] # List of ImageParam instances
-
-        self._view = ImageViewer()
-        self._view.setContentsMargins(10, 10, 10, 10)
-
-    def current_image(self):
-        return self._images[self._imagelist.currentRow()]
-
-    def get_view(self):
-        return self._view
-
-    def get_ui_manager(self):
-        return self._imagedocks
-
-    def install_ui_manager(self):
-        self.parent().addDockWidget(Qt.DockWidgetArea(1), self._imagedocks)
-
-    def add_image_from_file(self, filename):
-        self._images.append(io.imread(filename))
-        self._imagelist.addItem(filename)
-        self._imagelist.setCurrentRow(len(self._images)-1)
-        self._view.setImage(filename)
-
-    def imagewidget(self):
-        self._imagedocks = QDockWidget(_("Image Manager"))
-        self._imagelist = QListWidget(self._imagedocks)
-        self._imagedocks.setWidget(self._imagelist)
-        self.connect(self._imagelist, SIGNAL("currentRowChanged(int)"),
-                     self.current_item_changed)
-        self.connect(self._imagelist, SIGNAL("itemSelectionChanged()"),
-                     self.selection_changed)
-
-    def selection_changed(self):
-        row = self._imagelist.currentRow()
-        self._view.setImage(self._imagelist.currentItem().text())
-
-    def current_item_changed(self, row):
-        self._view.setImage(self._imagelist.currentItem().text())
 
 
 class ImageViewer(QWidget, AbstractImageViewer):

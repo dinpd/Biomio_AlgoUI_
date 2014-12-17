@@ -216,11 +216,6 @@ class FeatureDetector:
         img1 = obj_feature.image()
         img2 = scn_feature.image()
 
-    @classmethod
-    def saveKeypoints(cls, filename, features):
-        out = cv2.drawKeypoints(features.image(), features.keypoints())
-        print cv2.imwrite(filename, out)
-
 
 class ComplexDetector:
     def __init__(self):

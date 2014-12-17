@@ -32,7 +32,7 @@ class ImageManager(QObject):
     def current_image_index(self):
         if self._imagelist is not None:
             return self._imagelist.currentRow()
-        return -1;
+        return -1
 
     def current_image(self):
         if len(self._images) > 0:
