@@ -8,7 +8,13 @@ class IAlgorithmPlugin(IPlugin):
         """
         raise NotImplementedError()
 
-    def get_action(self, parent):
+    def get_algorithms_actions(self, parent):
+        """
+        This method should be reimplemented by custom plugins
+        """
+        raise NotImplementedError()
+
+    def get_test_actions(self, parent):
         """
         This method should be reimplemented by custom plugins
         """

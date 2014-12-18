@@ -26,7 +26,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
     def set_image_manager(self, manager):
         self._imanager = manager
 
-    def get_action(self, parent):
+    def get_algorithms_actions(self, parent):
         detector_menu = QMenu(parent)
         detector_menu.setTitle(_("Feature Detectors"))
 
@@ -34,6 +34,9 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         detector_menu.addAction(self.add_orb_action(detector_menu))
         print detector_menu
         return [detector_menu]
+
+    def get_test_actions(self, parent):
+        pass
 
     def get_interfaces(self):
         return self._setwigets

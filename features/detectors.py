@@ -1,7 +1,7 @@
 # General Modules
 import cv2
+import sys
 import numpy
-from matplotlib import pyplot as plt
 
 # Own Modules
 import defines

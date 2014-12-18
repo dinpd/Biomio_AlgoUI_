@@ -48,20 +48,20 @@ class AlgorithmsManager(QObject):
     def get_actions(self):
         for plugin_info in self._plmanager.getAllPlugins():
             if plugin_info.is_activated:
-                actions = plugin_info.plugin_object.get_action(self._menu)
+                actions = plugin_info.plugin_object.get_algorithms_actions(self._menu)
                 for action in actions:
-                    if (action and isinstance(action, QAction)):
+                    if action and isinstance(action, QAction):
                         self._menu.addAction(action)
-                    if (action and isinstance(action, QMenu)):
+                    if action and isinstance(action, QMenu):
                         self._menu.addMenu(action)
 
     def get_widgets(self):
         for plugin_info in self._plmanager.getAllPlugins():
             if plugin_info.is_activated:
                 widgets = plugin_info.plugin_object.get_interfaces()
-                if (widgets):
+                if widgets:
                     for widget in widgets:
-                        if (widget):
+                        if widget:
                             self._algorithms.append(widget)
 
     def init_plugin_manager(self):

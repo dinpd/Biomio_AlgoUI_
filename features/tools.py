@@ -4,6 +4,7 @@ Implementation of functions for basic processing of images based on OpenCV.
 """
 
 import cv2
+import numpy
 from matplotlib import pyplot as plt
 
 
@@ -108,3 +109,21 @@ def paintKeypoints(features):
     :return: numpy.ndarray image with image keypoints.
     """
     return cv2.drawKeypoints(features.image(), features.keypoints())
+
+
+def keypointsToArrays(keypoints):
+    arrays = []
+    for keypoint in keypoints:
+        arrays.append(classKeyPointToArray(keypoint))
+    return arrays
+
+
+def classKeyPointToArray(keypoint):
+    darray = []
+    darray.append(keypoint.pt[0])
+    darray.append(keypoint.pt[1])
+    darray.append(keypoint.size)
+    darray.append(keypoint.angle)
+    darray.append(keypoint.response)
+    darray.append(keypoint.octave)
+    return numpy.array(darray)

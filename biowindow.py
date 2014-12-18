@@ -69,7 +69,6 @@ class BioWindow(QMainWindow):
             if widget:
                 self.addDockWidget(Qt.DockWidgetArea(1), widget)
 
-
     def open_image(self):
         saved_in, saved_out, saved_err = sys.stdin, sys.stdout, sys.stderr
         sys.stdout = None

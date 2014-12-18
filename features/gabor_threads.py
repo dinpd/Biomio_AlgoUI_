@@ -14,7 +14,6 @@ gabor_threads.py [image filename]
 import numpy as np
 import cv2
 from multiprocessing.pool import ThreadPool
-import tools
 
 
 def build_filters():

@@ -15,7 +15,7 @@ class EqualizeHistPlugin(IAlgorithmPlugin, QObject):
     def set_image_manager(self, manager):
         self._imanager = manager
 
-    def get_action(self, parent):
+    def get_algorithms_actions(self, parent):
         gr_action = QAction(parent)
         gr_action.setText(_("Grayscale"))
         gr_action.setIcon(get_icon('grayscale.png'))
@@ -27,6 +27,9 @@ class EqualizeHistPlugin(IAlgorithmPlugin, QObject):
         self.connect(eq_action, SIGNAL("triggered()"), self.slot_equalize)
 
         return [gr_action, eq_action]
+
+    def get_test_actions(self, parent):
+        pass
 
     def get_interfaces(self):
         pass
