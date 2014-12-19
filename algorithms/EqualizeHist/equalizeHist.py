@@ -21,7 +21,6 @@ class EqualizeHistPlugin(QObject, IAlgorithmPlugin):
         self._imanager = manager
 
     def get_algorithms_actions(self, parent):
-        logger.debug("get_algorithms_actions")
         gr_action = QAction(parent)
         gr_action.setText(_("Grayscale"))
         gr_action.setIcon(get_icon('grayscale.png'))

@@ -2,18 +2,20 @@ from aiplugins import IAlgorithmPlugin
 from guidata.qt.QtCore import SIGNAL, pyqtSignal
 from guidata.qt.QtGui import (QAction, QMenu,
                               QWidget, QDockWidget,
-                              QFormLayout,
-                              QLineEdit, QPushButton,
+                              QFormLayout, QVBoxLayout, QHBoxLayout,
+                              QLineEdit, QPushButton, QGroupBox, QDial, QCheckBox,
                               QDoubleValidator, QIntValidator)
 from guidata.qt.QtCore import QObject
 from guidata.configtools import get_icon
 from imageproperties import ImageProperties
 from features.detectors import BRISKDetector, ORBDetector, ImageFeatures
-from features.tools import paintKeypoints, grayscale
+from features.tools import paintKeypoints
+from features.gabor_threads import build_filters, process_kernel, process
 
 from guiqwt.config import _
 
 ACTION_TITLE = 'Action: %s Features Detector::'
+GF_ACTION_TITLE = 'Action: Gabor Filtering::'
 
 
 class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
@@ -22,6 +24,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         self._setwigets = []
         self._setwigets.append(self.create_brisk_widget())
         self._setwigets.append(self.create_orb_widget())
+        self._setwigets.append(self.create_gabor_widget())
 
     def set_image_manager(self, manager):
         self._imanager = manager
@@ -32,7 +35,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
 
         detector_menu.addAction(self.add_brisk_action(detector_menu))
         detector_menu.addAction(self.add_orb_action(detector_menu))
-        return [detector_menu]
+        return [detector_menu, self.add_gabor_filter_action(parent)]
 
     def get_test_actions(self, parent):
         pass
@@ -79,7 +82,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
 
     def brisk(self):
         curr = self._imanager.current_image()
-        if (self._imanager and curr):
+        if self._imanager and curr:
             image = ImageProperties()
             image.title(str(ACTION_TITLE % 'BRISK' + curr.title()))
             detector = BRISKDetector(thresh=int(self._thresh_line_edit.text()),
@@ -133,7 +136,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
 
     def orb(self):
         curr = self._imanager.current_image()
-        if (self._imanager and curr):
+        if self._imanager and curr:
             image = ImageProperties()
             image.title(ACTION_TITLE % 'ORB' + curr.title())
             detector = ORBDetector(features=int(self._features_line_edit.text()),
@@ -144,6 +147,92 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
             keypoints = detector.detect(curr.data())
             fea.keypoints(keypoints)
             image.data(paintKeypoints(fea))
+            image.height(curr.height())
+            image.width(curr.width())
+            self._imanager.add_image(image)
+
+    def add_gabor_filter_action(self, parent):
+        gabor_action = QAction(parent)
+        gabor_action.setText(_("Gabor Filtering"))
+        gabor_action.setIcon(get_icon('gabor.png'))
+        gabor_action.setCheckable(True)
+        self.connect(gabor_action, SIGNAL("triggered(bool)"), self.gabor_opened)
+        return gabor_action
+
+    gabor_opened = pyqtSignal(bool, name='gaborOpened')
+
+    def create_gabor_widget(self):
+        gabor_dock = QDockWidget()
+        gabor_dock.setWindowTitle("Gabor Filter Settings")
+        gabor_dock.setVisible(False)
+        self.gabor_opened.connect(gabor_dock.setVisible)
+        gabor_widget = QWidget(gabor_dock)
+        self.kernel_box = QGroupBox(gabor_widget)
+        self.kernel_box.setTitle(_("Filter Kernel:"))
+        self.allkernel_box = QCheckBox(gabor_widget)
+        self.allkernel_box.setText(_("Apply all kernels"))
+        self.connect(self.allkernel_box, SIGNAL("clicked()"), self.gabor_temp)
+        self.kernel_dial = QDial(gabor_widget)
+        self.kernel_dial.setMaximum(len(build_filters()) + 1)
+        self.kernel_dial.setSingleStep(1)
+        self.kernel_dial.setValue(self.kernel_dial.maximum())
+        self.kernel_dial.setWrapping(True)
+        self.connect(self.kernel_dial, SIGNAL("valueChanged(int)"), self.gabor_temp)
+        kern_layout = QVBoxLayout()
+        kern_layout.addWidget(self.allkernel_box)
+        kern_layout.addWidget(self.kernel_dial)
+        self.kernel_box.setLayout(kern_layout)
+        accept = QPushButton(gabor_widget)
+        accept.setText('Accept')
+        self.connect(accept, SIGNAL("clicked()"), self.gabor_filter)
+        widget_layout = QVBoxLayout()
+        widget_layout.addWidget(self.kernel_box)
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(2)
+        button_layout.addWidget(accept)
+        widget_layout.addLayout(button_layout)
+        gabor_widget.setLayout(widget_layout)
+        gabor_dock.setWidget(gabor_widget)
+        return gabor_dock
+
+    def gabor_temp(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(curr.title())
+
+            gabor = build_filters()
+            if self.allkernel_box.isChecked():
+                self.kernel_dial.setEnabled(False)
+                image.data(process(curr.data(), gabor))
+            else:
+                self.kernel_dial.setEnabled(True)
+                value = self.kernel_dial.value() - 1
+                if len(gabor) > value >= 0:
+                    image.data(process_kernel(curr.data(), gabor[value]))
+                else:
+                    image.data(curr.data())
+
+            image.height(curr.height())
+            image.width(curr.width())
+            self._imanager.add_temp_image(image)
+
+    def gabor_filter(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(GF_ACTION_TITLE + curr.title())
+
+            gabor = build_filters()
+            if self.allkernel_box.isChecked():
+                image.data(process(curr.data(), gabor))
+            else:
+                value = self.kernel_dial.value() - 1
+                if len(gabor) > value >= 0:
+                    image.data(process_kernel(curr.data(), gabor[value]))
+                else:
+                    image.data(curr.data())
+
             image.height(curr.height())
             image.width(curr.width())
             self._imanager.add_image(image)

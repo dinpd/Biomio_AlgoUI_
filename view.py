@@ -53,6 +53,9 @@ class ImageManager(QObject):
     def install_ui_manager(self):
         self.parent().addDockWidget(Qt.DockWidgetArea(1), self._imagedocks)
 
+    def add_temp_image(self, image):
+        self._view.setImage(image)
+
     def add_image(self, image):
         self._images.append(image)
         self.refresh_list()

@@ -1,9 +1,11 @@
 from lshash import LSHash
 from nearpy_hash import NearPyHash
-from logger import logger
+import logging
 
+logger = logging.getLogger(__name__)
 
 def lshash_test(rects, template):
+    logger.debug("Running test. Test Module.lshash Query")
     print "==================================================="
     print "=                    Test Module                  ="
     print "=                 Test: lshash Query              ="
@@ -19,6 +21,7 @@ def lshash_test(rects, template):
 
 
 def nearpy_test(rects, template):
+    logger.debug("Running test. Test Module.NearPy Query")
     print "==================================================="
     print "=                   Test Module                   ="
     print "=                Test: NearPy Query               ="
