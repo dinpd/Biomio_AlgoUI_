@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from aiplugins import IAlgorithmPlugin
 from guidata.qt.QtCore import SIGNAL
 from guidata.qt.QtCore import QObject
@@ -11,11 +15,13 @@ from guiqwt.config import _
 EQ_ACTION_TITLE = 'Action: EqualizeHist::'
 GR_ACTION_TITLE = 'Action: Grayscale::'
 
-class EqualizeHistPlugin(IAlgorithmPlugin, QObject):
+
+class EqualizeHistPlugin(QObject, IAlgorithmPlugin):
     def set_image_manager(self, manager):
         self._imanager = manager
 
     def get_algorithms_actions(self, parent):
+        logger.debug("get_algorithms_actions")
         gr_action = QAction(parent)
         gr_action.setText(_("Grayscale"))
         gr_action.setIcon(get_icon('grayscale.png'))

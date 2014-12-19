@@ -65,12 +65,12 @@ class AlgorithmsManager(QObject):
                             self._algorithms.append(widget)
 
     def init_plugin_manager(self):
-        #Configuring plugin locator
+        # Configuring plugin locator
         plugin_locator = PluginFileLocator()
         plugin_locator.setPluginPlaces(PLUGIN_PLACES)
 
-        #Initializing plugin manager...
-        #categories_filter={"Default": IPlugin, "Custom": ICustomPlugin},
+        # Initializing plugin manager...
+        # categories_filter={"Default": IPlugin, "Custom": ICustomPlugin},
         self._plmanager = PluginManager(categories_filter={"Default": IAlgorithmPlugin}, plugin_locator=plugin_locator)
 
         # decorate plugin manager with configurable feature
@@ -86,8 +86,8 @@ class AlgorithmsManager(QObject):
         self._cpmanager.setConfigParser(configparser_instance=config_parser,
                                         config_change_trigger=config_change_trigger)
 
-        #plugin_manager.collectPlugins()
-        #configurable_plugin_manager.loadPlugins()
+        # plugin_manager.collectPlugins()
+        # configurable_plugin_manager.loadPlugins()
         self._cpmanager.collectPlugins()
 
         self.plugins_info()

@@ -32,7 +32,6 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
 
         detector_menu.addAction(self.add_brisk_action(detector_menu))
         detector_menu.addAction(self.add_orb_action(detector_menu))
-        print detector_menu
         return [detector_menu]
 
     def get_test_actions(self, parent):
