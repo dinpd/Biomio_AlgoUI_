@@ -12,18 +12,23 @@ def main():
     # tools.saveKeypoints("data/external/palm_EqGaborORBBased.png", cobj)
     # tools.saveImage("data/external/palm_Eq.png", cobj.image())
 
-    detector = FeatureDetector()
-    obj = detector.detectAndCompute("data/external/palm.png")
-    tools.drawKeypoints(obj)
-    key_arrays = tools.keypointsToArrays(obj.keypoints())
+    # detector = FeatureDetector()
+    # obj = detector.detectAndCompute("data/external/palm.png")
+    # tools.drawKeypoints(obj)
+    # key_arrays = tools.keypointsToArrays(obj.keypoints())
     # Two hash tests for face regions
-    lshash_test(key_arrays, [801.0, 1664.0, 31.0, 166.5230255126953, 0, 0])
-    nearpy_test(key_arrays, [801.0, 1664.0, 31.0, 166.5230255126953, 0, 0])
+    # lshash_test(key_arrays, [801.0, 1664.0, 31.0, 166.5230255126953, 0, 0])
+    # nearpy_test(key_arrays, [801.0, 1664.0, 31.0, 166.5230255126953, 0, 0])
 
     # tools.saveKeypoints("data/external/palm_ORB.png", obj)
     # scn = detector.detectAndCompute("data/test_scene.jpg")
     # tools.drawKeypoints(scn)
     # detector.match(obj, scn)
+
+    img = tools.loadImage("data/test2_object.jpg")
+    nimg = tools.iplImageToNumpy_darray(img)
+    print type(nimg)
+    print type(tools.numpy_darrayToIplImage(nimg))
     pass
 
 

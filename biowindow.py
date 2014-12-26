@@ -11,7 +11,8 @@ import sys
 
 from view import ImageManager
 from algorithms import AlgorithmsManager
-
+from gui_logger import LogManager
+from logger import logger
 
 APP_NAME = _("BioQ Algorithms Interface")
 VERSION = '0.1.0'
@@ -41,6 +42,9 @@ class BioWindow(QMainWindow):
         self.setCentralWidget(self._imanager.get_view())
         self._imanager.install_ui_manager()
 
+        self._logmanager = LogManager(self)
+        self.addDockWidget(Qt.DockWidgetArea(8), self._logmanager)
+
     def init_actions(self):
         file_menu = self.menuBar().addMenu(_("File"))
         open_action = create_action(self, _("Open..."),
@@ -53,15 +57,20 @@ class BioWindow(QMainWindow):
                                     icon=get_icon('save.png'),
                                     tip=_("Save an image"),
                                     triggered=self.save_image)
+        close_action = create_action(self, _("Close"),
+                                     shortcut="Del",
+                                     icon=get_icon('close.png'),
+                                     tip=_("Close an current image"),
+                                     triggered=self.close_image)
         quit_action = create_action(self, _("Quit"),
                                     shortcut="Ctrl+Q",
                                     icon=get_std_icon("DialogCloseButton"),
                                     tip=_("Quit application"),
                                     triggered=self.close)
-        add_actions(file_menu, (open_action, save_action, None, quit_action))
+        add_actions(file_menu, (open_action, save_action, close_action, None, quit_action))
 
         file_toolbar = self.addToolBar("FileToolBar")
-        add_actions(file_toolbar, (open_action, save_action))
+        add_actions(file_toolbar, (open_action, save_action, close_action))
 
     def init_widgets(self):
         widgets = self._amanager.algorithms_settings()
@@ -72,8 +81,7 @@ class BioWindow(QMainWindow):
     def open_image(self):
         saved_in, saved_out, saved_err = sys.stdin, sys.stdout, sys.stderr
         sys.stdout = None
-        filename, _filter = getopenfilename(self, _("Open"), "",
-                                            io.iohandler.get_filters('load'))
+        filename, _filter = getopenfilename(self, _("Open"), "")
         sys.stdin, sys.stdout, sys.stderr = saved_in, saved_out, saved_err
         if filename:
             self._imanager.add_image_from_file(filename)
@@ -86,3 +94,6 @@ class BioWindow(QMainWindow):
         sys.stdin, sys.stdout, sys.stderr = saved_in, saved_out, saved_err
         if filename:
             self._imanager.save_image(filename, self._imanager.current_image_index())
+
+    def close_image(self):
+        self._imanager.delete_image(self._imanager.current_image_index())

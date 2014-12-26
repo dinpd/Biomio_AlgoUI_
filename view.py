@@ -39,6 +39,16 @@ class ImageManager(QObject):
             return self._images[self._imagelist.currentRow()]
         return None
 
+    def delete_image(self, index):
+        if len(self._images) > index:
+            cur = self._imagelist.currentRow()
+            if cur >= index:
+                cur -= 1
+            self._images.pop(index)
+            self.refresh_list()
+            self._imagelist.setCurrentRow(cur)
+            self._view.update_plot()
+
     def save_image(self, filename, i):
         image = self._images[i]
         if image is not None:

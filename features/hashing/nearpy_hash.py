@@ -40,11 +40,16 @@ class NearPyHash:
                 engine.store_vector(r, 'set_%d' % i)
             i += 1
 
+    def add_dataset(self, data, key):
+        for engine in self._engines:
+            engine.store_vector(data, key)
+
     def neighbours(self, set):
         res = []
         for engine in self._engines:
             neb = engine.neighbours(set)
-            res.append(neb)
+            for els in neb:
+                res.append(els)
         return res
 
 

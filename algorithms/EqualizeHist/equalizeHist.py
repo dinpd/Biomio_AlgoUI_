@@ -17,6 +17,9 @@ GR_ACTION_TITLE = 'Action: Grayscale::'
 
 
 class EqualizeHistPlugin(QObject, IAlgorithmPlugin):
+    def __init__(self):
+        super(EqualizeHistPlugin, self).__init__()
+
     def set_image_manager(self, manager):
         self._imanager = manager
 

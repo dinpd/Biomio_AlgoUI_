@@ -158,8 +158,8 @@ def FlannMatcher():
 
 class FeatureDetector:
     def __init__(self):
-        self._detector = ORBDetector()
-        self._extractor = ORBDetector.extractor()
+        self._detector = BRISKDetector()
+        self._extractor = BRISKDetector.extractor()
         # self._matcher = MatcherCreator('BruteForce-Hamming')
         self._matcher = FlannMatcher() # MatcherCreator('FlannBased')
 
@@ -176,6 +176,21 @@ class FeatureDetector:
         mask = None
         if maskpath is not None:
             mask = cv2.imread(maskpath, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+
+        keypoints = self._detector.detect(gray, mask)
+        fea_image.keypoints(keypoints)
+        return fea_image
+
+    def detectImage(self, image, maskimage=None):
+        fea_image = ImageFeatures()
+        if image is None:
+            return fea_image
+
+        fea_image.image(image)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        mask = None
+        if maskimage is not None:
+            mask = cv2.imread(maskimage, cv2.CV_LOAD_IMAGE_GRAYSCALE)
 
         keypoints = self._detector.detect(gray, mask)
         fea_image.keypoints(keypoints)
@@ -258,14 +273,3 @@ class ComplexDetector:
         keypoints = self._detector.detect(gImage, mask)
         fea_image.keypoints(keypoints)
         return fea_image
-
-    @classmethod
-    def getROIImage(cls, image, rectangle):
-        im = image
-        cv2.cv.SetImageROI(im, rectangle)
-        out = cv2.cv.CreateImage(cv2.cv.GetSize(im),
-                                 im.depth,
-                                 im.nChannels)
-        cv2.cv.Copy(im, out)
-        cv2.cv.ResetImageROI(out)
-        return out

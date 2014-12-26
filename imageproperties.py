@@ -29,7 +29,7 @@ class ImageProperties:
             self._data = cv2.imread(filepath, cv2.CV_LOAD_IMAGE_COLOR)
             self._height = 0
             self._width = 0
-            #self._height, self._width = self._data.shape
+            self._height, self._width = self._data.shape[0], self._data.shape[1]
             self._lut_range = None
         else:
             self._title = "untitled"
