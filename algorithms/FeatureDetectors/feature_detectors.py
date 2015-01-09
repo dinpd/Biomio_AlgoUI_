@@ -11,6 +11,7 @@ from imageproperties import ImageProperties
 from features.detectors import BRISKDetector, ORBDetector, ImageFeatures
 from features.tools import paintKeypoints, spiralSort, paintLines
 from features.gabor_threads import build_filters, process_kernel, process
+from logger import logger
 
 from guiqwt.config import _
 

@@ -51,7 +51,8 @@ class LogManager(QDockWidget):
         self.setWindowTitle(_("Log"))
 
         self._console = QTextBrowser(self)
+        self._console.setReadOnly(True)
         self.setWidget(self._console)
 
-        XStream.stdout().messageWritten.connect(self._console.insertPlainText)
-        XStream.stderr().messageWritten.connect(self._console.insertPlainText)
+        XStream.stdout().messageWritten.connect(self._console.append)
+        XStream.stderr().messageWritten.connect(self._console.append)

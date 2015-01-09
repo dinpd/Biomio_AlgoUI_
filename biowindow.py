@@ -10,7 +10,7 @@ from guiqwt import io
 import sys
 
 from view import ImageManager
-from algorithms import AlgorithmsManager
+from algorithmsmanager import AlgorithmsManager
 from gui_logger import LogManager
 from logger import logger
 

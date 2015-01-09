@@ -39,6 +39,14 @@ def iplImageToNumpy_darray(source):
     return numpy.asarray(source[:,:])
 
 
+def numpy_ndarrayToList(source):
+    return source.toList()
+
+
+def listToNumpy_ndarray(source):
+    return numpy.array(source)
+
+
 def loadImage(filename):
     """
     Tools
@@ -184,6 +192,16 @@ def classKeyPointToArray(keypoint):
     return numpy.array(darray)
 
 
+def joinVectors(vector_list):
+    if vector_list is not None:
+        gen_vec = []
+        for el in vector_list:
+            for item in el:
+                gen_vec.append(item)
+        return gen_vec
+    return None
+
+
 def spiralSort(feature, width, height):
     if feature is not None:
         mid_x = width / 2.0
@@ -208,9 +226,32 @@ def spiralSort(feature, width, height):
                 if not mark:
                     keys.insert(0, dis)
                     keypoints.insert(0, keypoint)
-        logger.logger.debug(keys)
-        logger.logger.debug(keypoints)
+        # logger.logger.debug(keys)
+        # logger.logger.debug(keypoints)
         return keypoints
+    return None
+
+
+def minimizeSort(feature):
+    if feature is not None:
+        keys = []
+        for keypoint in feature.keypoints():
+            if len(keys) == 0:
+                keys.append(keypoint)
+            else:
+                i = 0
+                for tkey in keys:
+                    mark = False
+                    for j in range(0, len(keypoint), 1):
+                        if tkey[j] < keypoint[j]:
+                            mark = True
+                            i += 1
+                            break
+                    if not mark:
+                        break
+                keys.insert(i, keypoint)
+        logger.logger.debug(keys)
+        return keys
     return None
 
 

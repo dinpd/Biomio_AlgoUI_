@@ -1,6 +1,4 @@
-import logging
-
-logger = logging.getLogger(__name__)
+from logger import logger
 
 from aiplugins import IAlgorithmPlugin
 from guidata.qt.QtCore import SIGNAL, pyqtSignal
@@ -9,14 +7,14 @@ from guidata.qt.QtGui import (QAction, QMenu,
                               QFileDialog,
                               QVBoxLayout, QHBoxLayout, QFormLayout,
                               QPushButton, QGroupBox, QDoubleSpinBox,
-                              QSpinBox, QLabel, QProgressBar)
+                              QSpinBox, QLabel, QProgressBar, QLineEdit)
 from guidata.qt.QtCore import QObject, QCoreApplication
 from guidata.configtools import get_icon
 from imageproperties import ImageProperties
 import faces.biom.faces as fs
 from faces.biom.utils import files_list, read_file
-from faces.recognition.keypoints import KeypointsObjectDetector, NearPyHash
-
+from faces.recognition.keypoints import KeypointsObjectDetector, NearPyHash, SpiralKeypointsVector
+from algorithms.FaceRecognition.detdialog import DetectorSettingsDialog
 from guiqwt.config import _
 
 
@@ -27,6 +25,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         self.init_keysrecg_algorithm()
         self._setwigets.append(self.create_detect_widget())
         self._setwigets.append(self.create_keysrecg_widget())
+        self._setwigets.append(self.create_compare_widget())
 
     def set_image_manager(self, manager):
         self._imanager = manager
@@ -37,7 +36,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
 
         recognition_menu.addAction(self.add_detect_action(recognition_menu))
         recognition_menu.addAction(self.add_keysrecg_action(recognition_menu))
-        return [recognition_menu]
+        return [recognition_menu, self.add_compare_action(recognition_menu)]
 
     def get_test_actions(self, parent):
         pass
@@ -149,6 +148,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
 
     def init_keysrecg_algorithm(self):
         self._keysrecg_detector = KeypointsObjectDetector(NearPyHash)
+        self.settings_dialog = DetectorSettingsDialog()
         self._keysrecg_detector.kodsettings.cascade_list.append(
             "faces/data/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
         self._keysrecg_detector.kodsettings.cascade_list.append(
@@ -177,12 +177,18 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         self._settings_box = QGroupBox(keysrecg_widget)
         self._settings_box.setTitle(_("Settings:"))
 
-        self._neighBox = QDoubleSpinBox(keysrecg_widget)
+        change_button = QPushButton(self._settings_box)
+        change_button.setText(_("Change"))
+        self.connect(change_button, SIGNAL("clicked()"), self.det_change)
+
+        self._neighBox = QDoubleSpinBox(self._settings_box)
         self._neighBox.setSingleStep(0.10)
         self._neighBox.setMinimum(0)
+        self._neighBox.setMaximum(10000)
         self._neighBox.setValue(1.0)
 
         settings_layout = QFormLayout()
+        settings_layout.addRow(_("Keypoints Detector Settings:"), change_button)
         settings_layout.addRow(_("Max Neighbours Distance:"), self._neighBox)
         self._settings_box.setLayout(settings_layout)
 
@@ -199,10 +205,14 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         add_button = QPushButton(keysrecg_widget)
         add_button.setText('Add')
         self.connect(add_button, SIGNAL("clicked()"), self.add_source)
+        clear_button = QPushButton(keysrecg_widget)
+        clear_button.setText(_('Clear'))
+        self.connect(clear_button, SIGNAL("clicked()"), self.clear_detector)
 
         top_layout = QHBoxLayout()
         top_layout.addWidget(self._load_bar)
         top_layout.addWidget(add_button)
+        top_layout.addWidget(clear_button)
 
         sources_layout = QVBoxLayout()
         sources_layout.addLayout(top_layout)
@@ -229,6 +239,8 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
     def add_source(self):
         filedir = QFileDialog.getExistingDirectory(None, "Select source directory", ".")
         if not filedir.isEmpty():
+            if not self._keysrecg_detector.hash_initialized():
+                self._keysrecg_detector.init_hash()
             flist = files_list(str(filedir))
             i = 0
             for imfile in flist:
@@ -241,6 +253,18 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._load_label.setText("Loading finished.")
             self._load_bar.setValue(100)
 
+    def clear_detector(self):
+        self._keysrecg_detector = KeypointsObjectDetector(NearPyHash)
+        self._keysrecg_detector.kodsettings.cascade_list.append(
+            "faces/data/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
+        self._keysrecg_detector.kodsettings.cascade_list.append(
+            "faces/data/data/haarcascades/haarcascade_frontalface_alt2.xml")
+        self._keysrecg_detector.kodsettings.cascade_list.append(
+            "faces/data/data/haarcascades/haarcascade_frontalface_alt.xml")
+        self._keysrecg_detector.kodsettings.cascade_list.append(
+            "faces/data/data/haarcascades/haarcascade_frontalface_default.xml")
+        self._load_label.setText("The data has been cleared.")
+
     def keysrecg(self):
         curr = self._imanager.current_image()
         if self._imanager and curr:
@@ -250,4 +274,97 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 'data': curr.data()
             }
             self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
+            self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
+            self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
+            self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
             self._keysrecg_detector.identify(data)
+
+    def det_change(self):
+        if self.settings_dialog.exec_():
+            self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
+            self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
+            self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+
+    def add_compare_action(self, parent):
+        compare_action = QAction(parent)
+        compare_action.setText(_("Compare Images"))
+        compare_action.setIcon(get_icon('compi.png'))
+        compare_action.setCheckable(True)
+        self.connect(compare_action, SIGNAL("triggered(bool)"), self.compare_opened)
+        return compare_action
+
+    compare_opened = pyqtSignal(bool, name='compareImagesOpened')
+
+    def create_compare_widget(self):
+        compare_dock = QDockWidget()
+        compare_dock.setWindowTitle("Keypoints Face Recognition Settings")
+        compare_dock.setVisible(False)
+        self.compare_opened.connect(compare_dock.setVisible)
+        compare_widget = QWidget(compare_dock)
+        self._first_box = QGroupBox(compare_widget)
+        self._first_box.setTitle(_("First Image:"))
+
+        self._fimage_edit = QLineEdit(compare_widget)
+        self._fimage_edit.setReadOnly(True)
+
+        fbrowse_button = QPushButton(compare_widget)
+        fbrowse_button.setText('Browse...')
+        self.connect(fbrowse_button, SIGNAL("clicked()"), self.add_fimage)
+
+        fbrowse_layout = QHBoxLayout()
+        fbrowse_layout.addWidget(self._fimage_edit)
+        fbrowse_layout.addWidget(fbrowse_button)
+        self._first_box.setLayout(fbrowse_layout)
+
+        self._second_box = QGroupBox(compare_widget)
+        self._second_box.setTitle(_("Second Image:"))
+
+        self._simage_edit = QLineEdit(compare_widget)
+        self._simage_edit.setReadOnly(True)
+
+        sbrowse_button = QPushButton(compare_widget)
+        sbrowse_button.setText('Browse...')
+        self.connect(sbrowse_button, SIGNAL("clicked()"), self.add_simage)
+
+        sbrowse_layout = QHBoxLayout()
+        sbrowse_layout.addWidget(self._simage_edit)
+        sbrowse_layout.addWidget(sbrowse_button)
+        self._second_box.setLayout(sbrowse_layout)
+
+        compare_button = QPushButton(compare_widget)
+        compare_button.setText('Compare')
+        self.connect(compare_button, SIGNAL("clicked()"), self.compare)
+
+        bottom_layout = QHBoxLayout()
+        bottom_layout.addStretch(2)
+        bottom_layout.addWidget(compare_button)
+
+        widget_layout = QVBoxLayout()
+        widget_layout.addWidget(self._first_box)
+        widget_layout.addWidget(self._second_box)
+        widget_layout.addLayout(bottom_layout)
+        widget_layout.addStretch(2)
+        compare_widget.setLayout(widget_layout)
+        compare_dock.setWidget(compare_widget)
+        return compare_dock
+
+    def add_fimage(self):
+        filename = QFileDialog.getOpenFileName(None, "Select first image to compare", ".")
+        if not filename.isEmpty():
+            self._fimage_edit.setText(filename)
+
+    def add_simage(self):
+        filename = QFileDialog.getOpenFileName(None, "Select second image to compare", ".")
+        if not filename.isEmpty():
+            self._simage_edit.setText(filename)
+
+    def compare(self):
+        first = ImageProperties(str(self._fimage_edit.text()))
+        first_data = {'path': first.path(), 'name': first.title(), 'data': first.data()}
+        second = ImageProperties(str(self._simage_edit.text()))
+        second_data = {'path': second.path(), 'name': second.title(), 'data': second.data()}
+        detector = KeypointsObjectDetector(NearPyHash, SpiralKeypointsVector)
+        detector.addSource(first_data)
+        detector.addSource(second_data)
+        logger.debug(first_data['keypoints'])
+        logger.debug(second_data['keypoints'])

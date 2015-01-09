@@ -39,7 +39,6 @@ def label_list(dir=IMAGE_DIR):
 def files_list(dir=IMAGE_DIR):
     files = []
     for x in [dir + "/" + d for d in os.listdir(dir)]:
-        logger.logger.debug(x)
         for y in os.listdir(x):
             files.append(x + "/" + y)
     return files

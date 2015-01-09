@@ -7,6 +7,11 @@ import numpy
 import defines
 import tools
 import gabor_threads as gfilter
+from logger import logger
+
+# Detector types
+BRISKDetectorType = 0
+ORBDetectorType = 1
 
 
 class ImageFeatures:
@@ -89,6 +94,12 @@ class BaseDetector:
         pass
 
 
+class BRISKDetectorSettings:
+    thresh = 10
+    octaves = 0
+    patternScale = 1.0
+
+
 class BRISKDetector(BaseDetector):
     def __init__(self, thresh=10, octaves=0, scale=1.0):
         BaseDetector.__init__(self, cv2.BRISK(thresh=thresh, octaves=octaves, patternScale=scale))
@@ -96,6 +107,12 @@ class BRISKDetector(BaseDetector):
     @staticmethod
     def extractor():
         return cv2.DescriptorExtractor_create('BRISK')
+
+
+class ORBDetectorSettings:
+    features = 500
+    scaleFactor = 1.1
+    nlevels = 8
 
 
 class ORBDetector(BaseDetector):
@@ -157,11 +174,22 @@ def FlannMatcher():
 
 
 class FeatureDetector:
-    def __init__(self):
-        self._detector = BRISKDetector()
-        self._extractor = BRISKDetector.extractor()
+    def __init__(self, detector_type=ORBDetectorType):
+        self._detector = None
+        self._extractor = None
+        if detector_type is BRISKDetectorType:
+            self._detector = BRISKDetector()
+            self._extractor = BRISKDetector.extractor()
+        elif detector_type is ORBDetectorType:
+            self._detector = ORBDetector()
+            self._extractor = ORBDetector.extractor()
         # self._matcher = MatcherCreator('BruteForce-Hamming')
         self._matcher = FlannMatcher() # MatcherCreator('FlannBased')
+
+    def set_detector(self, detector):
+        if detector is not None:
+            self._detector = detector
+            self._extractor = detector.extractor()
 
     def detect(self, filepath, maskpath=None):
         fea_image = ImageFeatures()
@@ -172,7 +200,7 @@ class FeatureDetector:
             sys.exit()
         fea_image.image(img)
 
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = tools.equalizeHist(tools.grayscale(image))
         mask = None
         if maskpath is not None:
             mask = cv2.imread(maskpath, cv2.CV_LOAD_IMAGE_GRAYSCALE)
@@ -190,10 +218,29 @@ class FeatureDetector:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         mask = None
         if maskimage is not None:
-            mask = cv2.imread(maskimage, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+            mask = cv2.cvtColor(maskimage, cv2.COLOR_BGR2GRAY)
 
         keypoints = self._detector.detect(gray, mask)
         fea_image.keypoints(keypoints)
+        return fea_image
+
+    def detectAndComputeImage(self, image, maskimage=None):
+        fea_image = ImageFeatures()
+
+        if image is None:
+            return fea_image
+
+        fea_image.image(image)
+
+        gray = tools.equalizeHist(tools.grayscale(image))
+        mask = None
+        if maskimage is not None:
+            mask = cv2.cvtColor(maskimage, cv2.COLOR_BGR2GRAY)
+
+        keypoints = self._detector.detect(gray, mask)
+        keypoints, descriptors = self._extractor.compute(gray, keypoints)
+        fea_image.keypoints(keypoints)
+        fea_image.descriptors(descriptors)
         return fea_image
 
     def detectAndCompute(self, filepath, maskpath=None):

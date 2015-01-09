@@ -94,9 +94,9 @@ class FisherModel(BaseModel):
 
 
 class CascadeClassifierSettings:
-    scaleFactor = 1.1
+    scaleFactor = 1.01
     minNeighbors = 0
-    minSize = (30, 30)
+    minSize = (10, 10)
     flags = cv.CV_HAAR_SCALE_IMAGE
 
 
@@ -109,7 +109,7 @@ class CascadeROIDetector:
     def add_cascade(self, path):
         if os.path.exists(path):
             self.__cascades.append(cv2.CascadeClassifier(path))
-            logger.debug("Cascade is loaded.")
+            # logger.debug("Cascade is loaded.")
         else:
             logger.debug("Such file does not exist.")
 
