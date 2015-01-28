@@ -173,19 +173,25 @@ class KeypointsObjectDetector:
                     self.etalon = data['descriptors']
                 else:
                     matcher = FlannMatcher()
-                    matches = matcher.knnMatch(data['descriptors'], self.etalon, k=1)
+                    matches = matcher.knnMatch(self.etalon, data['descriptors'], k=1)
 
                     good = []
                     for v in matches:
                         if len(v) >= 1:
-                            m = v[0]
-                            if m.distance < self.kodsettings.neighbours_distance:
-                                good.append(data['descriptors'][m.queryIdx])
-                                good.append(self.etalon[m.trainIdx])
                         # if len(v) >= 2:
-                        #     m = v[0]
-                        #     n = v[1]
-                        #     if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                            m = v[0]
+                            # n = v[1]
+                            good.append(self.etalon[m.queryIdx])
+                        #     if m.distance < self.kodsettings.neighbours_distance:
+                        #         good.append(self.etalon[m.queryIdx])
+                                # good.append(data['descriptors'][m.queryIdx])
+                                # good.append(self.etalon[m.trainIdx])
+
+                            # if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                            #     good.append(self.etalon[m.queryIdx])
+                            # else:
+                            #     good.append(self.etalon[m.queryIdx])
+                            #     good.append(data['descriptors'][m.trainIdx])
                                 # good.append(data['descriptors'][m.queryIdx])
                                 # good.append(self.etalon[m.trainIdx])
 
@@ -362,21 +368,21 @@ class KeypointsObjectDetector:
             #
             #         etalon = listToNumpy_ndarray(good)
 
-            matches = matcher.knnMatch(data['descriptors'], self.etalon, k=2)
+            matches = matcher.knnMatch(self.etalon, data['descriptors'], k=1)
             ms = []
             for v in matches:
-                if len(v) >= 2:
-                    m = v[0]
-                    n = v[1]
-                    logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
-                                        + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
-                    if m.distance < self.kodsettings.neighbours_distance:
-                        ms.append(m)
+                if len(v) >= 1:
                 # if len(v) >= 2:
-                #     m = v[0]
-                #     n = v[1]
-                #     if m.distance < self.kodsettings.neighbours_distance * n.distance:
-                #         ms.append(m)
+                    m = v[0]
+                    # n = v[1]
+                    # logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
+                    #                     + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
+                    if m.distance < self.kodsettings.neighbours_distance:
+                    # if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                        ms.append(m)
+                    # else:
+                    #     ms.append(m)
+                    #     ms.append(n)
             logger.logger.debug("Image: " + data['path'])
             logger.logger.debug("Template size: " + str(len(self.etalon)) + " descriptors.")
             logger.logger.debug("Positive matched descriptors: " + str(len(ms)))
