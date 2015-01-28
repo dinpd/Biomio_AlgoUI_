@@ -39,8 +39,12 @@ def label_list(dir=IMAGE_DIR):
 def files_list(dir=IMAGE_DIR):
     files = []
     for x in [dir + "/" + d for d in os.listdir(dir)]:
-        for y in os.listdir(x):
-            files.append(x + "/" + y)
+        if os.path.isdir(x):
+            tfiles = files_list(x)
+            for temp in tfiles:
+                files.append(temp)
+        else:
+            files.append(x)
     return files
 
 

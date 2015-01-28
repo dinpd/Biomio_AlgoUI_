@@ -2,7 +2,7 @@ from guidata.qt.QtGui import QMainWindow
 from guidata.qt.QtCore import (Qt)
 from guidata.configtools import get_icon
 from guidata.qthelpers import create_action, add_actions, get_std_icon
-from guidata.qt.compat import getopenfilename, getsavefilename
+from guidata.qt.compat import getsavefilename, getopenfilenames
 
 from guiqwt.config import _
 from guiqwt import io
@@ -62,15 +62,19 @@ class BioWindow(QMainWindow):
                                      icon=get_icon('close.png'),
                                      tip=_("Close an current image"),
                                      triggered=self.close_image)
+        close_all_action = create_action(self, _("Close All"),
+                                     icon=get_icon('closeall.png'),
+                                     tip=_("Close an all images"),
+                                     triggered=self.close_all)
         quit_action = create_action(self, _("Quit"),
                                     shortcut="Ctrl+Q",
                                     icon=get_std_icon("DialogCloseButton"),
                                     tip=_("Quit application"),
                                     triggered=self.close)
-        add_actions(file_menu, (open_action, save_action, close_action, None, quit_action))
+        add_actions(file_menu, (open_action, save_action, close_action, close_all_action, None, quit_action))
 
         file_toolbar = self.addToolBar("FileToolBar")
-        add_actions(file_toolbar, (open_action, save_action, close_action))
+        add_actions(file_toolbar, (open_action, save_action, close_action, close_all_action))
 
     def init_widgets(self):
         widgets = self._amanager.algorithms_settings()
@@ -81,10 +85,11 @@ class BioWindow(QMainWindow):
     def open_image(self):
         saved_in, saved_out, saved_err = sys.stdin, sys.stdout, sys.stderr
         sys.stdout = None
-        filename, _filter = getopenfilename(self, _("Open"), "")
+        filenames, _filter = getopenfilenames(self, _("Open"), "")
         sys.stdin, sys.stdout, sys.stderr = saved_in, saved_out, saved_err
-        if filename:
-            self._imanager.add_image_from_file(filename)
+        if len(filenames) > 0:
+            for filename in filenames:
+                self._imanager.add_image_from_file(filename)
 
     def save_image(self):
         saved_in, saved_out, saved_err = sys.stdin, sys.stdout, sys.stderr
@@ -97,3 +102,6 @@ class BioWindow(QMainWindow):
 
     def close_image(self):
         self._imanager.delete_image(self._imanager.current_image_index())
+
+    def close_all(self):
+        self._imanager.delete_all()

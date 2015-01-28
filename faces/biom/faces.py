@@ -94,8 +94,8 @@ class FisherModel(BaseModel):
 
 
 class CascadeClassifierSettings:
-    scaleFactor = 1.01
-    minNeighbors = 0
+    scaleFactor = 1.1
+    minNeighbors = 2
     minSize = (10, 10)
     flags = cv.CV_HAAR_SCALE_IMAGE
 

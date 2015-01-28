@@ -1,7 +1,7 @@
 import logging
 import sys
-from guidata.qt.QtGui import QDockWidget, QTextBrowser
-from guidata.qt.QtCore import QObject, pyqtSignal
+from guidata.qt.QtGui import QDockWidget, QTextBrowser, QAction
+from guidata.qt.QtCore import QObject, pyqtSignal, SIGNAL, Qt
 from guiqwt.config import _
 
 
@@ -53,6 +53,11 @@ class LogManager(QDockWidget):
         self._console = QTextBrowser(self)
         self._console.setReadOnly(True)
         self.setWidget(self._console)
+
+        # action = QAction(self._console)
+        # action.setText(_("Clear"))
+        # self.connect(action, SIGNAL("triggered()"), self._console.clear)
+        # self._console.addAction(action)
 
         XStream.stdout().messageWritten.connect(self._console.append)
         XStream.stderr().messageWritten.connect(self._console.append)

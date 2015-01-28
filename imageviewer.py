@@ -2,7 +2,8 @@ from guidata.qt.QtGui import (QWidget,
                               QGraphicsView, QGraphicsScene,
                               QPixmap, QImage,
                               QHBoxLayout,
-                              QAction, QKeySequence, QMenu)
+                              QAction, QKeySequence, QMenu,
+                              QApplication)
 from guidata.qt.QtCore import (Qt, SIGNAL, pyqtSlot)
 
 from guiqwt.config import _
@@ -49,17 +50,18 @@ class ImageViewer(QWidget, AbstractImageViewer):
         self._scene.clear()
         self._scene.deleteLater()
         self._scene = QGraphicsScene()
-        self._current_pixmap = self._scene.addPixmap(QPixmap.fromImage(imageOpenCv2ToQImage(image.data())))
-        if image.data() is None:
-            self._current_pixmap = self._scene.addPixmap(QPixmap(image.path()))
-        if self._smoothAct.isChecked():
-            self._current_pixmap.setTransformationMode(Qt.SmoothTransformation)
-        else:
-            self._current_pixmap.setTransformationMode(Qt.FastTransformation)
+        if image is not None:
+            self._current_pixmap = self._scene.addPixmap(QPixmap.fromImage(imageOpenCv2ToQImage(image.data())))
+            if image.data() is None:
+                self._current_pixmap = self._scene.addPixmap(QPixmap(image.path()))
+                if self._smoothAct.isChecked():
+                    self._current_pixmap.setTransformationMode(Qt.SmoothTransformation)
+                else:
+                    self._current_pixmap.setTransformationMode(Qt.FastTransformation)
         self._view.setScene(self._scene)
 
     def update_plot(self):
-        pass
+        QApplication.processEvents()
 
     def createActions(self):
         """Create actions for the menus."""

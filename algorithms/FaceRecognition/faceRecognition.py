@@ -13,9 +13,12 @@ from guidata.configtools import get_icon
 from imageproperties import ImageProperties
 import faces.biom.faces as fs
 from faces.biom.utils import files_list, read_file
-from faces.recognition.keypoints import KeypointsObjectDetector, NearPyHash, SpiralKeypointsVector
+from faces.recognition.keypoints import (KeypointsObjectDetector, NearPyHash,
+                                         SpiralKeypointsVector, ObjectsFlannMatching)
 from algorithms.FaceRecognition.detdialog import DetectorSettingsDialog
 from guiqwt.config import _
+
+import os
 
 
 class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
@@ -147,7 +150,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._imanager.add_temp_image(image)
 
     def init_keysrecg_algorithm(self):
-        self._keysrecg_detector = KeypointsObjectDetector(NearPyHash)
+        self._keysrecg_detector = KeypointsObjectDetector(NearPyHash, ObjectsFlannMatching)
         self.settings_dialog = DetectorSettingsDialog()
         self._keysrecg_detector.kodsettings.cascade_list.append(
             "faces/data/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
@@ -223,9 +226,19 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         identify_button.setText(_('Identify'))
         self.connect(identify_button, SIGNAL("clicked()"), self.keysrecg)
 
+        iden_all_button = QPushButton(keysrecg_widget)
+        iden_all_button.setText(_('Identify All'))
+        self.connect(iden_all_button, SIGNAL("clicked()"), self.identify_all)
+
+        verify_button = QPushButton(keysrecg_widget)
+        verify_button.setText(_('Verify'))
+        self.connect(verify_button, SIGNAL("clicked()"), self.verify)
+
         identify_layout = QHBoxLayout()
         identify_layout.addStretch(2)
         identify_layout.addWidget(identify_button)
+        identify_layout.addWidget(iden_all_button)
+        identify_layout.addWidget(verify_button)
 
         widget_layout = QVBoxLayout()
         widget_layout.addWidget(self._settings_box)
@@ -237,10 +250,12 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         return keysrecg_dock
 
     def add_source(self):
+        self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
         filedir = QFileDialog.getExistingDirectory(None, "Select source directory", ".")
         if not filedir.isEmpty():
             if not self._keysrecg_detector.hash_initialized():
                 self._keysrecg_detector.init_hash()
+            logger.debug("Loading started...")
             flist = files_list(str(filedir))
             i = 0
             for imfile in flist:
@@ -252,9 +267,10 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 QCoreApplication.processEvents()
             self._load_label.setText("Loading finished.")
             self._load_bar.setValue(100)
+            logger.debug("Loading finished.")
 
     def clear_detector(self):
-        self._keysrecg_detector = KeypointsObjectDetector(NearPyHash)
+        self._keysrecg_detector = KeypointsObjectDetector(NearPyHash, ObjectsFlannMatching)
         self._keysrecg_detector.kodsettings.cascade_list.append(
             "faces/data/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
         self._keysrecg_detector.kodsettings.cascade_list.append(
@@ -278,6 +294,48 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
             self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
             self._keysrecg_detector.identify(data)
+
+    def identify_all(self):
+        if self._imanager:
+            rtrue = 0
+            rfalse = 0
+            for curr in self._imanager.images():
+                logger.debug(curr.path())
+                data = {
+                    'path': curr.path(),
+                    'name': curr.title(),
+                    'data': curr.data()
+                }
+                self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
+                self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
+                self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
+                self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+                res = self._keysrecg_detector.identify(data)
+                logger.debug("Result: " + os.path.split(res)[1] + "\t"
+                             + os.path.split(os.path.split(curr.path())[0])[1])
+                if os.path.split(res)[1] == os.path.split(os.path.split(curr.path())[0])[1]:
+                    rtrue += 1
+                else:
+                    rfalse += 1
+            logger.debug("Positive identification: " + str(rtrue) + "\t"
+                         + str((rtrue / (1.0 * (rtrue + rfalse))) * 100))
+            logger.debug("Negative identification: " + str(rfalse) + "\t"
+                         + str((rfalse / (1.0 * (rtrue + rfalse))) * 100))
+
+    def verify(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            data = {
+                'path': curr.path(),
+                'name': curr.title(),
+                'data': curr.data()
+            }
+            self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
+            self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
+            self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
+            self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            self._keysrecg_detector.verify(data)
+
 
     def det_change(self):
         if self.settings_dialog.exec_():

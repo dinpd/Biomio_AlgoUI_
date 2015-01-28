@@ -3,7 +3,7 @@ from rectmerge import mergeRectangles
 from features.tools import (getROIImage, keypointsToArrays, spiralSort, joinVectors, listToNumpy_ndarray,
                             drawImage, drawKeypoints, minimizeSort)
 from features.detectors import (BRISKDetector, ORBDetector, FeatureDetector,
-                                BRISKDetectorSettings, ORBDetectorSettings)
+                                BRISKDetectorSettings, ORBDetectorSettings, FlannMatcher)
 from lshash import LSHash
 from features.hashing.nearpy_hash import NearPyHash
 import logger
@@ -13,8 +13,9 @@ import os
 LSHashType = 0
 NearPyHashType = 1
 
-SimpleKeypoints = 0
+FeaturesMatching = 0
 SpiralKeypointsVector = 1
+ObjectsFlannMatching = 2
 
 BRISKDetectorType = 0
 ORBDetectorType = 1
@@ -25,7 +26,7 @@ class KODSettings:
     Keypoints Object Detector's Settings class
     """
     cascade_list = []
-    neighbours_distance = 2.0
+    neighbours_distance = 1.0
     max_hash_length = 600
     detector_type = BRISKDetectorType
     brisk_settings = BRISKDetectorSettings()
@@ -35,14 +36,19 @@ class KODSettings:
 class KeypointsObjectDetector:
     kodsettings = KODSettings()
 
-    def __init__(self, hash_t=LSHashType, data_t=SimpleKeypoints):
+    def __init__(self, hash_t=LSHashType, data_t=FeaturesMatching):
         self._hash_type = hash_t
         self._data_type = data_t
         self._data_keys = dict()
         self._hash = None
+        self.etalon = []
         self._data_init = False
+        self._cascadeROI = None
 
     def init_hash(self):
+        self._cascadeROI = CascadeROIDetector()
+        for cascade in self.kodsettings.cascade_list:
+            self._cascadeROI.add_cascade(cascade)
         if self.kodsettings.detector_type is BRISKDetectorType:
             size = 64
         else:
@@ -50,11 +56,14 @@ class KeypointsObjectDetector:
         if self._hash_type is LSHashType:
             self._hash = LSHash(128, size)
         else:
-            if self._data_type is SimpleKeypoints:
+            if self._data_type is FeaturesMatching:
                 self._hash = NearPyHash(size)
-            else:
+                self._hash.addRandomBinaryProjectionsEngine(10)
+            elif self._data_type is SpiralKeypointsVector:
                 self._hash = NearPyHash(self.kodsettings.max_hash_length)
-            self._hash.addRandomBinaryProjectionsEngine(10)
+                self._hash.addRandomBinaryProjectionsEngine(10)
+            elif self._data_type is ObjectsFlannMatching:
+                self._hash = []
         self._data_init = True
 
     def hash_initialized(self):
@@ -69,51 +78,68 @@ class KeypointsObjectDetector:
             self.addSource(data)
 
     def identify(self, data):
-        if self.data_detect(data) and len(self._data_keys) > 0:
-            if self._data_type is SimpleKeypoints:
-                return self.matching(data)
-            else:
-                return self.vect_matching(data)
-        return None
+        logger.logger.debug("Identifying...")
+        res = None
+        if self.data_detect(data):
+            if self._data_type is FeaturesMatching:
+                if len(self._data_keys) > 0:
+                    res = self.matching(data)
+            elif self._data_type is SpiralKeypointsVector:
+                res = self.vect_matching(data)
+            elif self._data_type is ObjectsFlannMatching:
+                res = self.flann_matching(data)
+        logger.logger.debug("Identifying finished.")
+        return res
+
+    def verify(self, data):
+        logger.logger.debug("Verifying...")
+        res = None
+        if self.data_detect(data):
+            if self._data_type is FeaturesMatching:
+                logger.logger.debug("Data Type doesn't support image verification.")
+            elif self._data_type is SpiralKeypointsVector:
+                logger.logger.debug("Data Type doesn't support image verification.")
+            elif self._data_type is ObjectsFlannMatching:
+                res = self.flann_verify(data)
+        logger.logger.debug("Verifying finished.")
+        return res
 
     def data_detect(self, data):
         # ROI detection
-        cascadeROI = CascadeROIDetector()
-        for cascade in self.kodsettings.cascade_list:
-            cascadeROI.add_cascade(cascade)
-        rects = cascadeROI.detect(data['data'])
+        rects = self._cascadeROI.detect(data['data'])
         if len(rects) is 0:
             logger.logger.debug("ROI is not found for " + data['path'])
             return False
         rect = mergeRectangles(rects)
-        #ROI cutting
+        # ROI cutting
         data['roi'] = getROIImage(data['data'], rect)
-        #Keypoints detection
+        # Keypoints detection
         detector = FeatureDetector()
         if self.kodsettings.detector_type is BRISKDetectorType:
-            logger.logger.debug('%d, %d, %f', self.kodsettings.brisk_settings.thresh,
-                                self.kodsettings.brisk_settings.octaves, self.kodsettings.brisk_settings.patternScale)
+            # logger.logger.debug('%d, %d, %f', self.kodsettings.brisk_settings.thresh,
+            #                     self.kodsettings.brisk_settings.octaves, self.kodsettings.brisk_settings.patternScale)
             brisk_detector = BRISKDetector(self.kodsettings.brisk_settings.thresh,
                                            self.kodsettings.brisk_settings.octaves,
                                            self.kodsettings.brisk_settings.patternScale)
             detector.set_detector(brisk_detector)
         else:
-            logger.logger.debug('%d, %f, %d', self.kodsettings.orb_settings.features,
-                                self.kodsettings.orb_settings.scaleFactor, self.kodsettings.orb_settings.nlevels)
+            # logger.logger.debug('%d, %f, %d', self.kodsettings.orb_settings.features,
+            #                     self.kodsettings.orb_settings.scaleFactor, self.kodsettings.orb_settings.nlevels)
             orb_detector = ORBDetector(self.kodsettings.orb_settings.features,
                                        self.kodsettings.orb_settings.scaleFactor,
                                        self.kodsettings.orb_settings.nlevels)
             detector.set_detector(orb_detector)
         obj = detector.detectAndComputeImage(data['roi'])
+        data['keypoints'] = obj.keypoints()
         data['descriptors'] = obj.descriptors()
         if data['descriptors'] is None:
             data['descriptors'] = []
-        if self._data_type is SimpleKeypoints:
+        if self._data_type is FeaturesMatching:
             key_arrays = keypointsToArrays(obj.keypoints())
             data['keypoints'] = key_arrays
-        else:
+        elif self._data_type is SpiralKeypointsVector:
             height, width = data['roi'].shape[0], data['roi'].shape[1]
-            order_keys = obj.keypoints() #spiralSort(obj, width, height)
+            order_keys = obj.keypoints()  #spiralSort(obj, width, height)
             # order_keys = minimizeSort(obj)
             obj.keypoints(keypointsToArrays(order_keys))
             key_arr = joinVectors(obj.keypoints())
@@ -127,15 +153,44 @@ class KeypointsObjectDetector:
             for keypoint in data['keypoints']:
                 self._hash.index(keypoint)
         else:
-            if self._data_type is SimpleKeypoints:
+            if self._data_type is FeaturesMatching:
                 # for keypoint in data['keypoints']:
                 for keypoint in data['descriptors']:
                     self._hash.add_dataset(keypoint, os.path.split(data['path'])[0])
                     value = self._data_keys.get(os.path.split(data['path'])[0], 0)
                     value += 1
                     self._data_keys[os.path.split(data['path'])[0]] = value
-            else:
+            elif self._data_type is SpiralKeypointsVector:
                 self._hash.add_dataset(data['descriptors'], os.path.split(data['path'])[0])
+            elif self._data_type is ObjectsFlannMatching:
+                del data['data']
+                del data['roi']
+                del data['keypoints']
+                self._hash.append(data)
+                ###############################################
+
+                if len(self.etalon) == 0:
+                    self.etalon = data['descriptors']
+                else:
+                    matcher = FlannMatcher()
+                    matches = matcher.knnMatch(data['descriptors'], self.etalon, k=1)
+
+                    good = []
+                    for v in matches:
+                        if len(v) >= 1:
+                            m = v[0]
+                            if m.distance < self.kodsettings.neighbours_distance:
+                                good.append(data['descriptors'][m.queryIdx])
+                                good.append(self.etalon[m.trainIdx])
+                        # if len(v) >= 2:
+                        #     m = v[0]
+                        #     n = v[1]
+                        #     if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                                # good.append(data['descriptors'][m.queryIdx])
+                                # good.append(self.etalon[m.trainIdx])
+
+                    self.etalon = listToNumpy_ndarray(good)
+
 
     def matching(self, data):
         imgs = dict()
@@ -157,6 +212,7 @@ class KeypointsObjectDetector:
             logger.logger.debug(imgs)
             logger.logger.debug(max_key)
             logger.logger.debug(self._data_keys[max_key])
+            logger.logger.debug(len(data['descriptors']))
             logger.logger.debug(imgs[max_key] / (self._data_keys[max_key] * 1.0))
             return max_key
         return None
@@ -181,4 +237,149 @@ class KeypointsObjectDetector:
             logger.logger.debug(imgs)
             logger.logger.debug(max_key)
             return max_key
+        return None
+
+    def flann_matching(self, data):
+        imgs = dict()
+        if data is not None:
+            matcher = FlannMatcher()
+            for d in self._hash:
+                matches = matcher.knnMatch(d['descriptors'],
+                                           data['descriptors'],
+                                           k=2)
+                good = []
+                count = len(matches)
+                for v in matches:
+                    if len(v) is 2:
+                        m = v[0]
+                        n = v[1]
+                        if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                            good.append([m])
+                    else:
+                        count -= 1
+                key = d['path']
+                value = imgs.get(key, dict())
+                value['id'] = os.path.split(d['path'])[1]
+                value['all'] = count
+                value['positive'] = len(good)
+                value['negative'] = count - len(good)
+                value['prob'] = len(good) / (1.0 * count)
+                imgs[key] = value
+            res = self.merge_results(imgs)
+            result = self.print_dict(res)
+            return result
+        return None
+
+    def merge_results(self, results):
+        mres = dict()
+        res = dict()
+        for key in results.keys():
+            value = results.get(key, dict())
+            str_key = os.path.split(key)[0]
+            avg = mres.get(str_key, dict({'id': str_key, 'all': 0, 'positive': 0,
+                                          'negative': 0, 'prob': 0, 'count': 0}))
+            avg['all'] += value['all']
+            avg['positive'] += value['positive']
+            avg['negative'] += value['negative']
+            avg['prob'] += value['prob']
+            avg['count'] += 1
+            mres[str_key] = avg
+        for k in mres.keys():
+            value = mres.get(k, dict())
+            dic = dict()
+            dic['id'] = value['id']
+            dic['all'] = value['all']  # / value['count']
+            dic['positive'] = value['positive']  # / value['count']
+            dic['negative'] = value['negative']  # / value['count']
+            dic['prob'] = value['prob'] / value['count']
+            res[k] = dic
+        return res
+
+    def print_dict(self, d):
+        logs = "Keys\tAll Matches\tPositive Matches\tNegative Matches\tProbability\n"
+        amatches = 0
+        gmatches = 0
+        nmatches = 0
+        prob = 0
+        count = 0
+        max_val = 0
+        max_key = ''
+        max_low = 0
+        low_key = ''
+        for key in d.keys():
+            value = d.get(key, dict())
+            logs += (value['id'] + "\t" + str(value['all']) + "\t" + str(value['positive']) + "\t"
+                     + str(value['negative']) + "\t" + str(value['prob'] * 100) + "\n")
+            amatches += value['all']
+            gmatches += value['positive']
+            nmatches += value['negative']
+            prob += value['prob'] * 100
+            count += 1
+            if max_val < value['prob']:
+                max_key = key
+                max_val = value['prob']
+            if max_low < value['prob'] and max_key != key:
+                low_key = key
+                max_low = value['prob']
+        v = d.get(max_key, dict())
+        logs += ("Max:\t" + v['id'] + "\t" + str(v['all']) + "\t" + str(v['positive']) + "\t"
+                 + str(v['negative']) + "\t" + str(v['prob'] * 100) + "\n")
+        v1 = d.get(low_key, dict())
+        logs += ("Next:\t" + v1['id'] + "\t" + str(v1['all']) + "\t" + str(v1['positive']) + "\t"
+                 + str(v1['negative']) + "\t" + str(v1['prob'] * 100) + "\n")
+        logs += ("Total:\t\t" + str(amatches) + "\t" + str(gmatches) + "\t" + str(nmatches)
+                 + "\t" + str(prob) + "\n")
+        if count > 0:
+            logs += ("Average:\t\t" + str(amatches / (1.0 * count)) + "\t" + str(gmatches / (1.0 * count))
+                     + "\t" + str(nmatches / (1.0 * count)) + "\t" + str(prob / (1.0 * count)) + "\n")
+        logger.logger.debug(logs)
+        return max_key
+
+    def flann_verify(self, data):
+        imgs = dict()
+        if data is not None:
+            matcher = FlannMatcher()
+            # etalon = []
+            # for d in self._hash:
+            #     if len(etalon) == 0:
+            #         etalon = d['descriptors']
+            #     else:
+            #         matches = matcher.knnMatch(d['descriptors'], etalon, k=2)
+            #
+            #         good = []
+            #         for v in matches:
+            #             # if len(v) >= 1:
+            #             #     m = v[0]
+            #             #     if m.distance < self.kodsettings.neighbours_distance:
+            #             #         good.append(d['descriptors'][m.queryIdx])
+            #             if len(v) >= 2:
+            #                 m = v[0]
+            #                 n = v[1]
+            #
+            #                 if m.distance < self.kodsettings.neighbours_distance * n.distance:
+            #                     good.append(d['descriptors'][m.queryIdx])
+            #                     good.append(etalon[m.trainIdx])
+            #
+            #         etalon = listToNumpy_ndarray(good)
+
+            matches = matcher.knnMatch(data['descriptors'], self.etalon, k=2)
+            ms = []
+            for v in matches:
+                if len(v) >= 2:
+                    m = v[0]
+                    n = v[1]
+                    logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
+                                        + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
+                    if m.distance < self.kodsettings.neighbours_distance:
+                        ms.append(m)
+                # if len(v) >= 2:
+                #     m = v[0]
+                #     n = v[1]
+                #     if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                #         ms.append(m)
+            logger.logger.debug("Image: " + data['path'])
+            logger.logger.debug("Template size: " + str(len(self.etalon)) + " descriptors.")
+            logger.logger.debug("Positive matched descriptors: " + str(len(ms)))
+            logger.logger.debug("Probability: " + str((len(ms) / (1.0 * len(self.etalon))) * 100))
+            return True
         return None

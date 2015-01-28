@@ -164,9 +164,9 @@ def FlannMatcher():
     # index_params = dict(algorithm=defines.FLANN_INDEX_KDTREE,
     #                     trees=5)
     index_params = dict(algorithm=defines.FLANN_INDEX_LSH,
-                        table_number=6,       # 12
-                        key_size=12,          # 20
-                        multi_probe_level=1)  # 2
+                        table_number=12,       # 12
+                        key_size=20,          # 20
+                        multi_probe_level=2)  # 2
 
     search_params = dict(checks=50)
 

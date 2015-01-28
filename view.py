@@ -13,6 +13,7 @@ from imageproperties import ImageProperties
 from imageviewer import ImageViewer
 from viewers import AbstractImageViewer
 from features.tools import saveImage
+import logger
 
 
 class ImageManager(QObject):
@@ -39,6 +40,12 @@ class ImageManager(QObject):
             return self._images[self._imagelist.currentRow()]
         return None
 
+    def count(self):
+        return len(self._images)
+
+    def images(self):
+        return self._images
+
     def delete_image(self, index):
         if len(self._images) > index:
             cur = self._imagelist.currentRow()
@@ -48,6 +55,11 @@ class ImageManager(QObject):
             self.refresh_list()
             self._imagelist.setCurrentRow(cur)
             self._view.update_plot()
+
+    def delete_all(self):
+        self._images = []
+        self.refresh_list()
+        self._view.update_plot()
 
     def save_image(self, filename, i):
         image = self._images[i]
@@ -96,10 +108,13 @@ class ImageManager(QObject):
     #     # self._properties.setDisabled(row == -1)
 
     def current_item_changed(self, row):
-        image = self._images[row]
-        self._view.setImage(image)
-        # update_dataset(self._properties.dataset, image.toImageParam())
-        # self._properties.get()
+        if len(self._images) > row >= 0:
+            image = self._images[row]
+            self._view.setImage(image)
+            # update_dataset(self._properties.dataset, image.toImageParam())
+            #  self._properties.get()
+        else:
+            self._view.setImage(None)
 
 
 class GuiQwtImageViewer(ImageWidget, AbstractImageViewer):
