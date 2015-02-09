@@ -12,7 +12,7 @@ from guiqwt.config import _
 from imageproperties import ImageProperties
 from imageviewer import ImageViewer
 from viewers import AbstractImageViewer
-from features.tools import saveImage
+from algorithms.cvtools.system import saveNumpyImage
 import logger
 
 

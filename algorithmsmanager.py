@@ -13,7 +13,7 @@ from guiqwt.config import _
 
 import os
 
-PLUGIN_PLACES = ['./algorithms']
+PLUGIN_PLACES = ['./plugins']
 
 
 def get_config_file_path():
