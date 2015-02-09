@@ -6,8 +6,8 @@ from guidata.qt.QtGui import (QWidget, QStackedWidget,
                               QIntValidator, QDoubleValidator,
                               QVBoxLayout, QHBoxLayout, QFormLayout,
                               QPushButton, QLineEdit, QRadioButton)
-from features.detectors import (BRISKDetectorSettings, ORBDetectorSettings,
-                                BRISKDetectorType, ORBDetectorType)
+from algorithms.features.detectors import (BRISKDetectorSettings, ORBDetectorSettings,
+                                           BRISKDetectorType, ORBDetectorType)
 from guiqwt.config import _
 
 

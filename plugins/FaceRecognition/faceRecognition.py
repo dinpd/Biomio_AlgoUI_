@@ -11,11 +11,13 @@ from guidata.qt.QtGui import (QAction, QMenu,
 from guidata.qt.QtCore import QObject, QCoreApplication
 from guidata.configtools import get_icon
 from imageproperties import ImageProperties
-import faces.biom.faces as fs
-from faces.biom.utils import files_list, read_file
-from faces.recognition.keypoints import (KeypointsObjectDetector, NearPyHash,
-                                         SpiralKeypointsVector, ObjectsFlannMatching)
-from algorithms.FaceRecognition.detdialog import DetectorSettingsDialog
+import algorithms.faces.biom.faces as fs
+from algorithms.faces.biom.utils import files_list
+from plugins.FaceRecognition.detdialog import DetectorSettingsDialog
+from algorithms.recognition.detcreator import (DetectorCreator,
+                                               ClustersObjectMatching,
+                                               FaceCascadeClassifier, EyesCascadeClassifier)
+from algorithms.imgobj import loadImageObject
 from guiqwt.config import _
 
 import os
@@ -150,16 +152,19 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._imanager.add_temp_image(image)
 
     def init_keysrecg_algorithm(self):
-        self._keysrecg_detector = KeypointsObjectDetector(NearPyHash, ObjectsFlannMatching)
         self.settings_dialog = DetectorSettingsDialog()
-        self._keysrecg_detector.kodsettings.cascade_list.append(
-            "faces/data/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
-        self._keysrecg_detector.kodsettings.cascade_list.append(
-            "faces/data/data/haarcascades/haarcascade_frontalface_alt2.xml")
-        self._keysrecg_detector.kodsettings.cascade_list.append(
-            "faces/data/data/haarcascades/haarcascade_frontalface_alt.xml")
-        self._keysrecg_detector.kodsettings.cascade_list.append(
-            "faces/data/data/haarcascades/haarcascade_frontalface_default.xml")
+        self.init_detector()
+
+    def init_detector(self):
+        creator = DetectorCreator(type=ClustersObjectMatching)
+        creator.addClassifier(FaceCascadeClassifier)
+        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
+        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt2.xml")
+        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt.xml")
+        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_default.xml")
+        creator.addClassifier(EyesCascadeClassifier)
+        creator.addCascade(EyesCascadeClassifier, "algorithms/data/haarcascades/haarcascade_mcs_eyepair_big.xml")
+        self._keysrecg_detector = creator.detector()
 
     def add_keysrecg_action(self, parent):
         keysrecg_action = QAction(parent)
@@ -253,14 +258,12 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
         filedir = QFileDialog.getExistingDirectory(None, "Select source directory", ".")
         if not filedir.isEmpty():
-            if not self._keysrecg_detector.hash_initialized():
-                self._keysrecg_detector.init_hash()
             logger.debug("Loading started...")
             flist = files_list(str(filedir))
             i = 0
             for imfile in flist:
                 i += 1
-                obj = read_file(imfile)
+                obj = loadImageObject(imfile)
                 self._keysrecg_detector.addSource(obj)
                 self._load_label.setText("Load file: " + imfile)
                 self._load_bar.setValue((i * 100) / len(flist))
@@ -270,15 +273,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             logger.debug("Loading finished.")
 
     def clear_detector(self):
-        self._keysrecg_detector = KeypointsObjectDetector(NearPyHash, ObjectsFlannMatching)
-        self._keysrecg_detector.kodsettings.cascade_list.append(
-            "faces/data/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
-        self._keysrecg_detector.kodsettings.cascade_list.append(
-            "faces/data/data/haarcascades/haarcascade_frontalface_alt2.xml")
-        self._keysrecg_detector.kodsettings.cascade_list.append(
-            "faces/data/data/haarcascades/haarcascade_frontalface_alt.xml")
-        self._keysrecg_detector.kodsettings.cascade_list.append(
-            "faces/data/data/haarcascades/haarcascade_frontalface_default.xml")
+        self.init_detector()
         self._load_label.setText("The data has been cleared.")
 
     def keysrecg(self):

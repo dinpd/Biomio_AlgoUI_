@@ -8,9 +8,8 @@ from guidata.qt.QtGui import (QAction, QMenu,
 from guidata.qt.QtCore import QObject
 from guidata.configtools import get_icon
 from imageproperties import ImageProperties
-from features.detectors import BRISKDetector, ORBDetector, ImageFeatures
-from features.tools import paintKeypoints, spiralSort, paintLines
-from features.gabor_threads import build_filters, process_kernel, process
+from algorithms.features.detectors import BRISKDetector, ORBDetector
+from algorithms.features.gabor_threads import build_filters, process_kernel, process
 from logger import logger
 
 from guiqwt.config import _

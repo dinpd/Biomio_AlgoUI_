@@ -1,16 +1,13 @@
-import logging
-
-logger = logging.getLogger(__name__)
-
 from aiplugins import IAlgorithmPlugin
-from guidata.qt.QtCore import SIGNAL
-from guidata.qt.QtCore import QObject
+from guidata.qt.QtCore import SIGNAL, QObject
 from guidata.qt.QtGui import QAction
 from guidata.configtools import get_icon
 from imageproperties import ImageProperties
-from features.tools import equalizeHist, grayscale
-
+from algorithms.cvtools.effects import equalizeHist, grayscale
 from guiqwt.config import _
+import logging
+
+logger = logging.getLogger(__name__)
 
 EQ_ACTION_TITLE = 'Action: EqualizeHist::'
 GR_ACTION_TITLE = 'Action: Grayscale::'
