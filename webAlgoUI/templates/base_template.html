@@ -8,6 +8,22 @@
             <a href="/">Home</a>
             <a href="#">Help</a>
         </div>
+        <div class="algo_db_selection">
+            <form name="algo_db_form" id="algo_db_form_id"
+                  action="{{ url_for('show_algo_properties', algo_name='test') }}" method="POST">
+                <select class="algo_select">
+                    {% for algorithm in algo_list %}
+                        <option value="{{ algorithm.pk }}">{{ algorithm.name }}</option>
+                    {% endfor %}
+                </select>
+                <select class="db_select">
+                    {% for db in db_list %}
+                        <option value="{{ db.pk }}">{{ db.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="submit" value="Go">
+            </form>
+        </div>
     </div>
     {% block body %}{% endblock %}
 </div>

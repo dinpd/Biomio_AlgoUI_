@@ -1,5 +1,6 @@
 from flask import Flask
 from flask.templating import render_template
+from algointerface import AlgorithmsInterface as agi
 
 app = Flask(__name__)
 
@@ -27,6 +28,15 @@ def show_algo_properties(algo_name):
     """
     return algo_name
 
+
+@app.context_processor
+def inject_db_list():
+    return dict(db_list=agi.getDatabasesList())
+
+
+@app.context_processor
+def inject_algo_list():
+    return dict(algo_list=agi.getAlgorithmsList())
 
 if __name__ == '__main__':
     app.run()
