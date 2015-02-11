@@ -19,14 +19,14 @@ def run_algorithm():
     return 'OK'
 
 
-@app.route('/<algo_name>')
-def show_algo_properties(algo_name):
+@app.route('/', methods=['POST'])
+def show_algo_properties():
     """
     Will render the template with selected algorithm parameters.
     :param algo_name: Name of the algorithm
     :return:
     """
-    return algo_name
+    return 'OK'
 
 
 @app.context_processor

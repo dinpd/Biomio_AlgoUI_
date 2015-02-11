@@ -10,7 +10,7 @@
         </div>
         <div class="algo_db_selection">
             <form name="algo_db_form" id="algo_db_form_id"
-                  action="{{ url_for('show_algo_properties', algo_name='test') }}" method="POST">
+                  action="{{ url_for('show_algo_properties') }}" method="POST">
                 <select class="algo_select">
                     {% for algorithm in algo_list %}
                         <option value="{{ algorithm.pk }}">{{ algorithm.name }}</option>
