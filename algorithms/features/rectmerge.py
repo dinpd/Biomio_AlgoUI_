@@ -1,6 +1,8 @@
 
 def mergeRectangles(rects, general=True, convex=True):
-    if len(rects) <= 1:
+    if len(rects) == 0:
+        return rects
+    if len(rects) == 1:
         return rects[0]
 
     left = []
