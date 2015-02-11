@@ -1,8 +1,10 @@
 from algorithms.features.classifiers import CascadeROIDetector
-from algorithms.cvtools.visualization import showClusters
+from algorithms.cvtools.visualization import (showClusters, showNumpyImage,
+                                              drawLine)
 from algorithms.features.detectors import (BRISKDetector, ORBDetector,
                                            BRISKDetectorSettings, ORBDetectorSettings)
-from algorithms.features.classifiers import getROIImage
+from algorithms.features.classifiers import (getROIImage,
+                                             RectsIntersect, RectsFiltering)
 from algorithms.recognition.features import (FeatureDetector,
                                              BRISKDetectorType, ORBDetectorType)
 from algorithms.features.matchers import FlannMatcher
@@ -58,39 +60,14 @@ class KeypointsObjectDetector:
     kodsettings = KODSettings()
 
     def __init__(self):
-        #     self._data_keys = dict()
         self._hash = None
-        #     self._data_init = False
         self._cascadeROI = None
         self._detector = None
         self._eyeROI = None
-    #
-    # def init_hash(self):
-    #     self._cascadeROI = CascadeROIDetector()
-    #     for cascade in self.kodsettings.cascade_list:
-    #         self._cascadeROI.add_cascade(cascade)
-    #     self._eyeROI = CascadeROIDetector()
-    #     self._eyeROI.classifierSettings.minNeighbors = 1
-    #     self._eyeROI.classifierSettings.scaleFactor = 1.2
-    #     for cascade in self.kodsettings.clusters_cascade:
-    #         self._eyeROI.add_cascade(cascade)
-    #     if self.kodsettings.detector_type is BRISKDetectorType:
-    #         size = 64
-    #     else:
-    #         size = 32
-    #     if self._hash_type is LSHashType:
-    #         self._hash = LSHash(128, size)
-    #     else:
-    #         if self._data_type is FeaturesMatching:
-    #             self._hash = NearPyHash(size)
-    #             self._hash.addRandomBinaryProjectionsEngine(10)
-    #         elif self._data_type is SpiralKeypointsVector:
-    #             self._hash = NearPyHash(self.kodsettings.max_hash_length)
-    #             self._hash.addRandomBinaryProjectionsEngine(10)
-    #     self._data_init = True
-    #
-    # def hash_initialized(self):
-    #     return self._data_init
+        self._use_etalon = False
+
+    def setUseTemplate(self, use):
+        self._use_etalon = use
 
     def addSource(self, data):
         if self.data_detect(data):
@@ -102,26 +79,19 @@ class KeypointsObjectDetector:
 
     @identifying
     def identify(self, data):
-    #         if self._data_type is FeaturesMatching:
-    #             if len(self._data_keys) > 0:
-    #                 res = self.matching(data)
-    #         elif self._data_type is SpiralKeypointsVector:
-    #             res = self.vect_matching(data)
         pass
 
     @verifying
     def verify(self, data):
-    #         if self._data_type is FeaturesMatching:
-    #             logger.logger.debug("Data Type doesn't support image verification.")
-    #         elif self._data_type is SpiralKeypointsVector:
-    #             logger.logger.debug("Data Type doesn't support image verification.")
+        logger.logger.debug("Detector doesn't support image verification.")
         pass
 
     def data_detect(self, data):
         # ROI detection
-        rect = self._cascadeROI.detectAndJoin(data['data'])
+        rect = self._cascadeROI.detectAndJoin(data['data'], False, RectsFiltering)
         # ROI cutting
         data['roi'] = getROIImage(data['data'], rect)
+        # showNumpyImage(data['roi'])
         # Keypoints detection
         detector = FeatureDetector()
         if self.kodsettings.detector_type is BRISKDetectorType:
@@ -139,86 +109,104 @@ class KeypointsObjectDetector:
         data['descriptors'] = obj['descriptors']
         if data['descriptors'] is None:
             data['descriptors'] = []
-            # if self._data_type is FeaturesMatching:
-            #     key_arrays = keypointsToArrays(obj.keypoints())
-            #     data['keypoints'] = key_arrays
-            # elif self._data_type is SpiralKeypointsVector:
-            #     height, width = data['roi'].shape[0], data['roi'].shape[1]
-            #     order_keys = obj.keypoints()  # spiralSort(obj, width, height)
-            # order_keys = minimizeSort(obj)
-            # obj.keypoints(keypointsToArrays(order_keys))
-            # key_arr = joinVectors(obj.keypoints())
-            # while len(key_arr) < self.kodsettings.max_hash_length:
-            #     key_arr.append(0)
-            # data['keypoints'] = listToNumpy_ndarray(key_arr)
-        self._detect(data, detector)
-        return True
+        return self._detect(data, detector)
 
     def _detect(self, data, detector):
         pass
 
     def update_hash(self, data):
         pass
-        #     if self._hash_type is LSHashType:
-        #         for keypoint in data['keypoints']:
-        #             self._hash.index(keypoint)
-        #     else:
-        #         if self._data_type is FeaturesMatching:
-        #             for keypoint in data['keypoints']:
-        # for keypoint in data['descriptors']:
-        #     self._hash.add_dataset(keypoint, os.path.split(data['path'])[0])
-        #     value = self._data_keys.get(os.path.split(data['path'])[0], 0)
-        #     value += 1
-        #     self._data_keys[os.path.split(data['path'])[0]] = value
-        # elif self._data_type is SpiralKeypointsVector:
-        #     self._hash.add_dataset(data['descriptors'], os.path.split(data['path'])[0])
 
-        # def matching(self, data):
-        #     imgs = dict()
-        #     if data is not None:
-        #         for keypoint in data['descriptors']:
-        #             neig = self._hash.neighbours(keypoint)
-        #             for el in neig:
-        #                 if el[2] < self.kodsettings.neighbours_distance:
-        #                     value = imgs.get(el[1], 0)
-        #                     value += 1
-        #                     imgs[el[1]] = value
-        #         keys = imgs.keys()
-        #         vmax = 0
-        #         max_key = ""
-        #         for key in keys:
-        #             if imgs[key] > vmax:
-        #                 max_key = key
-        #                 vmax = imgs[key]
-        #         logger.logger.debug(imgs)
-        #         logger.logger.debug(max_key)
-        #         logger.logger.debug(self._data_keys[max_key])
-        #         logger.logger.debug(len(data['descriptors']))
-        #         logger.logger.debug(imgs[max_key] / (self._data_keys[max_key] * 1.0))
-        #         return max_key
-        #     return None
-        #
-        # def vect_matching(self, data):
-        #     imgs = dict()
-        #     if data is not None:
-        #         neig = self._hash.neighbours(data['keypoints'])
-        #         logger.logger.debug(neig)
-        #         for el in neig:
-        #             if el[2] < self.kodsettings.neighbours_distance:
-        #                 value = imgs.get(el[1], 0)
-        #                 value += 1
-        #                 imgs[el[1]] = value
-        #         keys = imgs.keys()
-        #         vmax = 0
-        #         max_key = ""
-        #         for key in keys:
-        #             if imgs[key] > vmax:
-        #                 max_key = key
-        #                 vmax = imgs[key]
-        #         logger.logger.debug(imgs)
-        #         logger.logger.debug(max_key)
-        #         return max_key
-        #     return None
+
+class FeaturesMatchingDetector(KeypointsObjectDetector):
+    def __init__(self):
+        KeypointsObjectDetector.__init__(self)
+        self._data_keys = dict()
+        if self.kodsettings.detector_type is BRISKDetectorType:
+            size = 64
+        else:
+            size = 32
+        self._hash = NearPyHash(size)
+        self._hash.addRandomBinaryProjectionsEngine(10)
+
+    def update_hash(self, data):
+        # for keypoint in data['keypoints']:
+        for keypoint in data['descriptors']:
+            self._hash.add_dataset(keypoint, os.path.split(data['path'])[0])
+            value = self._data_keys.get(os.path.split(data['path'])[0], 0)
+            value += 1
+            self._data_keys[os.path.split(data['path'])[0]] = value
+
+    @identifying
+    def identify(self, data):
+        imgs = dict()
+        for keypoint in data['descriptors']:
+            neig = self._hash.neighbours(keypoint)
+            for el in neig:
+                if el[2] < self.kodsettings.neighbours_distance:
+                    value = imgs.get(el[1], 0)
+                    value += 1
+                    imgs[el[1]] = value
+        keys = imgs.keys()
+        vmax = 0
+        max_key = ""
+        for key in keys:
+            if imgs[key] > vmax:
+                max_key = key
+                vmax = imgs[key]
+        logger.logger.debug(imgs)
+        logger.logger.debug(max_key)
+        logger.logger.debug(self._data_keys[max_key])
+        logger.logger.debug(len(data['descriptors']))
+        logger.logger.debug(imgs[max_key] / (self._data_keys[max_key] * 1.0))
+        return max_key
+
+    def _detect(self, data, detector):
+        key_arrays = keypointsToArrays(data['keypoints'])
+        data['keypoints'] = key_arrays
+        return True
+
+
+class SpiralKeypointsVectorDetector(KeypointsObjectDetector):
+    def __init__(self):
+        KeypointsObjectDetector.__init__(self)
+        self._hash = NearPyHash(self.kodsettings.max_hash_length)
+        self._hash.addRandomBinaryProjectionsEngine(10)
+
+    def update_hash(self, data):
+        self._hash.add_dataset(data['descriptors'], os.path.split(data['path'])[0])
+
+    @identifying
+    def identify(self, data):
+        imgs = dict()
+        neig = self._hash.neighbours(data['keypoints'])
+        logger.logger.debug(neig)
+        for el in neig:
+            if el[2] < self.kodsettings.neighbours_distance:
+                value = imgs.get(el[1], 0)
+                value += 1
+                imgs[el[1]] = value
+        keys = imgs.keys()
+        vmax = 0
+        max_key = ""
+        for key in keys:
+            if imgs[key] > vmax:
+                max_key = key
+                vmax = imgs[key]
+        logger.logger.debug(imgs)
+        logger.logger.debug(max_key)
+        return max_key
+
+    def _detect(self, data, detector):
+        height, width = data['roi'].shape[0], data['roi'].shape[1]
+        order_keys = obj.keypoints()  # spiralSort(obj, width, height)
+        order_keys = minimizeSort(obj)
+        obj.keypoints(keypointsToArrays(order_keys))
+        key_arr = joinVectors(obj.keypoints())
+        while len(key_arr) < self.kodsettings.max_hash_length:
+            key_arr.append(0)
+        data['keypoints'] = listToNumpy_ndarray(key_arr)
+        return True
 
 
 class ObjectsMatchingDetector(KeypointsObjectDetector):
@@ -407,6 +395,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
     def __init__(self):
         KeypointsObjectDetector.__init__(self)
         self._hash = []
+        self._etalon = []
 
     def update_hash(self, data):
         del data['data']
@@ -414,9 +403,56 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         del data['keypoints']
         del data['descriptors']
         self._hash.append(data)
+        ##############################################
+        if len(self._etalon) == 0:
+            self._etalon = data['clusters']
+        else:
+            matcher = FlannMatcher()
+            for index in range(0, len(self._etalon)):
+                et_cluster = self._etalon[index]
+                dt_cluster = data['clusters'][index]
+                matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=1)
+                matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=1)
+
+                good = []
+                # for v in matches:
+                #     if len(v) >= 1:
+                    # if len(v) >= 2:
+                    #     m = v[0]
+                    #     n = v[1]
+                    #     good.append(self.etalon[m.queryIdx])
+                    #     if m.distance < self.kodsettings.neighbours_distance:
+                    #         good.append(self.etalon[m.queryIdx])
+                    #     good.append(data['descriptors'][m.queryIdx])
+                    #     good.append(self.etalon[m.trainIdx])
+                    #
+                    #     if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                    #         good.append(self.etalon[m.queryIdx])
+                    #     else:
+                    #         good.append(self.etalon[m.queryIdx])
+                    #         good.append(data['descriptors'][m.trainIdx])
+                    #         good.append(data['descriptors'][m.queryIdx])
+                    #         good.append(self.etalon[m.trainIdx])
+
+                for v in matches1:
+                    if len(v) >= 1:
+                        m = v[0]
+                        for c in matches2:
+                            if len(c) >= 1:
+                                n = c[0]
+                                if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+                                    good.append(self._etalon[index][m.queryIdx])
+                                    good.append(data['clusters'][index][n.queryIdx])
+                self._etalon[index] = listToNumpy_ndarray(good)
 
     @verifying
     def verify(self, data):
+        if self._use_etalon:
+            return self.verify_etalon(data)
+        else:
+            return self.verify_database(data)
+
+    def verify_database(self, data):
         matcher = FlannMatcher()
         gres = []
         for d in self._hash:
@@ -449,18 +485,61 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         logger.logger.debug("Total: " + str(s / len(gres)))
         return True
 
+    def verify_etalon(self, data):
+        matcher = FlannMatcher()
+        res = []
+        for index in range(0, len(self._etalon)):
+            et_cluster = self._etalon[index]
+            dt_cluster = data['clusters'][index]
+            matches = matcher.knnMatch(et_cluster, dt_cluster, k=1)
+            # matches2 = matcher.knnMatch(data['descriptors'], self.etalon, k=1)
+            ms = []
+            for v in matches:
+                if len(v) >= 1:
+                # if len(v) >= 2:
+                    m = v[0]
+                    # n = v[1]
+                    # logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
+                    #                     + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
+                    if m.distance < self.kodsettings.neighbours_distance:
+                    # if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                        ms.append(m)
+                    # else:
+                    #     ms.append(m)
+                    #     ms.append(n)
+            # for v in matches1:
+            # if len(v) >= 1:
+            #         m = v[0]
+            #         for c in matches2:
+            #             if len(c) >= 1:
+            #                 n = c[0]
+            #                 if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+            #                     ms.append(m)
+            res.append(ms)
+
+        prob = 0
+        logger.logger.debug("Image: " + data['path'])
+        logger.logger.debug("Template size: ")
+        for index in range(0, len(self._etalon)):
+            val = (len(res[index]) / (1.0 * len(self._etalon[index]))) * 100
+            logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
+                                + " Positive: " + str(len(res[index])) + " Probability: " + str(val))
+            prob += val
+        logger.logger.debug("Probability: " + str((prob / (1.0 * len(self._etalon)))))
+        return True
+
     def _detect(self, data, detector):
         # ROI detection
-        rect = self._eyeROI.detectAndJoin(data['roi'])
+        rect = self._eyeROI.detectAndJoin(data['roi'], False)
         if len(rect) <= 0:
             return False
         # ROI cutting
         lefteye = (rect[0] + rect[3], rect[1] + rect[3] / 2)
         righteye = (rect[0] + rect[2] - rect[3], rect[1] + rect[3] / 2)
         center = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, rect[1] + 2 * rect[3])
-        # out = paintLine(data['roi'], (lefteye[0], lefteye[1], righteye[0], righteye[1]), (255, 0, 0))
-        # out = paintLine(out, (lefteye[0], lefteye[1], center[0], center[1]), (255, 0, 0))
-        # out = paintLine(out, (righteye[0], righteye[1], center[0], center[1]), (255, 0, 0))
+        # out = drawLine(data['roi'], (lefteye[0], lefteye[1], righteye[0], righteye[1]), (255, 0, 0))
+        # out = drawLine(out, (lefteye[0], lefteye[1], center[0], center[1]), (255, 0, 0))
+        # out = drawLine(out, (righteye[0], righteye[1], center[0], center[1]), (255, 0, 0))
         #     drawImage(out)
         centers = [lefteye, righteye, center]
 
@@ -472,3 +551,4 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             desc = detector.computeImage(data['roi'], cluster['items'])
             descriptors.append(desc['descriptors'])
         data['clusters'] = descriptors
+        return True

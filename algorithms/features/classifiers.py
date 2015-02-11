@@ -1,12 +1,16 @@
 from algorithms.cvtools.effects import grayscaleAndEqualize
 from algorithms.cvtools.types import numpy_darrayToIplImage, iplImageToNumpy_darray
 from algorithms.features.rectmerge import mergeRectangles
+from algorithms.features.rectsect import intersectRectangles
+from algorithms.features.rectfilter import filterRectangles
 from logger import logger
 import cv2
 import os
 
 
-RectanglesUnion = 0
+RectsUnion = 0
+RectsIntersect = 1
+RectsFiltering = 2
 
 
 def getROIImage(image, rectangle):
@@ -27,7 +31,7 @@ def getROIImage(image, rectangle):
 
 class CascadeClassifierSettings:
     scaleFactor = 1.1
-    minNeighbors = 7
+    minNeighbors = 2
     minSize = (10, 10)
     flags = cv2.cv.CV_HAAR_SCALE_IMAGE
 
@@ -45,7 +49,7 @@ class CascadeROIDetector:
         else:
             logger.debug("Such file does not exist.")
 
-    def detect(self, img):
+    def detect(self, img, as_list=False):
         rects = list()
         gray = grayscaleAndEqualize(img)
         if len(self.__cascades) == 0:
@@ -60,21 +64,36 @@ class CascadeROIDetector:
                 flags=self.classifierSettings.flags)
             # if len(lrects) != 0:
                 # lrects[:,2:] += lrects[:,:2]
-            for r in lrects:
-                rects.append(r)
+            if as_list:
+                for r in lrects:
+                    rects.append(r)
+            else:
+                rects.append(lrects)
         if len(rects) == 0:
             return []
         return rects
 
-    def detectAndJoin(self, image, algorithm=RectanglesUnion):
-        rects = self.detect(image)
+    def detectAndJoin(self, image, as_list=False, algorithm=RectsUnion):
+        rects = self.detect(image, as_list)
         if len(rects) is 0:
             logger.debug("ROI is not found for image")
         return self.joinRectangles(rects, algorithm)
 
     @staticmethod
-    def joinRectangles(rects, algorithm=RectanglesUnion):
+    def joinRectangles(rects, algorithm=RectsUnion):
         if len(rects) > 0:
-            if algorithm == RectanglesUnion:
-                return mergeRectangles(rects)
+            if algorithm == RectsUnion:
+                return mergeRectangles(CascadeROIDetector.toList(rects))
+            elif algorithm == RectsIntersect:
+                return intersectRectangles(CascadeROIDetector.toList(rects))
+            elif algorithm == RectsFiltering:
+                return filterRectangles(CascadeROIDetector.toList(rects))
         return []
+
+    @staticmethod
+    def toList(rects):
+        rs = []
+        for r in rects:
+            for c in r:
+                rs.append(c)
+        return rs

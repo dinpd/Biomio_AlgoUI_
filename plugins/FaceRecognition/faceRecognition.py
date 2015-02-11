@@ -12,6 +12,8 @@ from guidata.qt.QtCore import QObject, QCoreApplication
 from guidata.configtools import get_icon
 from imageproperties import ImageProperties
 import algorithms.faces.biom.faces as fs
+from algorithms.cvtools.visualization import drawRectangle
+from algorithms.features.classifiers import CascadeROIDetector
 from algorithms.faces.biom.utils import files_list
 from plugins.FaceRecognition.detdialog import DetectorSettingsDialog
 from algorithms.recognition.detcreator import (DetectorCreator,
@@ -132,17 +134,17 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
 
             img = curr.data()
             # Refactor code
-            ff = fs.FisherFaces()
+            ff = CascadeROIDetector()
             ff.classifierSettings.scaleFactor = self._scaleBox.value()
             ff.classifierSettings.minNeighbors = self._neighborsBox.value()
             ff.add_cascade(str(casc))
 
-            faces = ff.detect(img)
+            faces = ff.detect(img, True)
 
             inx = 0
             for face in faces:
                 print face
-                img = fs.paintRectangle(img, face, (0, 0, 0))
+                img = drawRectangle(img, face, (0, 0, 0))
                 inx += 1
 
             logger.info("Detection finished.")
@@ -267,7 +269,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 self._keysrecg_detector.addSource(obj)
                 self._load_label.setText("Load file: " + imfile)
                 self._load_bar.setValue((i * 100) / len(flist))
-                QCoreApplication.processEvents()
+                # QCoreApplication.processEvents()
             self._load_label.setText("Loading finished.")
             self._load_bar.setValue(100)
             logger.debug("Loading finished.")
