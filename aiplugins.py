@@ -14,6 +14,12 @@ class IAlgorithmPlugin(IPlugin):
         """
         raise NotImplementedError()
 
+    def get_algorithms_list(self):
+        """
+        This method should be reimplemented by custom plugins
+        """
+        raise NotImplementedError()
+
     def get_test_actions(self, parent):
         """
         This method should be reimplemented by custom plugins
@@ -21,6 +27,18 @@ class IAlgorithmPlugin(IPlugin):
         raise NotImplementedError()
 
     def get_interfaces(self):
+        """
+        This method should be reimplemented by custom plugins
+        """
+        raise NotImplementedError()
+
+    def settings(self, name):
+        """
+        This method should be reimplemented by custom plugins
+        """
+        raise NotImplementedError()
+
+    def apply(self, name, settings=dict()):
         """
         This method should be reimplemented by custom plugins
         """

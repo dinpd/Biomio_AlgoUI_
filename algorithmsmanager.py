@@ -15,6 +15,10 @@ import os
 
 PLUGIN_PLACES = ['./plugins']
 
+USER_DATABASE_SETTINGS = 0
+ALGO_DATABASE_SETTINGS = 1
+FULL_DATABASE_SETTINGS = 2
+
 
 def get_config_file_path():
     curr_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,17 +37,28 @@ class AlgorithmsManager(QObject):
         self._cpmanager = None
         self._immanager = imanager
         self._algorithms = []
+        self._algolist = dict()
         self._menu = QMenu(_("Algorithms"))
         self.init_plugin_manager()
         self.get_actions()
         self.get_widgets()
+        self._databases = dict()
         pass
+
+    def databases_list(self):
+        return self._databases.keys()
+
+    def database_settings(self, name, settings_type):
+        return self._databases.get(name)
 
     def algorithms_menu(self):
         return self._menu
 
     def algorithms_settings(self):
         return self._algorithms
+
+    def algorithms_list(self):
+        return self._algolist.keys()
 
     def get_actions(self):
         for plugin_info in self._plmanager.getAllPlugins():
@@ -54,6 +69,9 @@ class AlgorithmsManager(QObject):
                         self._menu.addAction(action)
                     if action and isinstance(action, QMenu):
                         self._menu.addMenu(action)
+                algo_list = plugin_info.plugin_object.get_algorithms_list()
+                for algo in algo_list:
+                    self._algolist[algo] = plugin_info.plugin_object
 
     def get_widgets(self):
         for plugin_info in self._plmanager.getAllPlugins():
@@ -64,6 +82,18 @@ class AlgorithmsManager(QObject):
                         if widget:
                             self._algorithms.append(widget)
 
+    def algosettings(self, name):
+        plugin = self._algolist.get(name)
+        if plugin is not None:
+            return plugin.settings(name)
+        return None
+
+    def apply_algorithm(self, name, settings=dict()):
+        plugin = self._algolist.get(name)
+        if plugin is not None:
+            return plugin.apply(name, settings)
+        return None
+
     def init_plugin_manager(self):
         # Configuring plugin locator
         plugin_locator = PluginFileLocator()
@@ -71,7 +101,8 @@ class AlgorithmsManager(QObject):
 
         # Initializing plugin manager...
         # categories_filter={"Default": IPlugin, "Custom": ICustomPlugin},
-        self._plmanager = PluginManager(categories_filter={"Default": IAlgorithmPlugin}, plugin_locator=plugin_locator)
+        self._plmanager = PluginManager(categories_filter={"Default": IAlgorithmPlugin},
+                                        plugin_locator=plugin_locator)
 
         # decorate plugin manager with configurable feature
         self._cpmanager = ConfigurablePluginManager(decorated_manager=self._plmanager)
@@ -116,4 +147,4 @@ class AlgorithmsManager(QObject):
             # configurable_plugin_manager.registerOptionFromPlugin(category_name='Default',
             #     plugin_name=plugin_info.name, option_name='option1', option_value='value1')
             # print "      option1 : %s" % self._cpmanager.readOptionFromPlugin(category_name='Default',
-            #                                                                   plugin_name=plugin_info.name, option_name='option1')
+            #        plugin_name=plugin_info.name, option_name='option1')

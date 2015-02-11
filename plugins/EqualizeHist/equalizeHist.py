@@ -33,10 +33,19 @@ class EqualizeHistPlugin(QObject, IAlgorithmPlugin):
 
         return [gr_action, eq_action]
 
+    def get_algorithms_list(self):
+        return []
+
     def get_test_actions(self, parent):
         pass
 
     def get_interfaces(self):
+        pass
+
+    def settings(self, name):
+        pass
+
+    def apply(self, name, settings=dict()):
         pass
 
     def slot_grayscale(self):
