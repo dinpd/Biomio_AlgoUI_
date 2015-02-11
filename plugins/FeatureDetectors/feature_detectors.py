@@ -37,11 +37,20 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         detector_menu.addAction(self.add_orb_action(detector_menu))
         return [detector_menu, self.add_gabor_filter_action(parent)]
 
+    def get_algorithms_list(self):
+        return []
+
     def get_test_actions(self, parent):
         pass
 
     def get_interfaces(self):
         return self._setwigets
+
+    def settings(self, name):
+        pass
+
+    def apply(self, name, settings=dict()):
+        pass
 
     def add_brisk_action(self, parent):
         brisk_action = QAction(parent)

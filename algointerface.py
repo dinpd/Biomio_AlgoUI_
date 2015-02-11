@@ -1,24 +1,28 @@
 """
 Interface for Biom.io algorithms.
-"""
 
-USER_DATABASE_SETTINGS = 0
-ALGO_DATABASE_SETTINGS = 1
-FULL_DATABASE_SETTINGS = 2
+Algorithm Settings
+   Key           Value
+   'database'  Name of database
+   'data'      Test object image
+"""
+from algorithmsmanager import (AlgorithmsManager,
+                               USER_DATABASE_SETTINGS, ALGO_DATABASE_SETTINGS, FULL_DATABASE_SETTINGS)
 
 
 class AlgorithmsInterface:
-    @staticmethod
-    def getDatabasesList():
+    def __init__(self):
+        self._imanager = AlgorithmsManager(None)
+
+    def getDatabasesList(self):
         """
         Return list of current supported databases.
 
         :return: list of databases.
         """
-        pass
+        return self._imanager.databases_list()
 
-    @staticmethod
-    def getDatabaseSettings(database_name, settings_type=USER_DATABASE_SETTINGS):
+    def getDatabaseSettings(self, database_name, settings_type=USER_DATABASE_SETTINGS):
         """
         Return dictionary with database settings.
 
@@ -32,29 +36,26 @@ class AlgorithmsInterface:
              parameters.
         :return: dictionary with database settings.
         """
-        pass
+        return self._imanager.database_settings(database_name, settings_type)
 
-    @staticmethod
-    def getAlgorithmsList():
+    def getAlgorithmsList(self):
         """
         Return list of current supported algorithms.
 
         :return: list of algorithms.
         """
-        pass
+        return self._imanager.algorithms_list()
 
-    @staticmethod
-    def getSettingsTemplate(algorithm_name):
+    def getSettingsTemplate(self, algorithm_name):
         """
         Return settings dictionary with keys and empty value for filling algorithm settings.
 
         :param algorithm_name: name of algorithm from AlgorithmsInterface.getAlgorithmsList()
         :return: dictionary for customizing of algorithm's settings
         """
-        pass
+        return self._imanager.algosettings(algorithm_name)
 
-    @staticmethod
-    def applyAlgorithm(algorithm_name, settings=dict()):
+    def applyAlgorithm(self, algorithm_name, settings=dict()):
         """
         Starts algorithm for execution by algorithm_name using algorithm settings.
 
@@ -62,4 +63,4 @@ class AlgorithmsInterface:
         :param settings: dictionary with algorithm settings
         :return: dictionary of the results of the algorithm
         """
-        pass
+        return self._imanager.apply_algorithm(algorithm_name, settings)

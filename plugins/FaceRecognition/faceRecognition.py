@@ -25,6 +25,9 @@ from guiqwt.config import _
 import os
 
 
+VerificationAlgorithm = "KeypointsVerificationAlgorithm"
+
+
 class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
     def __init__(self):
         super(FaceRecognitionPlugin, self).__init__()
@@ -45,11 +48,26 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         recognition_menu.addAction(self.add_keysrecg_action(recognition_menu))
         return [recognition_menu, self.add_compare_action(recognition_menu)]
 
+    def get_algorithms_list(self):
+        return [VerificationAlgorithm]
+
     def get_test_actions(self, parent):
         pass
 
     def get_interfaces(self):
         return self._setwigets
+
+    def settings(self, name):
+        setting = dict()
+        if name == VerificationAlgorithm:
+            setting['database'] = "default"
+            setting['data'] = None
+        return setting
+
+    def apply(self, name, settings=dict()):
+        if name == VerificationAlgorithm:
+            return self.verification_algorithm(settings)
+        return None
 
     def add_detect_action(self, parent):
         detect_action = QAction(parent)
@@ -333,7 +351,6 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
             self._keysrecg_detector.verify(data)
 
-
     def det_change(self):
         if self.settings_dialog.exec_():
             self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
@@ -423,3 +440,6 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         detector.addSource(second_data)
         logger.debug(first_data['keypoints'])
         logger.debug(second_data['keypoints'])
+
+    def verification_algorithm(self, settings):
+        database = self._imanager.database(settings['database'])
