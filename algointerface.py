@@ -6,13 +6,13 @@ Algorithm Settings
    'database'  Name of database
    'data'      Test object image
 """
-from algorithmsmanager import (AlgorithmsManager,
-                               USER_DATABASE_SETTINGS, ALGO_DATABASE_SETTINGS, FULL_DATABASE_SETTINGS)
+from webalgomanager import (WebAlgorithmsManager,
+                            USER_DATABASE_SETTINGS, ALGO_DATABASE_SETTINGS, FULL_DATABASE_SETTINGS)
 
 
 class AlgorithmsInterface:
     def __init__(self):
-        self._imanager = AlgorithmsManager(None)
+        self._imanager = WebAlgorithmsManager(None)
 
     def getDatabasesList(self):
         """
