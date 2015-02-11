@@ -61,8 +61,17 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         setting = dict()
         if name == VerificationAlgorithm:
             setting['database'] = "default"
+            setting['max_neigh'] = self.checkMaxNeigh
             setting['data'] = None
         return setting
+
+    @staticmethod
+    def checkMaxNeigh(value):
+        res = False
+        if type(value) == type(float):
+            if 0 < value < 1000.0:
+                res = True
+        return res
 
     def apply(self, name, settings=dict()):
         if name == VerificationAlgorithm:
@@ -443,3 +452,9 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
 
     def verification_algorithm(self, settings):
         database = self._imanager.database(settings['database'])
+        self._keysrecg_detector.importSources(database['data'])
+        self._keysrecg_detector.kodsettings.neighbours_distance = settings['max_neigh']
+        self._keysrecg_detector.kodsettings.detector_type = database['settings']
+        self._keysrecg_detector.kodsettings.brisk_settings = database['settings']
+        self._keysrecg_detector.kodsettings.orb_settings = database['settings']
+        self._keysrecg_detector.verify(settings['data'])

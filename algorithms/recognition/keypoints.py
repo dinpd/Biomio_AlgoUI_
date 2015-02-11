@@ -77,6 +77,12 @@ class KeypointsObjectDetector:
         for data in data_list:
             self.addSource(data)
 
+    def importSources(self, data):
+        pass
+
+    def exportSources(self):
+        pass
+
     @identifying
     def identify(self, data):
         pass
@@ -444,6 +450,12 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                                     good.append(self._etalon[index][m.queryIdx])
                                     good.append(data['clusters'][index][n.queryIdx])
                 self._etalon[index] = listToNumpy_ndarray(good)
+
+    def importSources(self, data):
+        self._etalon = data
+
+    def exportSources(self):
+        return self._etalon
 
     @verifying
     def verify(self, data):
