@@ -22,7 +22,7 @@ class AlgorithmsInterface:
     def __init__(self):
         self._imanager = WebAlgorithmsManager()
 
-    def getDatabasesList(self):
+    def get_databases_list(self):
         """
         Return list of current supported databases.
 
@@ -30,11 +30,11 @@ class AlgorithmsInterface:
         """
         return self._imanager.databases_list()
 
-    def getDatabaseSettings(self, database_name, settings_type=USER_DATABASE_SETTINGS):
+    def get_database_settings(self, database_name, settings_type=USER_DATABASE_SETTINGS):
         """
         Return dictionary with database settings.
 
-        :param database_name: name of database from AlgorithmsInterface.getDatabasesList()
+        :param database_name: name of database from AlgorithmsInterface.get_databases_list()
         :param settings_type: type of settings dictionary
             USER_DATABASE_SETTINGS - only general parameters: size of databases, general and
              average number of key features.
@@ -46,7 +46,7 @@ class AlgorithmsInterface:
         """
         return self._imanager.database_settings(database_name, settings_type)
 
-    def getAlgorithmsList(self):
+    def get_algorithms_list(self):
         """
         Return list of current supported algorithms.
 
@@ -54,20 +54,20 @@ class AlgorithmsInterface:
         """
         return self._imanager.algorithms_list()
 
-    def getSettingsTemplate(self, algorithm_name):
+    def get_settings_template(self, algorithm_name):
         """
         Return settings dictionary with keys and empty value for filling algorithm settings.
 
-        :param algorithm_name: name of algorithm from AlgorithmsInterface.getAlgorithmsList()
+        :param algorithm_name: name of algorithm from AlgorithmsInterface.get_algorithms_list()
         :return: dictionary for customizing of algorithm's settings
         """
         return self._imanager.algosettings(algorithm_name)
 
-    def applyAlgorithm(self, algorithm_name, settings=dict()):
+    def apply_algorithm(self, algorithm_name, settings=dict()):
         """
         Starts algorithm for execution by algorithm_name using algorithm settings.
 
-        :param algorithm_name: name of algorithm from AlgorithmsInterface.getAlgorithmsList()
+        :param algorithm_name: name of algorithm from AlgorithmsInterface.get_algorithms_list()
         :param settings: dictionary with algorithm settings
         :return: dictionary of the results of the algorithm
         """
