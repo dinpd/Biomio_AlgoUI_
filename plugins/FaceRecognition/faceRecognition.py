@@ -21,7 +21,7 @@ from algorithms.recognition.detcreator import (DetectorCreator,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
 from algorithms.imgobj import loadImageObject
 from guiqwt.config import _
-
+import json
 import os
 
 
@@ -268,16 +268,30 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         verify_button.setText(_('Verify'))
         self.connect(verify_button, SIGNAL("clicked()"), self.verify)
 
+        import_button = QPushButton(keysrecg_widget)
+        import_button.setText(_('Import'))
+        self.connect(import_button, SIGNAL("clicked()"), self.import_database)
+
+        export_button = QPushButton(keysrecg_widget)
+        export_button.setText(_('Export'))
+        self.connect(export_button, SIGNAL("clicked()"), self.export_database)
+
         identify_layout = QHBoxLayout()
         identify_layout.addStretch(2)
         identify_layout.addWidget(identify_button)
         identify_layout.addWidget(iden_all_button)
         identify_layout.addWidget(verify_button)
 
+        load_layout = QHBoxLayout()
+        load_layout.addStretch(2)
+        load_layout.addWidget(import_button)
+        load_layout.addWidget(export_button)
+
         widget_layout = QVBoxLayout()
         widget_layout.addWidget(self._settings_box)
         widget_layout.addWidget(self._sources_box)
         widget_layout.addLayout(identify_layout)
+        widget_layout.addLayout(load_layout)
         widget_layout.addStretch(2)
         keysrecg_widget.setLayout(widget_layout)
         keysrecg_dock.setWidget(keysrecg_widget)
@@ -359,6 +373,23 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
             self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
             self._keysrecg_detector.verify(data)
+
+    def export_database(self):
+        source = self._keysrecg_detector.exportSources()
+        json_encoded = json.dumps(source)
+        filedir = QFileDialog.getExistingDirectory(None, "Select database directory", ".")
+        if not filedir.isEmpty():
+            source_file = os.path.join(str(filedir), 'data.json')
+            with open(source_file, "w") as data_file:
+                data_file.write(json_encoded)
+
+    def import_database(self):
+        filedir = QFileDialog.getExistingDirectory(None, "Select database directory", ".")
+        if not filedir.isEmpty():
+            source_file = os.path.join(str(filedir), 'data.json')
+            with open(source_file, "r") as data_file:
+                source = json.load(data_file,)
+                self._keysrecg_detector.importSources(source)
 
     def det_change(self):
         if self.settings_dialog.exec_():
@@ -451,10 +482,13 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         logger.debug(second_data['keypoints'])
 
     def verification_algorithm(self, settings):
+        results = dict()
         database = self._imanager.database(settings['database'])
         self._keysrecg_detector.importSources(database['data'])
         self._keysrecg_detector.kodsettings.neighbours_distance = settings['max_neigh']
         self._keysrecg_detector.kodsettings.detector_type = database['settings']
         self._keysrecg_detector.kodsettings.brisk_settings = database['settings']
         self._keysrecg_detector.kodsettings.orb_settings = database['settings']
-        self._keysrecg_detector.verify(settings['data'])
+        results['result'] = self._keysrecg_detector.verify(settings['data'])
+        results['log'] = self._keysrecg_detector.log()
+        return results

@@ -8,7 +8,7 @@ from algorithms.features.classifiers import (getROIImage,
 from algorithms.recognition.features import (FeatureDetector,
                                              BRISKDetectorType, ORBDetectorType)
 from algorithms.features.matchers import FlannMatcher
-from algorithms.cvtools.types import listToNumpy_ndarray
+from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
 from lshash import LSHash
 from algorithms.hashing.nearpy_hash import NearPyHash
 from algorithms.clustering.forel import FOREL
@@ -65,6 +65,10 @@ class KeypointsObjectDetector:
         self._detector = None
         self._eyeROI = None
         self._use_etalon = False
+        self._log = ""
+
+    def log(self):
+        return self._log
 
     def setUseTemplate(self, use):
         self._use_etalon = use
@@ -451,11 +455,40 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                                     good.append(data['clusters'][index][n.queryIdx])
                 self._etalon[index] = listToNumpy_ndarray(good)
 
-    def importSources(self, data):
-        self._etalon = data
+    def importSources(self, source):
+        # logger.logger.debug(self._etalon)
+        self._etalon = []
+        logger.logger.debug(source)
+        etalon = source['etalon']
+        for i in range(0, len(etalon.keys())):
+            cluster = etalon.get(unicode(str(i)))
+            c_etalon = []
+            for j in range(0, len(cluster.keys())):
+                descriptor = cluster.get(unicode(str(j)))
+                desc = []
+                for k in range(0, len(descriptor.keys())):
+                    element = descriptor.get(unicode(str(k)))
+                    desc.append(int(element))
+                c_etalon.append(desc)
+            self._etalon.append(c_etalon)
+        logger.logger.debug(self._etalon)
 
     def exportSources(self):
-        return self._etalon
+        sources = dict()
+        etalon = dict()
+        i = 0
+        for cluster in self._etalon:
+            i += 1
+            elements = dict()
+            for index in range(0, len(cluster)):
+                descriptor = cluster[index]
+                desc_dict = dict()
+                for indx in range(0, len(descriptor)):
+                    desc_dict[str(indx)] = str(descriptor[indx])
+                elements[str(index)] = desc_dict
+            etalon[str(i)] = elements
+        sources["etalon"] = etalon
+        return sources
 
     @verifying
     def verify(self, data):
@@ -467,9 +500,11 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
     def verify_database(self, data):
         matcher = FlannMatcher()
         gres = []
+        self._log += "Test: " + data['path'] + "\n"
         for d in self._hash:
             res = []
             logger.logger.debug("Source: " + d['path'])
+            self._log += "Source: " + d['path'] + "\n"
             for i in range(0, len(d['clusters'])):
                 test = data['clusters'][i]
                 source = d['clusters'][i]
@@ -486,20 +521,24 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                 prob = len(ms) / (1.0 * len(matches))
                 res.append(prob * 100)
                 logger.logger.debug("Part #" + str(i + 1) + ": " + str(prob * 100) + "%")
+                self._log += "Part #" + str(i + 1) + ": " + str(prob * 100) + "%" + "\n"
             suma = 0
             for val in res:
                 suma += val
             logger.logger.debug("Total for image: " + str(suma / len(res)))
+            self._log += "Total for image: " + str(suma / len(res)) + "\n"
             gres.append(suma / len(res))
         s = 0
         for val in gres:
             s += val
         logger.logger.debug("Total: " + str(s / len(gres)))
+        self._log += "\nTotal: " + str(s / len(gres)) + "\n\n"
         return True
 
     def verify_etalon(self, data):
         matcher = FlannMatcher()
         res = []
+        self._log += "Test: " + data['path'] + "\n"
         for index in range(0, len(self._etalon)):
             et_cluster = self._etalon[index]
             dt_cluster = data['clusters'][index]
@@ -532,12 +571,16 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         prob = 0
         logger.logger.debug("Image: " + data['path'])
         logger.logger.debug("Template size: ")
+        self._log += "Template size: " + "\n"
         for index in range(0, len(self._etalon)):
             val = (len(res[index]) / (1.0 * len(self._etalon[index]))) * 100
             logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
                                 + " Positive: " + str(len(res[index])) + " Probability: " + str(val))
+            self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))\
+                         + " Positive: " + str(len(res[index])) + " Probability: " + str(val) + "\n"
             prob += val
         logger.logger.debug("Probability: " + str((prob / (1.0 * len(self._etalon)))))
+        self._log += "Probability: " + str((prob / (1.0 * len(self._etalon)))) + "\n"
         return True
 
     def _detect(self, data, detector):
