@@ -8,6 +8,7 @@ from ConfigParser import ConfigParser
 import os
 
 PLUGIN_PLACES = ['./webplugins']
+DATABASE_PLACES = ['./databases']
 
 USER_DATABASE_SETTINGS = 0
 ALGO_DATABASE_SETTINGS = 1

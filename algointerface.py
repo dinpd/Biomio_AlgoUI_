@@ -5,6 +5,14 @@ Algorithm Settings
    Key           Value
    'database'  Name of database
    'data'      Test object image
+
+Algorithms Results:
+Algorithm: KeypointsVerificationAlgorithm
+Result: dictionary
+   Key           Value
+   'log'       Log of the algorithm
+   'result'    Boolean. Contain 'True' if verification successfully,
+   otherwise return 'False'
 """
 from webalgomanager import (WebAlgorithmsManager,
                             USER_DATABASE_SETTINGS, ALGO_DATABASE_SETTINGS, FULL_DATABASE_SETTINGS)
@@ -12,7 +20,7 @@ from webalgomanager import (WebAlgorithmsManager,
 
 class AlgorithmsInterface:
     def __init__(self):
-        self._imanager = WebAlgorithmsManager(None)
+        self._imanager = WebAlgorithmsManager()
 
     def getDatabasesList(self):
         """
