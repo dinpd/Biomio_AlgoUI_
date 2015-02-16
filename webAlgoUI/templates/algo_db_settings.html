@@ -1,48 +1,104 @@
-<form id="algo-form-id" name="algo-form" role="form" action="{{ url_for('run_algorithm') }}" method="post">
-    <p>Selected algorithm ID: {{ algo_id }}, DB ID: {{ db_id }}</p>
-    {% if selects %}
-        <label for="settings_selects">{{ selects.general_label }}</label>
-        <div id="settings_selects">
-            {% for select in selects.elements %}
-                <label for="select_{{ select.general_label | slugify }}">{{ select.general_label }}</label>
-                <select id="select_{{ select.general_label | slugify }}"
-                        name="select_{{ select.general_label | slugify }}">
-                    {% for option in select.options %}
-                        <option value="{{ option.value }}" {% if option.value == select.default_value %}
-                                selected="selected" {% endif %}>{{ option.label }}</option>
-                    {% endfor %}
-                </select>
-            {% endfor %}
-        </div>
-    {% endif %}
-    {% if inputs %}
-        <label for="settings_inputs">{{ inputs.general_label }}</label>
-        <div id="settings_inputs">
-            {% for input in inputs.elements %}
-                <label for="input_{{ input.label | slugify }}">{{ input.label }}</label>
-                <input type="text" id="input_{{ input.label | slugify }}" value="{{ input.default_value }}">
-            {% endfor %}
-        </div>
-    {% endif %}
-    {% if checkboxes %}
-        <label for="settings_checkboxes">{{ checkboxes.general_label }}</label>
-        <div id="settings_checkboxes">
-            {% for checkbox in checkboxes.elements %}
-                <label for="checkbox_{{ checkbox.label | slugify }}">{{ checkbox.label }}</label>
-                <input type="checkbox" id="checkbox_{{ checkbox.label | slugify }}"
-                       {% if checkbox.default_value %}checked="checked" {% endif %}>
-            {% endfor %}
-        </div>
-    {% endif %}
-    {% if radiobuttons %}
-        <label for="settings_radiobuttons">{{ radiobuttons.general_label }}</label>
-        <div id="settings_radiobuttons">
-            {% for radio_button in radiobuttons.elements %}
-                <label for="radio_{{ radio_button | slugify }}">{{ radio_button }}</label>
-                <input type="radio" id="radio_{{ radio_button | slugify }}"
-                       {% if radio_button == radiobuttons.default_value %}checked="checked" {% endif %}>
-            {% endfor %}
-        </div>
-    {% endif %}
-    <input type="submit" value="Run Algorithm">
+<form id="algo-form-id" name="algo-form" role="form" action="{{ url_for('run_algorithm', algo_id=algo_id) }}"
+      method="post">
+    <div>
+    <label for="image_selector_id"> Select image to test.</label>
+    <select name="image_selector" id="image_selector_id" size="5">
+        {% for image in images %}
+            <option value={{ image }}>{{ image }}</option>
+        {% endfor %}
+    </select>
+    <img id="image_preview" src="" width="150px" height="150px">
+    </div>
+    <table>
+        <tr>
+            {% if selects %}
+                <td>
+                    <label for="settings_selects">{{ selects.general_label }}
+
+                        <div id="settings_selects">
+                            {% for select in selects.elements %}
+                                <label for="select_{{ select.general_label | slugify }}">{{ select.general_label }}
+                                    <select id="select_{{ select.general_label | slugify }}"
+                                            name="select_{{ select.general_label | slugify }}">
+                                        {% for option in select.options %}
+                                            <option value="{{ option.value }}"
+                                                    {% if option.value == select.default_value %}
+                                                    selected="selected" {% endif %}>{{ option.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </label>
+                </td>
+            {% endif %}
+            <td>
+                {% if inputs %}
+                    <label for="settings_inputs">{{ inputs.general_label }}
+                        <div id="settings_inputs">
+                            {% for input in inputs.elements %}
+                                <label for="input_{{ input.label | slugify }}">{{ input.label }}:
+                                    <input type="text" id="input_{{ input.label | slugify }}"
+                                           value="{{ input.default_value }}"></label>
+                            {% endfor %}
+                        </div>
+                    </label>
+                {% endif %}
+            </td>
+            <td>
+                {% if checkboxes %}
+                    <label for="settings_checkboxes">{{ checkboxes.general_label }}
+                        <div id="settings_checkboxes">
+                            {% for checkbox in checkboxes.elements %}
+                                <label for="checkbox_{{ checkbox.label | slugify }}">
+                                    <input type="checkbox" id="checkbox_{{ checkbox.label | slugify }}"
+                                           {% if checkbox.default_value %}checked="checked" {% endif %}>{{ checkbox.label }}
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </label>
+                {% endif %}
+            </td>
+            <td>
+                {% if radiobuttons %}
+                    <label for="settings_radiobuttons">{{ radiobuttons.general_label }}
+                        <div id="settings_radiobuttons">
+                            {% for radio_button in radiobuttons.elements %}
+                                <label for="radio_{{ radio_button | slugify }}">
+                                    <input type="radio" id="radio_{{ radio_button | slugify }}"
+                                           {% if radio_button == radiobuttons.default_value %}checked="checked" {% endif %}>{{ radio_button }}
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </label>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+    <input type="button" id="run_algo_button" value="Run Algorithm">
 </form>
+<script>
+    $('#settings_caption').text('Selected algorithm ID: {{ algo_id }}, DB ID: {{ db_id }}');
+    $('#run_algo_button').on('click', function (e) {
+        e.preventDefault();
+        $('#settings_caption').text('Running algorithm...');
+        var form = $('#algo-form-id');
+        $.ajax({
+            url: form.attr('action'),
+            data: form.serialize(),
+            type: form.attr('method'),
+            success: function (response) {
+                console.log(response);
+                $('#algo_result_data').html(response);
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    });
+    $('#image_selector_id').on('change', function(e){
+        var selectedValue = $(e.currentTarget).val();
+        console.log(selectedValue);
+        $('#image_preview').attr('src', '{{ url_for('static', filename='media_images/') }}' + selectedValue);
+    });
+</script>

@@ -1,7 +1,7 @@
 {% extends "base_template.html" %}
 {% block body %}
-    <div id="algo_db_settings">
-        <p id="settings_caption">Select Algorithm and DB to get their settings...</p>
+    <p id="settings_caption">Select Algorithm and DB to get their settings...</p>
+    <div id="algo_result_data">
     </div>
 {% endblock %}
 {% block sctipts %}
@@ -15,8 +15,7 @@
                 data: form.serialize(),
                 type: form.attr('method'),
                 success: function (response) {
-                    console.log(response);
-                    $('#algo_db_settings').html(response);
+                    $('#algo_result_data').html(response);
                 },
                 error: function (error) {
                     console.log(error);

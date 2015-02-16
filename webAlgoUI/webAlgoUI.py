@@ -1,9 +1,13 @@
+import os
 from flask import Flask
 from flask import request
 from flask.templating import render_template
 from algointerface import AlgorithmsInterface
 from fake_data import FAKE_ALGO_LIST, FAKE_DB_LIST, FAKE_ALGO_DB_SETTINGS
 import re
+
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+STATIC_MEDIA_PATH = os.path.join(APP_ROOT, 'static', 'media_images')
 
 app = Flask(__name__)
 
@@ -25,12 +29,14 @@ def home_page():
     return render_template('main_algo_template.html')
 
 
-@app.route('/run', methods=['POST'])
-def run_algorithm():
+@app.route('/run/<int:algo_id>/', methods=['POST'])
+def run_algorithm(algo_id):
     """
     Will gather all input values from request POST data and will invoke selected algorithm.
     :return:
     """
+
+    print algo_id
     return 'OK'
 
 
@@ -46,7 +52,8 @@ def show_algo_properties():
     return render_template('algo_db_settings.html', algo_id=algo_id, db_id=db_id,
                            selects=algo_db_settings.get('selects', None), inputs=algo_db_settings.get('inputs', None),
                            checkboxes=algo_db_settings.get('checkboxes', None),
-                           radiobuttons=algo_db_settings.get('radio_buttons', None))
+                           radiobuttons=algo_db_settings.get('radio_buttons', None),
+                           images=os.listdir(STATIC_MEDIA_PATH))
 
 
 _slugify_strip_re = re.compile(r'[^\w\s-]')
