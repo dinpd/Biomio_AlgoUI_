@@ -100,3 +100,24 @@ def drawLine(image, line, color):
     img = image.copy()
     cv2.line(img, (line[0], line[1]), (line[2], line[3]), color, 1)
     return img
+
+
+def drawClusters(clusters, image):
+    """
+    Open CV Tools/Visualization Module
+    Functionality for drawing keypoints cluster on image based on
+     OpenCV cv2.drawKeypoints(...) function.
+
+     Type definition: cluster = dict()
+         cluster['center'] = tuple(x1,x2) - center of cluster
+         cluster['items'] = list<KeyPoint> - list of cluster's items
+
+    :param clusters: list of clusters
+    """
+    out = image
+    for cluster in clusters:
+        out = cv2.drawKeypoints(out, cluster['items'], None,
+                                cv2.cv.Scalar(random.randint(0, 255),
+                                              random.randint(0, 255),
+                                              random.randint(0, 255)))
+    return out

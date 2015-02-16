@@ -13,7 +13,7 @@ from guidata.configtools import get_icon
 from imageproperties import ImageProperties
 import algorithms.faces.biom.faces as fs
 from algorithms.cvtools.visualization import drawRectangle
-from algorithms.features.classifiers import CascadeROIDetector
+from algorithms.features.classifiers import CascadeROIDetector, getROIImage, CascadeClassifierSettings
 from algorithms.faces.biom.utils import files_list
 from plugins.FaceRecognition.detdialog import DetectorSettingsDialog
 from algorithms.recognition.detcreator import (DetectorCreator,
@@ -36,6 +36,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         self._setwigets.append(self.create_detect_widget())
         self._setwigets.append(self.create_keysrecg_widget())
         self._setwigets.append(self.create_compare_widget())
+        self._setwigets.append(self.create_kod_widget())
 
     def set_image_manager(self, manager):
         self._imanager = manager
@@ -46,6 +47,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
 
         recognition_menu.addAction(self.add_detect_action(recognition_menu))
         recognition_menu.addAction(self.add_keysrecg_action(recognition_menu))
+        recognition_menu.addAction(self.add_kod_action(recognition_menu))
         return [recognition_menu, self.add_compare_action(recognition_menu)]
 
     def get_algorithms_list(self):
@@ -72,11 +74,6 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             if 0 < value < 1000.0:
                 res = True
         return res
-
-    def apply(self, name, settings=dict()):
-        if name == VerificationAlgorithm:
-            return self.verification_algorithm(settings)
-        return None
 
     def add_detect_action(self, parent):
         detect_action = QAction(parent)
@@ -127,8 +124,13 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         add_button.setText('Add')
         self.connect(add_button, SIGNAL("clicked()"), self.add_cascade)
 
+        cut_button = QPushButton(detect_widget)
+        cut_button.setText('Cut')
+        self.connect(cut_button, SIGNAL("clicked()"), self.cut_image)
+
         right_layout = QVBoxLayout()
         right_layout.addWidget(add_button)
+        right_layout.addWidget(cut_button)
         right_layout.addStretch(2)
 
         cascades_layout = QHBoxLayout()
@@ -150,6 +152,30 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         filenames = QFileDialog.getOpenFileNames(None, "Select cascades", ".")
         if not filenames.isEmpty():
             self._cascades_list.addItems(filenames)
+
+    def cut_image(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            casc = self._cascades_list.item(self._cascades_list.currentRow()).text()
+
+            img = curr.data()
+            # Refactor code
+            ff = CascadeROIDetector()
+            ff.classifierSettings.scaleFactor = self._scaleBox.value()
+            ff.classifierSettings.minNeighbors = self._neighborsBox.value()
+            ff.add_cascade(str(casc))
+
+            faces = ff.detect(img, True)
+
+            logger.info("Detection finished.")
+            for face in faces:
+                image = ImageProperties()
+                image.title(str('ROI Detection by Haar Cascade::' + str(face) + '::' + curr.title()))
+                det = getROIImage(img, face)
+                image.data(det)
+                image.height(curr.height())
+                image.width(curr.width())
+                self._imanager.add_image(image)
 
     def face_detect(self):
         curr = self._imanager.current_image()
@@ -180,8 +206,111 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             image.width(curr.width())
             self._imanager.add_temp_image(image)
 
+    def add_kod_action(self, parent):
+        kod_action = QAction(parent)
+        kod_action.setText(_("Keypoints Object Detectors"))
+        kod_action.setIcon(get_icon('kod.png'))
+        kod_action.setCheckable(True)
+        self.connect(kod_action, SIGNAL("triggered(bool)"), self.kod_opened)
+        return kod_action
+
+    kod_opened = pyqtSignal(bool, name='kodOpened')
+
+    def create_kod_widget(self):
+        kod_dock = QDockWidget()
+        kod_dock.setWindowTitle("Keypoints Object Detectors Settings")
+        kod_dock.setVisible(False)
+        self.kod_opened.connect(kod_dock.setVisible)
+        kod_widget = QWidget(kod_dock)
+        self._kod_settings_box = QGroupBox(kod_widget)
+        self._kod_settings_box.setTitle(_("Settings:"))
+
+        change_button = QPushButton(self._kod_settings_box)
+        change_button.setText(_("Change"))
+        self.connect(change_button, SIGNAL("clicked()"), self.det_change)
+
+        form_layout = QFormLayout()
+        form_layout.addRow(_("Keypoints Detector Settings:"), change_button)
+
+        cascade_box = QGroupBox(kod_widget)
+        cascade_box.setTitle(_("Cascade ROI Detector Settings:"))
+
+        self._kod_scaleBox = QDoubleSpinBox(cascade_box)
+        self._kod_scaleBox.setSingleStep(0.10)
+        self._kod_scaleBox.setMinimum(1.01)
+        self._kod_scaleBox.setValue(1.1)
+        self._kod_neighborsBox = QSpinBox(cascade_box)
+        self._kod_neighborsBox.setValue(3)
+
+        cascade_layout = QFormLayout()
+        cascade_layout.addRow(_("Scale Factor:"), self._kod_scaleBox)
+        cascade_layout.addRow(_("Min Neighbors:"), self._kod_neighborsBox)
+        cascade_box.setLayout(cascade_layout)
+
+        settings_layout = QVBoxLayout()
+        settings_layout.addLayout(form_layout)
+        settings_layout.addWidget(cascade_box)
+        settings_layout.addStretch(2)
+
+        self._kod_settings_box.setLayout(settings_layout)
+
+        apply_button = QPushButton(kod_widget)
+        apply_button.setText(_("Apply"))
+        self.connect(apply_button, SIGNAL("clicked()"), self.kod_apply)
+
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(2)
+        button_layout.addWidget(apply_button)
+
+        widget_layout = QVBoxLayout()
+        widget_layout.addWidget(self._kod_settings_box)
+        widget_layout.addLayout(button_layout)
+        kod_widget.setLayout(widget_layout)
+        kod_dock.setWidget(kod_widget)
+        return kod_dock
+
+    def kod_apply(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            data = {
+                'path': curr.path(),
+                'name': curr.title(),
+                'data': curr.data()
+            }
+            cascade_settings = CascadeClassifierSettings()
+            cascade_settings.minNeighbors = self._kod_neighborsBox.value()
+            cascade_settings.scaleFactor = self._kod_scaleBox.value()
+
+            creator = DetectorCreator(type=ClustersObjectMatching)
+            creator.addClassifier(FaceCascadeClassifier, cascade_settings)
+            creator.addCascade(FaceCascadeClassifier,
+                               "algorithms/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
+            creator.addCascade(FaceCascadeClassifier,
+                               "algorithms/data/haarcascades/haarcascade_frontalface_alt2.xml")
+            creator.addCascade(FaceCascadeClassifier,
+                               "algorithms/data/haarcascades/haarcascade_frontalface_alt.xml")
+            creator.addCascade(FaceCascadeClassifier,
+                               "algorithms/data/haarcascades/haarcascade_frontalface_default.xml")
+            creator.addClassifier(EyesCascadeClassifier, cascade_settings)
+            creator.addCascade(EyesCascadeClassifier,
+                               "algorithms/data/haarcascades/haarcascade_mcs_eyepair_big.xml")
+            detector = creator.detector()
+            # detector.kodsettings.neighbours_distance = self._neighBox.value()
+            detector.kodsettings.detector_type = self.settings_dialog.result_type()
+            detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
+            detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            detector.detect(data)
+            image = ImageProperties()
+            image.title(str('Keypoints Object Detector::' + curr.title()))
+            image.data(data['clustering'])
+            image.height(data['clustering'].shape[1])
+            image.width(data['clustering'].shape[0])
+            self._imanager.add_image(image)
+
+
     def init_keysrecg_algorithm(self):
         self.settings_dialog = DetectorSettingsDialog()
+        self.settings_dialog.setWindowTitle(_("Keypoints Detector Settings"))
         self.init_detector()
 
     def init_detector(self):
@@ -480,15 +609,3 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         detector.addSource(second_data)
         logger.debug(first_data['keypoints'])
         logger.debug(second_data['keypoints'])
-
-    def verification_algorithm(self, settings):
-        results = dict()
-        database = self._imanager.database(settings['database'])
-        self._keysrecg_detector.importSources(database['data'])
-        self._keysrecg_detector.kodsettings.neighbours_distance = settings['max_neigh']
-        self._keysrecg_detector.kodsettings.detector_type = database['settings']
-        self._keysrecg_detector.kodsettings.brisk_settings = database['settings']
-        self._keysrecg_detector.kodsettings.orb_settings = database['settings']
-        results['result'] = self._keysrecg_detector.verify(settings['data'])
-        results['log'] = self._keysrecg_detector.log()
-        return results

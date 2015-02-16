@@ -12,7 +12,7 @@ Result: dictionary
    Key           Value
    'log'       Log of the algorithm
    'result'    Boolean. Contain 'True' if verification successfully,
-   otherwise return 'False'
+               otherwise return 'False'
 """
 from webalgomanager import (WebAlgorithmsManager,
                             USER_DATABASE_SETTINGS, ALGO_DATABASE_SETTINGS, FULL_DATABASE_SETTINGS)

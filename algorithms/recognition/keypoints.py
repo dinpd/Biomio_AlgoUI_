@@ -1,6 +1,6 @@
 from algorithms.features.classifiers import CascadeROIDetector
-from algorithms.cvtools.visualization import (showClusters, showNumpyImage,
-                                              drawLine)
+from algorithms.cvtools.visualization import (showClusters, showNumpyImage, showKeypoints,
+                                              drawLine, drawClusters)
 from algorithms.features.detectors import (BRISKDetector, ORBDetector,
                                            BRISKDetectorSettings, ORBDetectorSettings)
 from algorithms.features.classifiers import (getROIImage,
@@ -94,6 +94,9 @@ class KeypointsObjectDetector:
     @verifying
     def verify(self, data):
         logger.logger.debug("Detector doesn't support image verification.")
+        pass
+
+    def detect(self, data):
         pass
 
     def data_detect(self, data):
@@ -421,8 +424,8 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             for index in range(0, len(self._etalon)):
                 et_cluster = self._etalon[index]
                 dt_cluster = data['clusters'][index]
-                matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=1)
-                matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=1)
+                matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=2)
+                matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=2)
 
                 good = []
                 # for v in matches:
@@ -446,13 +449,15 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
                 for v in matches1:
                     if len(v) >= 1:
-                        m = v[0]
-                        for c in matches2:
-                            if len(c) >= 1:
-                                n = c[0]
-                                if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
-                                    good.append(self._etalon[index][m.queryIdx])
-                                    good.append(data['clusters'][index][n.queryIdx])
+                        for m in v:
+                        # m = v[0]
+                            for c in matches2:
+                                if len(c) >= 1:
+                                    for n in c:
+                                        # n = c[0]
+                                        if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+                                            good.append(self._etalon[index][m.queryIdx])
+                                            good.append(data['clusters'][index][n.queryIdx])
                 self._etalon[index] = listToNumpy_ndarray(good)
 
     def importSources(self, source):
@@ -489,6 +494,10 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             etalon[str(i)] = elements
         sources["etalon"] = etalon
         return sources
+
+    def detect(self, data):
+        if self.data_detect(data):
+            data['clustering'] = drawClusters(data['true_clusters'], data['roi'])
 
     @verifying
     def verify(self, data):
@@ -542,30 +551,32 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         for index in range(0, len(self._etalon)):
             et_cluster = self._etalon[index]
             dt_cluster = data['clusters'][index]
-            matches = matcher.knnMatch(et_cluster, dt_cluster, k=1)
-            # matches2 = matcher.knnMatch(data['descriptors'], self.etalon, k=1)
+            matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=2)
+            matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=2)
             ms = []
-            for v in matches:
-                if len(v) >= 1:
+            # for v in matches:
+            #     if len(v) >= 1:
                 # if len(v) >= 2:
-                    m = v[0]
+                #     m = v[0]
                     # n = v[1]
                     # logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
                     #                     + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
-                    if m.distance < self.kodsettings.neighbours_distance:
+                    # if m.distance < self.kodsettings.neighbours_distance:
                     # if m.distance < self.kodsettings.neighbours_distance * n.distance:
-                        ms.append(m)
+                    #     ms.append(m)
                     # else:
                     #     ms.append(m)
                     #     ms.append(n)
-            # for v in matches1:
-            # if len(v) >= 1:
-            #         m = v[0]
-            #         for c in matches2:
-            #             if len(c) >= 1:
-            #                 n = c[0]
-            #                 if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
-            #                     ms.append(m)
+            for v in matches1:
+                if len(v) >= 1:
+                    for m in v:
+                    # m = v[0]
+                        for c in matches2:
+                            if len(c) >= 1:
+                                for n in c:
+                                    # n = c[0]
+                                    if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+                                        ms.append(m)
             res.append(ms)
 
         prob = 0
@@ -597,13 +608,35 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         # out = drawLine(out, (righteye[0], righteye[1], center[0], center[1]), (255, 0, 0))
         #     drawImage(out)
         centers = [lefteye, righteye, center]
+        self.filter_keypoints(data)
 
         clusters = KMeans(data['keypoints'], 0, centers)
-        # clusters = FOREL(obj['keypoints'], 40)
         # showClusters(clusters, out)
+        data['true_clusters'] = clusters
         descriptors = []
         for cluster in clusters:
             desc = detector.computeImage(data['roi'], cluster['items'])
             descriptors.append(desc['descriptors'])
         data['clusters'] = descriptors
         return True
+
+    def filter_keypoints(self, data):
+        logger.logger.debug(len(data['keypoints']))
+        clusters = FOREL(data['keypoints'], 20)
+        logger.logger.debug(len(data['keypoints']))
+        keypoints = []
+        # cls = []
+        for cluster in clusters:
+            # logger.logger.debug(cluster['items'])
+            logger.logger.debug(len(cluster['items']))
+            p = len(cluster['items']) / (1.0 * len(data['keypoints']))
+            logger.logger.debug(p)
+            # logger.logger.debug(cluster['center'])
+            img = dict()
+            img['data'] = data['roi']
+            img['keypoints'] = cluster['items']
+            if p > 0.02:
+                # cls.append(cluster)
+                for item in cluster['items']:
+                    keypoints.append(item)
+        data['keypoints'] = keypoints
