@@ -2,9 +2,8 @@ from yapsy.PluginManager import PluginManager
 from yapsy.PluginFileLocator import PluginFileLocator
 from yapsy.ConfigurablePluginManager import ConfigurablePluginManager
 from aiplugins import IAlgorithmPlugin
-
 from ConfigParser import ConfigParser
-
+import json
 import os
 
 PLUGIN_PLACES = ['./webplugins']
@@ -33,14 +32,18 @@ class WebAlgorithmsManager(object):
         self._algolist = dict()
         self.init_plugin_manager()
         self.get_actions()
-        self._databases = dict()
+        self._databases = []
+        self._databases_list = []
         pass
 
     def databases_list(self):
-        return self._databases.keys()
+        return self._databases_list
 
     def database_settings(self, name, settings_type):
-        return self._databases.get(name)
+        for database in self._databases:
+            if database['name'] == name:
+                return database['info']
+        return dict()
 
     def algorithms_list(self):
         return self._algolist.keys()
@@ -51,6 +54,30 @@ class WebAlgorithmsManager(object):
                 algo_list = plugin_info.plugin_object.get_algorithms_list()
                 for algo in algo_list:
                     self._algolist[algo] = plugin_info.plugin_object
+
+    def get_database(self):
+        if os.path.exists(DATABASE_PLACES):
+            self._databases = []
+            i = 0
+            for d in os.listdir(DATABASE_PLACES):
+                database = dict()
+                d_list = dict()
+                database['name'] = d
+                database['id'] = i
+                d_list['name'] = d
+                d_list['pk'] = i
+                info = DATABASE_PLACES + "/" + d + "info.json"
+                data = DATABASE_PLACES + "/" + d + "data.json"
+                with open(data, "r") as data_file:
+                    source = json.load(data_file)
+                    database['data'] = source
+                with open(info, "r") as info_file:
+                    information = json.load(info_file)
+                    database['info'] = information
+                self._databases.append(database)
+                self._databases_list.append(d_list)
+                i += 1
+
 
     def algosettings(self, name):
         plugin = self._algolist.get(name)

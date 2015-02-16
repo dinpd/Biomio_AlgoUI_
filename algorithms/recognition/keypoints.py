@@ -14,6 +14,7 @@ from algorithms.hashing.nearpy_hash import NearPyHash
 from algorithms.clustering.forel import FOREL
 from algorithms.clustering.kmeans import KMeans
 import logger
+import numpy
 import os
 
 
@@ -456,22 +457,24 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                 self._etalon[index] = listToNumpy_ndarray(good)
 
     def importSources(self, source):
-        # logger.logger.debug(self._etalon)
         self._etalon = []
-        logger.logger.debug(source)
         etalon = source['etalon']
-        for i in range(0, len(etalon.keys())):
-            cluster = etalon.get(unicode(str(i)))
-            c_etalon = []
-            for j in range(0, len(cluster.keys())):
-                descriptor = cluster.get(unicode(str(j)))
+        logger.logger.debug("Database loading started...")
+        for j in range(0, len(etalon.keys())):
+            self._etalon.append([])
+        for c_num, cluster in etalon.iteritems():
+            etalon_cluster = []
+            for k in range(0, len(cluster.keys())):
+                etalon_cluster.append([])
+            for d_num, descriptor in cluster.iteritems():
                 desc = []
-                for k in range(0, len(descriptor.keys())):
-                    element = descriptor.get(unicode(str(k)))
-                    desc.append(int(element))
-                c_etalon.append(desc)
-            self._etalon.append(c_etalon)
-        logger.logger.debug(self._etalon)
+                for i in range(0, len(descriptor.keys())):
+                    desc.append([])
+                for e_num, element in descriptor.iteritems():
+                    desc[int(e_num)] = numpy.uint8(element)
+                etalon_cluster[int(d_num)] = listToNumpy_ndarray(desc)
+            self._etalon[int(c_num) - 1] = listToNumpy_ndarray(etalon_cluster)
+        logger.logger.debug("Database loading finished.")
 
     def exportSources(self):
         sources = dict()
@@ -489,6 +492,24 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             etalon[str(i)] = elements
         sources["etalon"] = etalon
         return sources
+
+    def exportSettings(self):
+        info = dict()
+        info['Database Size'] = len(self._hash)
+        settings = dict()
+        if self.kodsettings.detector_type == BRISKDetectorType:
+            info['Detector Type'] = 'BRISK'
+            settings['Thresh'] = self.kodsettings.brisk_settings.thresh
+            settings['Octaves'] = self.kodsettings.brisk_settings.octaves
+            settings['Pattern Scale'] = self.kodsettings.brisk_settings.patternScale
+            info['Detector Settings'] = settings
+        elif self.kodsettings.detector_type == ORBDetectorType:
+            info['Detector Type'] = 'ORB'
+            settings['Number of features'] = self.kodsettings.orb_settings.features
+            settings['Scale Factor'] = self.kodsettings.orb_settings.scaleFactor
+            settings['Number of levels'] = self.kodsettings.orb_settings.nlevels
+        info['Detector Settings'] = settings
+        return info
 
     @verifying
     def verify(self, data):

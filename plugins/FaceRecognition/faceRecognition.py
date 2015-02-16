@@ -376,19 +376,26 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
 
     def export_database(self):
         source = self._keysrecg_detector.exportSources()
+        info = self._keysrecg_detector.exportSettings()
         json_encoded = json.dumps(source)
+        info_encoded = json.dumps(info)
         filedir = QFileDialog.getExistingDirectory(None, "Select database directory", ".")
         if not filedir.isEmpty():
             source_file = os.path.join(str(filedir), 'data.json')
             with open(source_file, "w") as data_file:
                 data_file.write(json_encoded)
+            data_file.close()
+            jinfo_file = os.path.join(str(filedir), 'info.json')
+            with open(jinfo_file, "w") as info_file:
+                info_file.write(info_encoded)
+            data_file.close()
 
     def import_database(self):
         filedir = QFileDialog.getExistingDirectory(None, "Select database directory", ".")
         if not filedir.isEmpty():
             source_file = os.path.join(str(filedir), 'data.json')
             with open(source_file, "r") as data_file:
-                source = json.load(data_file,)
+                source = json.load(data_file)
                 self._keysrecg_detector.importSources(source)
 
     def det_change(self):
