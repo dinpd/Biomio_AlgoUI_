@@ -10,7 +10,6 @@ import os
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 DATABASE_PATH = os.path.join(APP_ROOT, 'databases')
 PLUGIN_PATH = os.path.join(APP_ROOT, 'webplugins')
-print PLUGIN_PATH
 
 PLUGIN_PLACES = [PLUGIN_PATH]
 DATABASE_PLACES = [DATABASE_PATH]
