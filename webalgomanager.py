@@ -57,28 +57,29 @@ class WebAlgorithmsManager(object):
                     self._algolist[algo] = plugin_info.plugin_object
 
     def get_databases(self):
-        if os.path.exists(DATABASE_PLACES):
-            self._databases = []
-            i = 0
-            for d in os.listdir(DATABASE_PLACES):
-                database = dict()
-                d_list = dict()
-                database['name'] = d
-                database['id'] = i
-                d_list['name'] = d
-                d_list['pk'] = i
-                info = DATABASE_PLACES + "/" + d + "info.json"
-                data = DATABASE_PLACES + "/" + d + "data.json"
-                with open(data, "r") as data_file:
-                    source = json.load(data_file)
-                    database['data'] = source
-                with open(info, "r") as info_file:
-                    information = json.load(info_file)
-                    database['info'] = information
-                self._databases.append(database)
-                self._databases_list.append(d_list)
-                i += 1
-
+        for path in DATABASE_PLACES:
+            if os.path.exists(path):
+                self._databases = []
+                i = 0
+                for d in os.listdir(path):
+                    database = dict()
+                    d_list = dict()
+                    database['name'] = d
+                    database['id'] = i
+                    d_list['name'] = d
+                    d_list['pk'] = i
+                    info = path + "/" + d + "/info.json"
+                    data = path + "/" + d + "/data.json"
+                    with open(data, "r") as data_file:
+                        source = json.load(data_file)
+                        database['data'] = source
+                    with open(info, "r") as info_file:
+                        information = json.load(info_file)
+                        database['info'] = information
+                    d_list['support'] = database.get('info', dict()).get('support', "")
+                    self._databases.append(database)
+                    self._databases_list.append(d_list)
+                    i += 1
 
     def algosettings(self, name):
         plugin = self._algolist.get(name)
@@ -121,9 +122,9 @@ class WebAlgorithmsManager(object):
 
         self.plugins_info()
 
-        for plugin_info in self._plmanager.getAllPlugins():
-            if plugin_info.is_activated:
-                plugin_info.plugin_object.set_image_manager()
+        # for plugin_info in self._plmanager.getAllPlugins():
+        #     if plugin_info.is_activated:
+        #         plugin_info.plugin_object.set_image_manager()
 
     def plugins_info(self):
         # Output of various information and activation of each plugin
