@@ -3,7 +3,6 @@ from yapsy.PluginFileLocator import PluginFileLocator
 from yapsy.ConfigurablePluginManager import ConfigurablePluginManager
 from aiplugins import IAlgorithmPlugin
 from ConfigParser import ConfigParser
-from logger import logger
 import json
 import os
 

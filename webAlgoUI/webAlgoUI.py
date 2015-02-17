@@ -16,11 +16,13 @@ algorithms_interface = AlgorithmsInterface()
 
 @app.context_processor
 def inject_db_list():
+    print algorithms_interface.get_databases_list()
     return dict(db_list=FAKE_DB_LIST)
 
 
 @app.context_processor
 def inject_algo_list():
+    print algorithms_interface.get_algorithms_list()
     return dict(algo_list=FAKE_ALGO_LIST)
 
 
