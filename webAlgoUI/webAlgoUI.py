@@ -16,8 +16,7 @@ algorithms_interface = AlgorithmsInterface()
 
 @app.context_processor
 def inject_db_list():
-    print algorithms_interface.get_databases_list()
-    return dict(db_list=FAKE_DB_LIST)
+    return dict(db_list=algorithms_interface.get_databases_list())
 
 
 @app.context_processor
@@ -48,13 +47,14 @@ def show_algo_properties():
     Will render the template with selected algorithm parameters.
     :return:
     """
-    algo_id = request.form['algo_id']
-    db_id = request.form['db_id']
-    algo_db_settings = FAKE_ALGO_DB_SETTINGS.get('algo__db')
+    algo_id = int(request.form['algo_id'])
+    db_id = int(request.form['db_id'])
+    algo_settings = FAKE_ALGO_DB_SETTINGS.get('algo__db')
     return render_template('algo_db_settings.html', algo_id=algo_id, db_id=db_id,
-                           selects=algo_db_settings.get('selects', None), inputs=algo_db_settings.get('inputs', None),
-                           checkboxes=algo_db_settings.get('checkboxes', None),
-                           radiobuttons=algo_db_settings.get('radio_buttons', None),
+                           db_settings=algorithms_interface.get_database_settings(db_id),
+                           selects=algo_settings.get('selects', None), inputs=algo_settings.get('inputs', None),
+                           checkboxes=algo_settings.get('checkboxes', None),
+                           radiobuttons=algo_settings.get('radio_buttons', None),
                            images=os.listdir(STATIC_MEDIA_PATH))
 
 
@@ -86,4 +86,5 @@ def _slugify(string):
 
 
 if __name__ == '__main__':
+    app.debug = True
     app.run()
