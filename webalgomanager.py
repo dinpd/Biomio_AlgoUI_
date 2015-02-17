@@ -3,6 +3,7 @@ from yapsy.PluginFileLocator import PluginFileLocator
 from yapsy.ConfigurablePluginManager import ConfigurablePluginManager
 from aiplugins import IAlgorithmPlugin
 from ConfigParser import ConfigParser
+from logger import logger
 import json
 import os
 
@@ -42,7 +43,7 @@ class WebAlgorithmsManager(object):
 
     def database_settings(self, name, settings_type):
         for database in self._databases:
-            if database['name'] == name:
+            if database['name'] == name or database['id'] == name:
                 return database['info']
         return dict()
 
