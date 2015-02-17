@@ -34,6 +34,7 @@ class WebAlgorithmsManager(object):
         self.get_actions()
         self._databases = []
         self._databases_list = []
+        self.get_databases()
         pass
 
     def databases_list(self):
@@ -55,7 +56,7 @@ class WebAlgorithmsManager(object):
                 for algo in algo_list:
                     self._algolist[algo] = plugin_info.plugin_object
 
-    def get_database(self):
+    def get_databases(self):
         if os.path.exists(DATABASE_PLACES):
             self._databases = []
             i = 0
