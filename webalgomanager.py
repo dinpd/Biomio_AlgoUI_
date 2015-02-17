@@ -47,14 +47,16 @@ class WebAlgorithmsManager(object):
         return dict()
 
     def algorithms_list(self):
-        return self._algolist.keys()
+        return self._algorithms
 
     def get_actions(self):
         for plugin_info in self._plmanager.getAllPlugins():
             if plugin_info.is_activated:
                 algo_list = plugin_info.plugin_object.get_algorithms_list()
                 for algo in algo_list:
-                    self._algolist[algo] = plugin_info.plugin_object
+                    self._algolist[algo['pk']] = {'info': algo,
+                                                  'object': plugin_info.plugin_object}
+                    self._algorithms.append(algo)
 
     def get_databases(self):
         for path in DATABASE_PLACES:

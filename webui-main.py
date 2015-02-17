@@ -7,6 +7,7 @@ def main():
     interface = AlgorithmsInterface()
     print interface.get_databases_list()
     print interface.get_database_settings(interface.get_databases_list()[0]['name'])
+    print interface.get_algorithms_list()
 
 
 if __name__ == '__main__':

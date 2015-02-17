@@ -13,7 +13,8 @@ from algorithms.imgobj import loadImageObject
 import os
 
 
-VerificationAlgorithm = "KeypointsVerificationAlgorithm"
+VerificationAlgorithm = {'name': 'Keypoints Verification Algorithm',
+                         'pk': 0}
 
 
 class FaceRecognitionPlugin(IAlgorithmPlugin):
