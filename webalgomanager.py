@@ -50,6 +50,12 @@ class WebAlgorithmsManager(object):
                 return database['info']
         return dict()
 
+    def database(self, name):
+        for database in self._databases:
+            if database['name'] == name or database['id'] == name:
+                return database
+        return dict()
+
     def algorithms_list(self):
         return self._algorithms
 
@@ -90,13 +96,13 @@ class WebAlgorithmsManager(object):
     def algosettings(self, name):
         plugin = self._algolist.get(name)
         if plugin is not None:
-            return plugin.settings(name)
+            return plugin['object'].settings(name)
         return None
 
     def apply_algorithm(self, name, settings=dict()):
         plugin = self._algolist.get(name)
         if plugin is not None:
-            return plugin.apply(name, settings)
+            return plugin['object'].apply(name, settings)
         return None
 
     def init_plugin_manager(self):
@@ -128,9 +134,9 @@ class WebAlgorithmsManager(object):
 
         self.plugins_info()
 
-        # for plugin_info in self._plmanager.getAllPlugins():
-        #     if plugin_info.is_activated:
-        #         plugin_info.plugin_object.set_image_manager()
+        for plugin_info in self._plmanager.getAllPlugins():
+            if plugin_info.is_activated:
+                plugin_info.plugin_object.set_resources_manager(self)
 
     def plugins_info(self):
         # Output of various information and activation of each plugin

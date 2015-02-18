@@ -25,6 +25,9 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
     def set_image_manager(self, manager):
         self._imanager = manager
 
+    def set_resources_manager(self, manager):
+        self._rmanager = manager
+
     def get_algorithms_actions(self, parent):
         pass
 
@@ -39,7 +42,7 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
 
     def settings(self, name):
         setting = dict()
-        if name == VerificationAlgorithm:
+        if name == VerificationAlgorithm['pk']:
             setting['database'] = "default"
             setting['max_neigh'] = self.checkMaxNeigh
             setting['data'] = None
@@ -54,7 +57,7 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
         return res
 
     def apply(self, name, settings=dict()):
-        if name == VerificationAlgorithm:
+        if name == VerificationAlgorithm['pk']:
             return self.verification_algorithm(settings)
         return None
 
@@ -70,10 +73,10 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
         self._keysrecg_detector = creator.detector()
 
     def verification_algorithm(self, settings):
-        database = self._imanager.database(settings['database'])
+        database = self._rmanager.database(settings['database'])
         self._keysrecg_detector.importSources(database['data'])
         self._keysrecg_detector.kodsettings.neighbours_distance = settings['max_neigh']
-        self._keysrecg_detector.kodsettings.detector_type = database['settings']
-        self._keysrecg_detector.kodsettings.brisk_settings = database['settings']
+        self._keysrecg_detector.kodsettings.detector_type = database.get('info', dict()).get('Detector Type', '')
+        self._keysrecg_detector.kodsettings.brisk_settings = database.get('info', dict()).get('')
         self._keysrecg_detector.kodsettings.orb_settings = database['settings']
         self._keysrecg_detector.verify(settings['data'])
