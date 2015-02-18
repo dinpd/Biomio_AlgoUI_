@@ -75,8 +75,8 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
     def verification_algorithm(self, settings):
         database = self._rmanager.database(settings['database'])
         self._keysrecg_detector.importSources(database['data'])
-        self._keysrecg_detector.kodsettings.neighbours_distance = settings['max_neigh']
-        self._keysrecg_detector.kodsettings.detector_type = database.get('info', dict()).get('Detector Type', '')
-        self._keysrecg_detector.kodsettings.brisk_settings = database.get('info', dict()).get('')
-        self._keysrecg_detector.kodsettings.orb_settings = database['settings']
-        self._keysrecg_detector.verify(settings['data'])
+        self._keysrecg_detector.importSettings(database['info'])
+        result = dict()
+        result['result'] = self._keysrecg_detector.verify(loadImageObject(settings['data']))
+        result['log'] = self._keysrecg_detector.log()
+        return result

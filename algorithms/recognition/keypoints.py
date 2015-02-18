@@ -493,6 +493,22 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         sources["etalon"] = etalon
         return sources
 
+    def importSettings(self, settings):
+        info = dict()
+        settings = dict()
+        detector = settings.get('Detector Settings', dict())
+        if settings.get('Detector Type') == 'BRISK':
+            self.kodsettings.detector_type = BRISKDetectorType
+            self.kodsettings.brisk_settings.thresh = detector['Thresh']
+            self.kodsettings.brisk_settings.octaves = detector['Octaves']
+            self.kodsettings.brisk_settings.patternScale = detector['Pattern Scale']
+            info['Detector Settings'] = settings
+        elif settings.get('Detector Type') == 'ORB':
+            self.kodsettings.detector_type = ORBDetectorType
+            self.kodsettings.orb_settings.features = detector['Number of features']
+            self.kodsettings.orb_settings.scaleFactor = detector['Scale Factor']
+            self.kodsettings.orb_settings.nlevels = detector['Number of levels']
+
     def exportSettings(self):
         info = dict()
         info['Database Size'] = len(self._hash)
