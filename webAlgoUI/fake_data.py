@@ -71,3 +71,16 @@ FAKE_ALGO_DB_SETTINGS = {
     },
 
 }
+
+VERIFICATION_SETTINGS = {
+    'inputs': {
+        'elements': [
+            {
+                'label': "Max Neighbours Distance",
+                'default_value': 50,
+                'callback': self.checkMaxNeigh
+            }
+        ],
+        'general_label': 'Verification Settings'
+    }
+}
