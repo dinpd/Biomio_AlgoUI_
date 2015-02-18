@@ -1,0 +1,24 @@
+<VirtualHost *:80>
+	ServerAdmin andriy.lobashchuk@vakoms.com.ua
+
+	ServerName gb.vakoms.com
+
+	WSGIDaemonProcess webAlgoUI user=www-data group=www-data threads=5
+	WSGIScriptAlias / /opt/algoui/webAlgoUI/apache/webAlgoUI.wsgi
+	DocumentRoot /opt/algoui/
+
+	<Directory /opt/algoui/webAlgoUI >
+	    WSGIProcessGroup webAlgoUI
+	    WSGIApplicationGroup %{GLOBAL}
+	    Order deny,allow
+	    Allow from all
+	</Directory>
+
+	ErrorLog ${APACHE_LOG_DIR}/webalgoui_error.log
+
+	# Possible values include: debug, info, notice, warn, error, crit,
+	# alert, emerg.
+	LogLevel warn
+
+	CustomLog ${APACHE_LOG_DIR}/webalgoui_access.log combined
+</VirtualHost>
