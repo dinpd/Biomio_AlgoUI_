@@ -1,7 +1,8 @@
 import sys
 import os
-from webAlgoUI.webAlgoUI import APP_ROOT
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 os.chdir(APP_ROOT)
+os.chdir('..')
 os.chdir('..')
 activate_this = os.path.join(os.curdir, 'venv', 'bin', 'activate_this.py')
 execfile(activate_this, dict(__file__=activate_this))
