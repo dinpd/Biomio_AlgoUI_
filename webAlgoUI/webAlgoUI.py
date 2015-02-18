@@ -38,6 +38,7 @@ def run_algorithm(algo_id):
     """
 
     print algo_id
+    print request.form
     return 'OK'
 
 
