@@ -21,7 +21,6 @@ def inject_db_list():
 
 @app.context_processor
 def inject_algo_list():
-    print algorithms_interface.get_algorithms_list()
     return dict(algo_list=FAKE_ALGO_LIST)
 
 
@@ -36,9 +35,6 @@ def run_algorithm(algo_id):
     Will gather all input values from request POST data and will invoke selected algorithm.
     :return:
     """
-
-    print algo_id
-    print request.form
     return 'OK'
 
 
