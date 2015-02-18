@@ -78,7 +78,7 @@ VERIFICATION_SETTINGS = {
             {
                 'label': "Max Neighbours Distance",
                 'default_value': 50,
-                'callback': self.checkMaxNeigh
+                'callback': "<function object>"
             }
         ],
         'general_label': 'Verification Settings'
