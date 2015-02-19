@@ -43,11 +43,16 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
         setting = dict()
         if name == VerificationAlgorithm['pk']:
             setting = {'inputs': {
+                'settings_parameters':
+                    {
+                        'image_required': True,
+                        'number_of_images': 1
+                    },
                 'elements': [
                     {
                         'label': "Max Neighbours Distance",
                         'default_value': 50,
-                        'callback': self.checkMaxNeigh
+                        'settings_key': 'max_neigh'
                     }
                 ],
                 'general_label': 'Verification Settings'
