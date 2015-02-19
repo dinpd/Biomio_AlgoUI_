@@ -1,6 +1,3 @@
-from algorithms.features.classifiers import CascadeROIDetector
-from algorithms.cvtools.visualization import (showClusters, showNumpyImage,
-                                              drawLine)
 from algorithms.features.detectors import (BRISKDetector, ORBDetector,
                                            BRISKDetectorSettings, ORBDetectorSettings)
 from algorithms.features.classifiers import (getROIImage,
@@ -9,8 +6,7 @@ from algorithms.recognition.features import (FeatureDetector,
                                              BRISKDetectorType, ORBDetectorType)
 from algorithms.features.matchers import FlannMatcher
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
-from lshash import LSHash
-from algorithms.hashing.nearpy_hash import NearPyHash
+# from algorithms.hashing.nearpy_hash import NearPyHash
 from algorithms.clustering.forel import FOREL
 from algorithms.clustering.kmeans import KMeans
 import logger

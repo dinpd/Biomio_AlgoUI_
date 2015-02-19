@@ -1,10 +1,6 @@
 from logger import logger
 
 from aiplugins import IAlgorithmPlugin
-import algorithms.faces.biom.faces as fs
-from algorithms.cvtools.visualization import drawRectangle
-from algorithms.features.classifiers import CascadeROIDetector
-from algorithms.faces.biom.utils import files_list
 from algorithms.recognition.detcreator import (DetectorCreator,
                                                ClustersObjectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
@@ -15,8 +11,6 @@ import os
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 CASCADE_PATH = os.path.join(APP_ROOT, '../../algorithms/data/')
-print CASCADE_PATH
-
 
 VerificationAlgorithm = {'name': 'Keypoints Verification Algorithm',
                          'pk': 0}
