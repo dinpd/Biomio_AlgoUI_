@@ -41,13 +41,21 @@ class CascadeROIDetector:
 
     def __init__(self):
         self.__cascades = []
+        self._cascades_list = []
 
     def add_cascade(self, path):
         if os.path.exists(path):
             self.__cascades.append(cv2.CascadeClassifier(path))
+            self._cascades_list.append(path)
             # logger.debug("Cascade is loaded.")
         else:
             logger.debug("Such file does not exist.")
+
+    def cascades(self):
+        cascades = []
+        for cascade in self._cascades_list:
+            cascades.append(os.path.split(cascade)[1])
+        return cascades
 
     def detect(self, img, as_list=False):
         rects = list()

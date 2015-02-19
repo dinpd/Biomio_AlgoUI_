@@ -310,7 +310,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 self._keysrecg_detector.addSource(obj)
                 self._load_label.setText("Load file: " + imfile)
                 self._load_bar.setValue((i * 100) / len(flist))
-                # QCoreApplication.processEvents()
+                QCoreApplication.processEvents()
             self._load_label.setText("Loading finished.")
             self._load_bar.setValue(100)
             logger.debug("Loading finished.")

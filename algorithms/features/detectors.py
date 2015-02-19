@@ -1,8 +1,8 @@
 import cv2
 
 # Detector types
-BRISKDetectorType = 0
-ORBDetectorType = 1
+BRISKDetectorType = 'BRISK'
+ORBDetectorType = 'ORB'
 
 
 class BaseDetector:

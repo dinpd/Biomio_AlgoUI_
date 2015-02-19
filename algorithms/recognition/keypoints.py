@@ -44,7 +44,8 @@ def identifying(fn):
 def verifying(fn):
     def wrapped(self, data):
         logger.logger.debug("Verifying...")
-        res = None
+        self._log = ""
+        res = False
         if self.data_detect(data):
             if data is not None:
                 res = fn(self, data)
@@ -506,20 +507,27 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
     def exportSettings(self):
         info = dict()
-        info['Database Size'] = len(self._hash)
+        info['Database Size'] = str(len(self._hash)) + " images"
         settings = dict()
         if self.kodsettings.detector_type == BRISKDetectorType:
             info['Detector Type'] = 'BRISK'
             settings['Thresh'] = self.kodsettings.brisk_settings.thresh
             settings['Octaves'] = self.kodsettings.brisk_settings.octaves
             settings['Pattern Scale'] = self.kodsettings.brisk_settings.patternScale
-            info['Detector Settings'] = settings
         elif self.kodsettings.detector_type == ORBDetectorType:
             info['Detector Type'] = 'ORB'
             settings['Number of features'] = self.kodsettings.orb_settings.features
             settings['Scale Factor'] = self.kodsettings.orb_settings.scaleFactor
             settings['Number of levels'] = self.kodsettings.orb_settings.nlevels
         info['Detector Settings'] = settings
+        face_cascade = dict()
+        face_cascade['Cascades'] = self._cascadeROI.cascades()
+        face_settings = dict()
+        face_settings['Scale Factor'] = self._cascadeROI.classifierSettings.scaleFactor
+        face_settings['Minimum Neighbors'] = self._cascadeROI.classifierSettings.minNeighbors
+        face_settings['Minimum Size'] = self._cascadeROI.classifierSettings.minSize
+        face_cascade['Settings'] = face_settings
+        info['Face Cascade Detector'] = face_cascade
         return info
 
     @verifying
