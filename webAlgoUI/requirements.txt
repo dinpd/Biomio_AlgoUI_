@@ -1,6 +1,7 @@
 Flask==0.10.1
 Yapsy==1.10.423
+numpy==1.9.1
 matplotlib==1.4.3
 lshash==0.0.4dev
-scipy==0.15.1
+git+http://github.com/scipy/scipy/
 bitarray
