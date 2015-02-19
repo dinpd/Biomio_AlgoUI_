@@ -1,0 +1,17 @@
+<label for="image_selector_id"> Select image to test.</label>
+<select name="image_selector" id="image_selector_id" size="5">
+    {% for image in images %}
+        <option value="{{ image }}"
+                {% if loop.index == 1 %}selected="selected"{% endif %}>{{ image }}</option>
+    {% endfor %}
+</select>
+<img id="image_preview" src="">
+<script>
+    var image_selector = $('#image_selector_id');
+    $('#image_preview').attr('src', '{{ url_for('static', filename='media_images/') }}{{ person }}/' + image_selector.val());
+    image_selector.on('change', function (e) {
+        var selectedValue = $(e.currentTarget).val();
+        console.log(selectedValue);
+        $('#image_preview').attr('src', '{{ url_for('static', filename='media_images/') }}{{ person }}/' + selectedValue);
+    });
+</script>
