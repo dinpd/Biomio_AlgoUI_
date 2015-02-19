@@ -1,4 +1,4 @@
-<form id="algo-form-id" name="algo-form" role="form" action="{{ url_for('run_algorithm', algo_id=algo_id) }}"
+<form id="algo-form-id" name="algo-form" role="form" action="{{ url_for('run_algorithm', algo_id=algo_id, db_id=db_id) }}"
       method="post">
     <p class="block_header_text">---=== Database settings ===---</p>
 
@@ -24,14 +24,16 @@
                 {% endwith %}
             </tr>
         </table>
-        <label for="image_selector_id"> Select image to test.</label>
-        <select name="image_selector" id="image_selector_id" size="5">
-            {% for image in images %}
-                <option value="{{ image }}"
-                        {% if loop.index == 1 %}selected="selected"{% endif %}>{{ image }}</option>
-            {% endfor %}
-        </select>
-        <img id="image_preview" src="">
+        {% if settings_parameters is defined %}
+            <label for="person_selector_id"> Select person with images.</label>
+            <select name="person_selector" id="person_selector_id">
+                {% for person in persons %}
+                    <option value="{{ person }}"
+                            {% if loop.index == 1 %}selected="selected"{% endif %}>{{ person }}</option>
+                {% endfor %}
+            </select>
+            <div id="image_selector_html"></div>
+        {% endif %}
     </div>
     <p class="block_header_text">---=== Algorithm Settings ===---</p>
 
@@ -78,7 +80,7 @@
                             <label for="input_{{ input.label | slugify }}">{{ input.label }}:
                                 <input type="text" id="input_{{ input.label | slugify }}"
                                        value="{{ input.default_value }}"
-                                       name=input_{{ input.label | slugify }}"></label>
+                                       name="{{ input.settings_key }}"></label>
                         </td>
                         {% if not loop.last and loop.index is divisibleby 2 %}
                             </tr>
@@ -140,8 +142,6 @@
 </form>
 <script>
     $('#settings_caption').text('Selected algorithm ID: {{ algo_id }}, DB ID: {{ db_id }}');
-    var image_selector = $('#image_selector_id');
-    $('#image_preview').attr('src', '{{ url_for('static', filename='media_images/') }}' + image_selector.val());
     $('#run_algo_button').on('click', function (e) {
         e.preventDefault();
         $('#settings_caption').text('Running algorithm...');
@@ -151,7 +151,6 @@
             data: form.serialize(),
             type: form.attr('method'),
             success: function (response) {
-                console.log(response);
                 $('#algo_result_data').html(response);
             },
             error: function (error) {
@@ -159,9 +158,20 @@
             }
         });
     });
-    image_selector.on('change', function (e) {
-        var selectedValue = $(e.currentTarget).val();
-        console.log(selectedValue);
-        $('#image_preview').attr('src', '{{ url_for('static', filename='media_images/') }}' + selectedValue);
-    });
+    var person_selector = $('#person_selector_id');
+    if(person_selector){
+        $.ajax({
+            url: '{{ url_for('get_person_images') }}',
+            data: {
+                'person': person_selector.val()
+            },
+            type: 'post',
+            success: function(response) {
+                $('#image_selector_html').html(response);
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    }
 </script>
