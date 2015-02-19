@@ -20,7 +20,7 @@ FULL_DATABASE_SETTINGS = 2
 
 def get_config_file_path():
     curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config_file_path = os.path.join(curr_dir, 'plugin_config.ini')
+    config_file_path = os.path.join(curr_dir, 'webplugin_config.ini')
     return config_file_path
 
 
@@ -123,7 +123,6 @@ class WebAlgorithmsManager(object):
 
         # set config file location
         config_parser.read(get_config_file_path())
-
         # set parser to configurable decorator
         self._cpmanager.setConfigParser(configparser_instance=config_parser,
                                         config_change_trigger=config_change_trigger)

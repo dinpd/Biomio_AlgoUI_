@@ -13,6 +13,11 @@ from algorithms.imgobj import loadImageObject
 import os
 
 
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+CASCADE_PATH = os.path.join(APP_ROOT, '../../algorithms/data/')
+print CASCADE_PATH
+
+
 VerificationAlgorithm = {'name': 'Keypoints Verification Algorithm',
                          'pk': 0}
 
@@ -43,9 +48,16 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
     def settings(self, name):
         setting = dict()
         if name == VerificationAlgorithm['pk']:
-            setting['database'] = "default"
-            setting['max_neigh'] = self.checkMaxNeigh
-            setting['data'] = None
+            setting = {'inputs': {
+                'elements': [
+                    {
+                        'label': "Max Neighbours Distance",
+                        'default_value': 50,
+                        'callback': self.checkMaxNeigh
+                    }
+                ],
+                'general_label': 'Verification Settings'
+            }}
         return setting
 
     @staticmethod
@@ -64,12 +76,17 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
     def init_detector(self):
         creator = DetectorCreator(type=ClustersObjectMatching)
         creator.addClassifier(FaceCascadeClassifier)
-        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
-        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt2.xml")
-        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt.xml")
-        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_default.xml")
+        creator.addCascade(FaceCascadeClassifier, os.path.join(CASCADE_PATH,
+                                                               "haarcascades/haarcascade_frontalface_alt_tree.xml"))
+        creator.addCascade(FaceCascadeClassifier, os.path.join(CASCADE_PATH,
+                                                               "haarcascades/haarcascade_frontalface_alt2.xml"))
+        creator.addCascade(FaceCascadeClassifier, os.path.join(CASCADE_PATH,
+                                                               "haarcascades/haarcascade_frontalface_alt.xml"))
+        creator.addCascade(FaceCascadeClassifier, os.path.join(CASCADE_PATH,
+                                                               "haarcascades/haarcascade_frontalface_default.xml"))
         creator.addClassifier(EyesCascadeClassifier)
-        creator.addCascade(EyesCascadeClassifier, "algorithms/data/haarcascades/haarcascade_mcs_eyepair_big.xml")
+        creator.addCascade(EyesCascadeClassifier, os.path.join(CASCADE_PATH,
+                                                               "haarcascades/haarcascade_mcs_eyepair_big.xml"))
         self._keysrecg_detector = creator.detector()
 
     def verification_algorithm(self, settings):
