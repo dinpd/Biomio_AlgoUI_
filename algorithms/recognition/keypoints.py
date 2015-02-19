@@ -495,7 +495,6 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
     def importSettings(self, settings):
         info = dict()
-        settings = dict()
         detector = settings.get('Detector Settings', dict())
         if settings.get('Detector Type') == 'BRISK':
             self.kodsettings.detector_type = BRISKDetectorType

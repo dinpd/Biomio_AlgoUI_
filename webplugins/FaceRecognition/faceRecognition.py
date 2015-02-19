@@ -93,6 +93,7 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
         database = self._rmanager.database(settings['database'])
         self._keysrecg_detector.importSources(database['data'])
         self._keysrecg_detector.importSettings(database['info'])
+        self._keysrecg_detector.kodsettings.neighbours_distance = settings['max_neigh']
         result = dict()
         result['result'] = self._keysrecg_detector.verify(loadImageObject(settings['data']))
         result['log'] = self._keysrecg_detector.log()
