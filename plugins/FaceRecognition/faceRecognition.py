@@ -232,24 +232,40 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         form_layout = QFormLayout()
         form_layout.addRow(_("Keypoints Detector Settings:"), change_button)
 
-        cascade_box = QGroupBox(kod_widget)
-        cascade_box.setTitle(_("Cascade ROI Detector Settings:"))
+        face_cascade_box = QGroupBox(kod_widget)
+        face_cascade_box.setTitle(_("Face Cascade ROI Detector Settings:"))
 
-        self._kod_scaleBox = QDoubleSpinBox(cascade_box)
-        self._kod_scaleBox.setSingleStep(0.10)
-        self._kod_scaleBox.setMinimum(1.01)
-        self._kod_scaleBox.setValue(1.1)
-        self._kod_neighborsBox = QSpinBox(cascade_box)
-        self._kod_neighborsBox.setValue(3)
+        self._kod_face_scaleBox = QDoubleSpinBox(face_cascade_box)
+        self._kod_face_scaleBox.setSingleStep(0.10)
+        self._kod_face_scaleBox.setMinimum(1.01)
+        self._kod_face_scaleBox.setValue(1.1)
+        self._kod_face_neighborsBox = QSpinBox(face_cascade_box)
+        self._kod_face_neighborsBox.setValue(2)
 
-        cascade_layout = QFormLayout()
-        cascade_layout.addRow(_("Scale Factor:"), self._kod_scaleBox)
-        cascade_layout.addRow(_("Min Neighbors:"), self._kod_neighborsBox)
-        cascade_box.setLayout(cascade_layout)
+        face_cascade_layout = QFormLayout()
+        face_cascade_layout.addRow(_("Scale Factor:"), self._kod_face_scaleBox)
+        face_cascade_layout.addRow(_("Min Neighbors:"), self._kod_face_neighborsBox)
+        face_cascade_box.setLayout(face_cascade_layout)
+
+        eye_cascade_box = QGroupBox(kod_widget)
+        eye_cascade_box.setTitle(_("Eyes Cascade ROI Detector Settings:"))
+
+        self._kod_eye_scaleBox = QDoubleSpinBox(eye_cascade_box)
+        self._kod_eye_scaleBox.setSingleStep(0.10)
+        self._kod_eye_scaleBox.setMinimum(1.01)
+        self._kod_eye_scaleBox.setValue(1.1)
+        self._kod_eye_neighborsBox = QSpinBox(eye_cascade_box)
+        self._kod_eye_neighborsBox.setValue(2)
+
+        eye_cascade_layout = QFormLayout()
+        eye_cascade_layout.addRow(_("Scale Factor:"), self._kod_eye_scaleBox)
+        eye_cascade_layout.addRow(_("Min Neighbors:"), self._kod_eye_neighborsBox)
+        eye_cascade_box.setLayout(eye_cascade_layout)
 
         settings_layout = QVBoxLayout()
         settings_layout.addLayout(form_layout)
-        settings_layout.addWidget(cascade_box)
+        settings_layout.addWidget(face_cascade_box)
+        settings_layout.addWidget(eye_cascade_box)
         settings_layout.addStretch(2)
 
         self._kod_settings_box.setLayout(settings_layout)
@@ -278,12 +294,16 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 'name': curr.title(),
                 'data': curr.data()
             }
-            cascade_settings = CascadeClassifierSettings()
-            cascade_settings.minNeighbors = self._kod_neighborsBox.value()
-            cascade_settings.scaleFactor = self._kod_scaleBox.value()
+            face_cascade_settings = CascadeClassifierSettings()
+            face_cascade_settings.minNeighbors = self._kod_face_neighborsBox.value()
+            face_cascade_settings.scaleFactor = self._kod_face_scaleBox.value()
+
+            eye_cascade_settings = CascadeClassifierSettings()
+            eye_cascade_settings.minNeighbors = self._kod_eye_neighborsBox.value()
+            eye_cascade_settings.scaleFactor = self._kod_eye_scaleBox.value()
 
             creator = DetectorCreator(type=ClustersObjectMatching)
-            creator.addClassifier(FaceCascadeClassifier, cascade_settings)
+            creator.addClassifier(FaceCascadeClassifier, face_cascade_settings)
             creator.addCascade(FaceCascadeClassifier,
                                "algorithms/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
             creator.addCascade(FaceCascadeClassifier,
@@ -292,7 +312,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                                "algorithms/data/haarcascades/haarcascade_frontalface_alt.xml")
             creator.addCascade(FaceCascadeClassifier,
                                "algorithms/data/haarcascades/haarcascade_frontalface_default.xml")
-            creator.addClassifier(EyesCascadeClassifier, cascade_settings)
+            creator.addClassifier(EyesCascadeClassifier, eye_cascade_settings)
             creator.addCascade(EyesCascadeClassifier,
                                "algorithms/data/haarcascades/haarcascade_mcs_eyepair_big.xml")
             detector = creator.detector()
