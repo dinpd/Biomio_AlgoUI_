@@ -1,7 +1,9 @@
+#Required debian packages before installation - apt-get install gfortran libopenblas-dev liblapack-dev freetype* libpng-dev
 Flask==0.10.1
 Yapsy==1.10.423
 numpy==1.9.1
 matplotlib==1.4.3
 lshash==0.0.4dev
-git+http://github.com/scipy/scipy/
+cython
+scipy==0.15.1
 bitarray

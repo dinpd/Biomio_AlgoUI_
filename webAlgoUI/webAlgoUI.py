@@ -1,9 +1,8 @@
 import os
 from flask import Flask
 from flask import request
-from flask.helpers import url_for
 from flask.templating import render_template
-from algointerface import AlgorithmsInterface
+from algoui.algointerface import AlgorithmsInterface
 import re
 import unicodedata
 
