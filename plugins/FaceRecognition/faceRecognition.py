@@ -265,6 +265,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         widget_layout = QVBoxLayout()
         widget_layout.addWidget(self._kod_settings_box)
         widget_layout.addLayout(button_layout)
+        widget_layout.addStretch(2)
         kod_widget.setLayout(widget_layout)
         kod_dock.setWidget(kod_widget)
         return kod_dock
@@ -300,6 +301,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
             detector.kodsettings.orb_settings = self.settings_dialog.orb()
             detector.detect(data)
+            print data.keys()
             image = ImageProperties()
             image.title(str('Keypoints Object Detector::' + curr.title()))
             image.data(data['clustering'])
