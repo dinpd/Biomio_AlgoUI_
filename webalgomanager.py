@@ -88,7 +88,7 @@ class WebAlgorithmsManager(object):
                     with open(info, "r") as info_file:
                         information = json.load(info_file)
                         database['info'] = information
-                    d_list['support'] = database.get('info', dict()).get('support', "")
+                    d_list['support'] = database.get('info', dict()).get('Support', "")
                     self._databases.append(database)
                     self._databases_list.append(d_list)
                     i += 1

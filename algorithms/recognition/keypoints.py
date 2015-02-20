@@ -528,6 +528,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         face_settings['Minimum Size'] = self._cascadeROI.classifierSettings.minSize
         face_cascade['Settings'] = face_settings
         info['Face Cascade Detector'] = face_cascade
+        info['Database Source'] = "Extended Yale Face Database B. Person Yale12"
         return info
 
     @verifying
