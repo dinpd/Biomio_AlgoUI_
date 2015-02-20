@@ -1,6 +1,7 @@
 from logger import logger
 
 from aiplugins import IAlgorithmPlugin
+from algorithms.features.classifiers import CascadeClassifierSettings
 from algorithms.recognition.detcreator import (DetectorCreator,
                                                ClustersObjectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
@@ -83,7 +84,9 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
                                                                "haarcascades/haarcascade_frontalface_alt.xml"))
         creator.addCascade(FaceCascadeClassifier, os.path.join(CASCADE_PATH,
                                                                "haarcascades/haarcascade_frontalface_default.xml"))
-        creator.addClassifier(EyesCascadeClassifier)
+        eyes_settings = CascadeClassifierSettings()
+        eyes_settings.minNeighbors = 1
+        creator.addClassifier(EyesCascadeClassifier, eyes_settings)
         creator.addCascade(EyesCascadeClassifier, os.path.join(CASCADE_PATH,
                                                                "haarcascades/haarcascade_mcs_eyepair_big.xml"))
         self._keysrecg_detector = creator.detector()
