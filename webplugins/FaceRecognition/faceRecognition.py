@@ -63,7 +63,7 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
     @staticmethod
     def checkMaxNeigh(value):
         res = False
-        if type(value) == type(float):
+        if type(value) == float:
             if 0 < value < 1000.0:
                 res = True
         return res
@@ -95,7 +95,13 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
         database = self._rmanager.database(settings['database'])
         self._keysrecg_detector.importSources(database['data'])
         self._keysrecg_detector.importSettings(database['info'])
-        self._keysrecg_detector.kodsettings.neighbours_distance = settings['max_neigh']
+        if self.checkMaxNeigh(float(settings['max_neigh'])):
+            self._keysrecg_detector.kodsettings.neighbours_distance = float(settings['max_neigh'])
+        else:
+            error = dict()
+            error['type'] = '010'
+            error['settings_key'] = 'max_neigh'
+            return error
         result = dict()
         result['result'] = self._keysrecg_detector.verify(loadImageObject(settings['data']))
         result['log'] = self._keysrecg_detector.log()

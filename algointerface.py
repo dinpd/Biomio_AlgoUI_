@@ -13,6 +13,14 @@ Result: dictionary
    'log'       Log of the algorithm
    'result'    Boolean. Contain 'True' if verification successfully,
    otherwise return 'False'
+
+Error Dictionary:
+{
+    'type': <'code'>        - error number
+    'settings_key': <'key'> - settings_key of parameter
+
+<'code'> =
+    '010' - parameters verification error
 """
 from webalgomanager import (WebAlgorithmsManager,
                             USER_DATABASE_SETTINGS, ALGO_DATABASE_SETTINGS, FULL_DATABASE_SETTINGS)
