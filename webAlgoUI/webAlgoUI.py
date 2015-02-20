@@ -2,7 +2,7 @@ import os
 from flask import Flask
 from flask import request
 from flask.templating import render_template
-from algoui.algointerface import AlgorithmsInterface
+from algointerface import AlgorithmsInterface
 import re
 import unicodedata
 
