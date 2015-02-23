@@ -4,6 +4,7 @@ from algorithms.features.classifiers import (getROIImage,
                                              RectsIntersect, RectsFiltering)
 from algorithms.recognition.features import (FeatureDetector,
                                              BRISKDetectorType, ORBDetectorType)
+from algorithms.cvtools.visualization import showClusters, drawLine
 from algorithms.features.matchers import FlannMatcher
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
 # from algorithms.hashing.nearpy_hash import NearPyHash
@@ -407,7 +408,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
     def update_hash(self, data):
         del data['data']
-        del data['roi']
+        # del data['roi']
         del data['keypoints']
         del data['descriptors']
         self._hash.append(data)
@@ -419,6 +420,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             for index in range(0, len(self._etalon)):
                 et_cluster = self._etalon[index]
                 dt_cluster = data['clusters'][index]
+
                 matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=1)
                 matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=1)
 
@@ -452,6 +454,13 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                                     good.append(self._etalon[index][m.queryIdx])
                                     good.append(data['clusters'][index][n.queryIdx])
                 self._etalon[index] = listToNumpy_ndarray(good)
+            local_clusters = []
+            for cl_set in self._etalon:
+                cl = dict()
+                cl['center'] = (0, 0)
+                cl['items'] = cl_set
+                local_clusters.append(cl)
+            showClusters(local_clusters, data['roi'])
 
     def importSources(self, source):
         self._etalon = []
@@ -632,16 +641,18 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         # ROI cutting
         lefteye = (rect[0] + rect[3], rect[1] + rect[3] / 2)
         righteye = (rect[0] + rect[2] - rect[3], rect[1] + rect[3] / 2)
+        centereye = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, lefteye[1] + (righteye[0] - lefteye[0]) / 2)
         center = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, rect[1] + 2 * rect[3])
-        # out = drawLine(data['roi'], (lefteye[0], lefteye[1], righteye[0], righteye[1]), (255, 0, 0))
-        # out = drawLine(out, (lefteye[0], lefteye[1], center[0], center[1]), (255, 0, 0))
-        # out = drawLine(out, (righteye[0], righteye[1], center[0], center[1]), (255, 0, 0))
-        #     drawImage(out)
-        centers = [lefteye, righteye, center]
+        out = drawLine(data['roi'], (lefteye[0], lefteye[1], centereye[0], centereye[1]), (255, 0, 0))
+        out = drawLine(out, (centereye[0], centereye[1], righteye[0], righteye[1]), (255, 0, 0))
+        out = drawLine(out, (lefteye[0], lefteye[1], center[0], center[1]), (255, 0, 0))
+        out = drawLine(out, (righteye[0], righteye[1], center[0], center[1]), (255, 0, 0))
+            # drawImage(out)
+        centers = [lefteye, righteye, centereye, center]
 
         clusters = KMeans(data['keypoints'], 0, centers)
         # clusters = FOREL(obj['keypoints'], 40)
-        # showClusters(clusters, out)
+        showClusters(clusters, out)
         descriptors = []
         for cluster in clusters:
             desc = detector.computeImage(data['roi'], cluster['items'])
