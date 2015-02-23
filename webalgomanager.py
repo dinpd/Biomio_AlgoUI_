@@ -2,13 +2,16 @@ from yapsy.PluginManager import PluginManager
 from yapsy.PluginFileLocator import PluginFileLocator
 from yapsy.ConfigurablePluginManager import ConfigurablePluginManager
 from aiplugins import IAlgorithmPlugin
-
 from ConfigParser import ConfigParser
-
+import json
 import os
 
-PLUGIN_PLACES = ['./webplugins']
-DATABASE_PLACES = ['./databases']
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+DATABASE_PATH = os.path.join(APP_ROOT, 'databases')
+PLUGIN_PATH = os.path.join(APP_ROOT, 'webplugins')
+
+PLUGIN_PLACES = [PLUGIN_PATH]
+DATABASE_PLACES = [DATABASE_PATH]
 
 USER_DATABASE_SETTINGS = 0
 ALGO_DATABASE_SETTINGS = 1
@@ -17,7 +20,7 @@ FULL_DATABASE_SETTINGS = 2
 
 def get_config_file_path():
     curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config_file_path = os.path.join(curr_dir, 'plugin_config.ini')
+    config_file_path = os.path.join(curr_dir, 'webplugin_config.ini')
     return config_file_path
 
 
@@ -33,35 +36,73 @@ class WebAlgorithmsManager(object):
         self._algolist = dict()
         self.init_plugin_manager()
         self.get_actions()
-        self._databases = dict()
+        self._databases = []
+        self._databases_list = []
+        self.get_databases()
         pass
 
     def databases_list(self):
-        return self._databases.keys()
+        return self._databases_list
 
     def database_settings(self, name, settings_type):
-        return self._databases.get(name)
+        for database in self._databases:
+            if database['name'] == name or database['id'] == name:
+                return database['info']
+        return dict()
+
+    def database(self, name):
+        for database in self._databases:
+            if database['name'] == name or database['id'] == name:
+                return database
+        return dict()
 
     def algorithms_list(self):
-        return self._algolist.keys()
+        return self._algorithms
 
     def get_actions(self):
         for plugin_info in self._plmanager.getAllPlugins():
             if plugin_info.is_activated:
                 algo_list = plugin_info.plugin_object.get_algorithms_list()
                 for algo in algo_list:
-                    self._algolist[algo] = plugin_info.plugin_object
+                    self._algolist[algo['pk']] = {'info': algo,
+                                                  'object': plugin_info.plugin_object}
+                    self._algorithms.append(algo)
+
+    def get_databases(self):
+        for path in DATABASE_PLACES:
+            if os.path.exists(path):
+                self._databases = []
+                i = 0
+                for d in os.listdir(path):
+                    database = dict()
+                    d_list = dict()
+                    database['name'] = d
+                    database['id'] = i
+                    d_list['name'] = d
+                    d_list['pk'] = i
+                    info = path + "/" + d + "/info.json"
+                    data = path + "/" + d + "/data.json"
+                    with open(data, "r") as data_file:
+                        source = json.load(data_file)
+                        database['data'] = source
+                    with open(info, "r") as info_file:
+                        information = json.load(info_file)
+                        database['info'] = information
+                    d_list['support'] = database.get('info', dict()).get('Support', "")
+                    self._databases.append(database)
+                    self._databases_list.append(d_list)
+                    i += 1
 
     def algosettings(self, name):
         plugin = self._algolist.get(name)
         if plugin is not None:
-            return plugin.settings(name)
+            return plugin['object'].settings(name)
         return None
 
     def apply_algorithm(self, name, settings=dict()):
         plugin = self._algolist.get(name)
         if plugin is not None:
-            return plugin.apply(name, settings)
+            return plugin['object'].apply(name, settings)
         return None
 
     def init_plugin_manager(self):
@@ -82,7 +123,6 @@ class WebAlgorithmsManager(object):
 
         # set config file location
         config_parser.read(get_config_file_path())
-
         # set parser to configurable decorator
         self._cpmanager.setConfigParser(configparser_instance=config_parser,
                                         config_change_trigger=config_change_trigger)
@@ -95,7 +135,7 @@ class WebAlgorithmsManager(object):
 
         for plugin_info in self._plmanager.getAllPlugins():
             if plugin_info.is_activated:
-                plugin_info.plugin_object.set_image_manager()
+                plugin_info.plugin_object.set_resources_manager(self)
 
     def plugins_info(self):
         # Output of various information and activation of each plugin

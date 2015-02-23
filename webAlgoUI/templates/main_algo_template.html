@@ -1,0 +1,26 @@
+{% extends "base_template.html" %}
+{% block body %}
+    <p id="settings_caption">Select Algorithm and DB to get their settings...</p>
+    <div id="algo_result_data">
+    </div>
+{% endblock %}
+{% block sctipts %}
+    <script>
+        $('#algo_db_select_button').on('click', function (e) {
+            e.preventDefault();
+            $('#settings_caption').text('Getting settings for selected algorithm and DB...');
+            var form = $('#algo_db_form_id');
+            $.ajax({
+                url: form.attr('action'),
+                data: form.serialize(),
+                type: form.attr('method'),
+                success: function (response) {
+                    $('#algo_result_data').html(response);
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        });
+    </script>
+{% endblock %}

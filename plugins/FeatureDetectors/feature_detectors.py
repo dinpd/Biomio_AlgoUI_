@@ -8,6 +8,7 @@ from guidata.qt.QtGui import (QAction, QMenu,
 from guidata.qt.QtCore import QObject
 from guidata.configtools import get_icon
 from imageproperties import ImageProperties
+from algorithms.cvtools.visualization import drawKeypoints
 from algorithms.features.detectors import BRISKDetector, ORBDetector
 from algorithms.features.gabor_threads import build_filters, process_kernel, process
 from logger import logger
@@ -97,11 +98,11 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
             detector = BRISKDetector(thresh=int(self._thresh_line_edit.text()),
                                      octaves=int(self._octaves_line_edit.text()),
                                      scale=float(self._pattern_scale_line_edit.text()))
-            fea = ImageFeatures()
-            fea.image(curr.data())
+            fea = dict()
+            fea['data'] = curr.data()
             keypoints = detector.detect(curr.data())
-            fea.keypoints(keypoints)
-            image.data(paintKeypoints(fea))
+            fea['keypoints'] = keypoints
+            image.data(drawKeypoints(fea))
             image.height(curr.height())
             image.width(curr.width())
             self._imanager.add_image(image)
@@ -151,13 +152,12 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
             detector = ORBDetector(features=int(self._features_line_edit.text()),
                                    scale=float(self._scale_line_edit.text()),
                                    levels=int(self._levels_line_edit.text()))
-            fea = ImageFeatures()
-            fea.image(curr.data())
+            fea = dict()
+            fea['data'] = curr.data()
             keypoints, descriptors = detector.detectAndCompute(curr.data())
-            fea.keypoints(keypoints)
-            fea.descriptors(descriptors)
-            logger.debug(len(descriptors))
-            image.data(paintKeypoints(fea))
+            fea['keypoints'] = keypoints
+            fea['descriptors'] = descriptors
+            image.data(drawKeypoints(fea))
             image.height(curr.height())
             image.width(curr.width())
             self._imanager.add_image(image)

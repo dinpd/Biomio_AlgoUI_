@@ -1,10 +1,7 @@
 from logger import logger
 
 from aiplugins import IAlgorithmPlugin
-import algorithms.faces.biom.faces as fs
-from algorithms.cvtools.visualization import drawRectangle
-from algorithms.features.classifiers import CascadeROIDetector
-from algorithms.faces.biom.utils import files_list
+from algorithms.features.classifiers import CascadeClassifierSettings
 from algorithms.recognition.detcreator import (DetectorCreator,
                                                ClustersObjectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
@@ -13,7 +10,11 @@ from algorithms.imgobj import loadImageObject
 import os
 
 
-VerificationAlgorithm = "KeypointsVerificationAlgorithm"
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+CASCADE_PATH = os.path.join(APP_ROOT, '../../algorithms/data/')
+
+VerificationAlgorithm = {'name': 'Keypoints Verification Algorithm',
+                         'pk': 0}
 
 
 class FaceRecognitionPlugin(IAlgorithmPlugin):
@@ -23,6 +24,9 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
 
     def set_image_manager(self, manager):
         self._imanager = manager
+
+    def set_resources_manager(self, manager):
+        self._rmanager = manager
 
     def get_algorithms_actions(self, parent):
         pass
@@ -38,44 +42,67 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
 
     def settings(self, name):
         setting = dict()
-        if name == VerificationAlgorithm:
-            setting['database'] = "default"
-            setting['max_neigh'] = self.checkMaxNeigh
-            setting['data'] = None
+        if name == VerificationAlgorithm['pk']:
+            setting = {'inputs': {
+                'settings_parameters':
+                    {
+                        'image_required': True,
+                        'number_of_images': 1
+                    },
+                'elements': [
+                    {
+                        'label': "Max Neighbours Distance",
+                        'default_value': 50,
+                        'settings_key': 'max_neigh'
+                    }
+                ],
+                'general_label': 'Verification Settings'
+            }}
         return setting
 
     @staticmethod
     def checkMaxNeigh(value):
         res = False
-        if type(value) == type(float):
+        if type(value) == float:
             if 0 < value < 1000.0:
                 res = True
         return res
 
     def apply(self, name, settings=dict()):
-        if name == VerificationAlgorithm:
+        if name == VerificationAlgorithm['pk']:
             return self.verification_algorithm(settings)
         return None
 
     def init_detector(self):
         creator = DetectorCreator(type=ClustersObjectMatching)
         creator.addClassifier(FaceCascadeClassifier)
-        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
-        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt2.xml")
-        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt.xml")
-        creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_default.xml")
-        creator.addClassifier(EyesCascadeClassifier)
-        creator.addCascade(EyesCascadeClassifier, "algorithms/data/haarcascades/haarcascade_mcs_eyepair_big.xml")
+        creator.addCascade(FaceCascadeClassifier, os.path.join(CASCADE_PATH,
+                                                               "haarcascades/haarcascade_frontalface_alt_tree.xml"))
+        creator.addCascade(FaceCascadeClassifier, os.path.join(CASCADE_PATH,
+                                                               "haarcascades/haarcascade_frontalface_alt2.xml"))
+        creator.addCascade(FaceCascadeClassifier, os.path.join(CASCADE_PATH,
+                                                               "haarcascades/haarcascade_frontalface_alt.xml"))
+        creator.addCascade(FaceCascadeClassifier, os.path.join(CASCADE_PATH,
+                                                               "haarcascades/haarcascade_frontalface_default.xml"))
+        eyes_settings = CascadeClassifierSettings()
+        eyes_settings.minNeighbors = 1
+        creator.addClassifier(EyesCascadeClassifier, eyes_settings)
+        creator.addCascade(EyesCascadeClassifier, os.path.join(CASCADE_PATH,
+                                                               "haarcascades/haarcascade_mcs_eyepair_big.xml"))
         self._keysrecg_detector = creator.detector()
 
     def verification_algorithm(self, settings):
-        results = dict()
-        database = self._imanager.database(settings['database'])
+        database = self._rmanager.database(settings['database'])
         self._keysrecg_detector.importSources(database['data'])
-        self._keysrecg_detector.kodsettings.neighbours_distance = settings['max_neigh']
-        self._keysrecg_detector.kodsettings.detector_type = database['settings']
-        self._keysrecg_detector.kodsettings.brisk_settings = database['settings']
-        self._keysrecg_detector.kodsettings.orb_settings = database['settings']
-        results['result'] = self._keysrecg_detector.verify(settings['data'])
-        results['log'] = self._keysrecg_detector.log()
-        return results
+        self._keysrecg_detector.importSettings(database['info'])
+        if self.checkMaxNeigh(float(settings['max_neigh'])):
+            self._keysrecg_detector.kodsettings.neighbours_distance = float(settings['max_neigh'])
+        else:
+            error = dict()
+            error['type'] = '010'
+            error['settings_key'] = 'max_neigh'
+            return error
+        result = dict()
+        result['result'] = self._keysrecg_detector.verify(loadImageObject(settings['data']))
+        result['log'] = self._keysrecg_detector.log()
+        return result

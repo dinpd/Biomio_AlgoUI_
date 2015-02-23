@@ -1,0 +1,184 @@
+<form id="algo-form-id" name="algo-form" role="form"
+      action="{{ url_for('run_algorithm', algo_id=algo_id, db_id=db_id) }}"
+      method="post">
+    <p class="block_header_text">---=== Database settings ===---</p>
+
+    <div class="settings_header">
+        <table id="db_settings_table">
+            <tr>
+                <td>Detector type:</td>
+                <td>{{ db_settings.get('Detector Type') }}</td>
+            </tr>
+            <tr>
+                <td>Detector Settings:</td>
+                {% with detector_settings=db_settings.get('Detector Settings') %}
+                    <td>
+                        <table>
+                            {% for detector_settings_key in detector_settings.keys() %}
+                                <tr>
+                                    <td>{{ detector_settings_key }}:</td>
+                                    <td>{{ detector_settings.get(detector_settings_key) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </td>
+                {% endwith %}
+            </tr>
+        </table>
+        {% if settings_parameters is defined %}
+            <label for="person_selector_id"> Select person with images.</label>
+            <select name="person_selector" id="person_selector_id">
+                {% for person in persons %}
+                    <option value="{{ person }}"
+                            {% if loop.index == 1 %}selected="selected"{% endif %}>{{ person }}</option>
+                {% endfor %}
+            </select>
+            <div id="image_selector_html"></div>
+        {% endif %}
+    </div>
+    <p class="block_header_text">---=== Algorithm Settings ===---</p>
+
+    <div class="settings_body">
+        <table>
+            {% if selects is defined %}
+                <tr>
+                    <td class="settings_block_caption">
+                        {{ selects.general_label }}
+                    </td>
+                </tr>
+                <tr>
+                    {% for select in selects.elements %}
+                        <td>
+                            <label for="select_{{ select.general_label | slugify }}">{{ select.general_label }}
+                                <select id="select_{{ select.general_label | slugify }}"
+                                        name="select_{{ select.general_label | slugify }}">
+                                    {% for option in select.options %}
+                                        <option value="{{ option.value }}"
+                                                {% if option.value == select.default_value %}
+                                                selected="selected" {% endif %}>{{ option.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                        </td>
+                        {% if not loop.last and loop.index is divisibleby 2 %}
+                            </tr>
+                            <tr>
+                        {% endif %}
+                    {% endfor %}
+
+                    </tr>
+            {% endif %}
+
+            {% if inputs is defined %}
+                <tr>
+                    <td class="settings_block_caption">
+                        {{ inputs.general_label }}
+                    </td>
+                </tr>
+                <tr>
+                    {% for input in inputs.elements %}
+                        <td>
+                            <label for="input_{{ input.label | slugify }}">{{ input.label }}:
+                                <input type="text" id="input_{{ input.label | slugify }}"
+                                       value="{{ input.default_value }}"
+                                       name="{{ input.settings_key }}"></label>
+                        </td>
+                        {% if not loop.last and loop.index is divisibleby 2 %}
+                            </tr>
+                            <tr>
+                        {% endif %}
+                    {% endfor %}
+
+                    </tr>
+            {% endif %}
+            {% if checkboxes is defined %}
+                <tr>
+                    <td class="settings_block_caption">
+                        {{ checkboxes.general_label }}
+                    </td>
+                </tr>
+                <tr>
+                    {% for checkbox in checkboxes.elements %}
+                        <td>
+                            <label for="checkbox_{{ checkbox.label | slugify }}">
+                                <input type="checkbox" id="checkbox_{{ checkbox.label | slugify }}"
+                                       name="checkbox_{{ checkbox.label | slugify }}"
+                                       {% if checkbox.default_value %}checked="checked" {% endif %}>{{ checkbox.label }}
+                            </label>
+                        </td>
+                        {% if not loop.last and loop.index is divisibleby 2 %}
+                            </tr>
+                            <tr>
+                        {% endif %}
+                    {% endfor %}
+
+                    </tr>
+            {% endif %}
+            {% if radiobuttons is defined %}
+                <tr>
+                    <td class="settings_block_caption"> {{ radiobuttons.general_label }}</td>
+                </tr>
+                <tr>
+                    {% for radio_button in radiobuttons.elements %}
+                        <td>
+                            <label for="radio_{{ radio_button | slugify }}">
+                                <input type="radio" id="radio_{{ radio_button | slugify }}"
+                                       name="radio_{{ radiobuttons.general_label | slugify }}"
+                                       {% if radio_button == radiobuttons.default_value %}checked="checked" {% endif %}>{{ radio_button }}
+                            </label>
+                        </td>
+                        {% if not loop.last and loop.index is divisibleby 2 %}
+                            </tr>
+                            <tr>
+                        {% endif %}
+                    {% endfor %}
+
+                    </tr>
+            {% endif %}
+        </table>
+    </div>
+    <div class="buttons_block">
+        <input type="button" id="run_algo_button" value="Run Algorithm">
+    </div>
+</form>
+<script>
+    $('#settings_caption').text('Selected algorithm ID: {{ algo_id }}, DB ID: {{ db_id }}');
+    $('#run_algo_button').on('click', function (e) {
+        e.preventDefault();
+        $('#settings_caption').text('Running algorithm...');
+        var form = $('#algo-form-id');
+        $.ajax({
+            url: form.attr('action'),
+            data: form.serialize(),
+            type: form.attr('method'),
+            success: function (response) {
+                $('#algo_result_data').html(response);
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    });
+    var person_selector = $('#person_selector_id');
+    if (person_selector) {
+        get_images();
+        person_selector.on('change', function () {
+            get_images();
+        });
+    }
+    function get_images() {
+        $.ajax({
+            url: '{{ url_for('get_person_images') }}',
+            data: {
+                'person': person_selector.val()
+            },
+            type: 'post',
+            success: function (response) {
+                $('#image_selector_html').html(response);
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    }
+</script>

@@ -7,8 +7,8 @@ import sys
 import cv2
 
 
-BRISKDetectorType = 0
-ORBDetectorType = 1
+BRISKDetectorType = 'BRISK'
+ORBDetectorType = 'ORB'
 
 
 class FeatureDetector:

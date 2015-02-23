@@ -1,0 +1,58 @@
+td {
+    padding-right: 30px;
+}
+
+#db_settings_table td {
+    padding-top: 20px;
+}
+
+body {
+    background-color: bisque;
+}
+
+#settings_caption {
+    color: blue;
+}
+
+.settings_block_caption {
+    padding-top: 15px;
+    padding-bottom: 15px;
+    font-size: 20px;
+    font-weight: 400;
+}
+
+.settings_header {
+    display: -webkit-inline-box;
+    padding-bottom: 40px;
+    background-color: darkgrey;
+}
+
+.block_header_text {
+    margin-bottom: 15px;
+}
+
+#db_settings_table {
+    padding-right: 70px;
+}
+
+#image_preview {
+    max-width: 400px;
+    max-height: 200px;
+}
+
+.buttons_block {
+    text-align: center;
+    padding-top: 15px;
+    padding-bottom: 20px;
+
+}
+
+.settings_body {
+    background-color: cadetblue;
+}
+
+#run_algo_button {
+    width: 235px;
+    height: 90px;
+    font-size: 26px;
+}

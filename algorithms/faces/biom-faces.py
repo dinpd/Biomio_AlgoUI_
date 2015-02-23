@@ -12,7 +12,7 @@ from tornado_json.application import Application as ApiApplication
 
 import biom.faces as fs
 from hashing.hash_test import lshash_test, nearpy_test
-from hashing.nearpy_hash import NearPyHash
+# from hashing.nearpy_hash import NearPyHash
 
 define("ws_port", default=8888, help="run on the given poort", type=int)
 define("api_port", default=9999, help="run on the given poort", type=int)

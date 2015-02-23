@@ -1,19 +1,17 @@
-from algorithms.features.classifiers import CascadeROIDetector
-from algorithms.cvtools.visualization import (showClusters, showNumpyImage, showKeypoints,
-                                              drawLine, drawClusters)
 from algorithms.features.detectors import (BRISKDetector, ORBDetector,
                                            BRISKDetectorSettings, ORBDetectorSettings)
 from algorithms.features.classifiers import (getROIImage,
                                              RectsIntersect, RectsFiltering)
 from algorithms.recognition.features import (FeatureDetector,
                                              BRISKDetectorType, ORBDetectorType)
+from algorithms.cvtools.visualization import showClusters, drawLine
 from algorithms.features.matchers import FlannMatcher
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
-from lshash import LSHash
-from algorithms.hashing.nearpy_hash import NearPyHash
+# from algorithms.hashing.nearpy_hash import NearPyHash
 from algorithms.clustering.forel import FOREL
 from algorithms.clustering.kmeans import KMeans
 import logger
+import numpy
 import os
 
 
@@ -47,7 +45,8 @@ def identifying(fn):
 def verifying(fn):
     def wrapped(self, data):
         logger.logger.debug("Verifying...")
-        res = None
+        self._log = ""
+        res = False
         if self.data_detect(data):
             if data is not None:
                 res = fn(self, data)
@@ -412,7 +411,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
     def update_hash(self, data):
         del data['data']
-        del data['roi']
+        # del data['roi']
         del data['keypoints']
         del data['descriptors']
         self._hash.append(data)
@@ -459,24 +458,33 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                                             good.append(self._etalon[index][m.queryIdx])
                                             good.append(data['clusters'][index][n.queryIdx])
                 self._etalon[index] = listToNumpy_ndarray(good)
+            local_clusters = []
+            for cl_set in self._etalon:
+                cl = dict()
+                cl['center'] = (0, 0)
+                cl['items'] = cl_set
+                local_clusters.append(cl)
+            showClusters(local_clusters, data['roi'])
 
     def importSources(self, source):
-        # logger.logger.debug(self._etalon)
         self._etalon = []
-        logger.logger.debug(source)
         etalon = source['etalon']
-        for i in range(0, len(etalon.keys())):
-            cluster = etalon.get(unicode(str(i)))
-            c_etalon = []
-            for j in range(0, len(cluster.keys())):
-                descriptor = cluster.get(unicode(str(j)))
+        logger.logger.debug("Database loading started...")
+        for j in range(0, len(etalon.keys())):
+            self._etalon.append([])
+        for c_num, cluster in etalon.iteritems():
+            etalon_cluster = []
+            for k in range(0, len(cluster.keys())):
+                etalon_cluster.append([])
+            for d_num, descriptor in cluster.iteritems():
                 desc = []
-                for k in range(0, len(descriptor.keys())):
-                    element = descriptor.get(unicode(str(k)))
-                    desc.append(int(element))
-                c_etalon.append(desc)
-            self._etalon.append(c_etalon)
-        logger.logger.debug(self._etalon)
+                for i in range(0, len(descriptor.keys())):
+                    desc.append([])
+                for e_num, element in descriptor.iteritems():
+                    desc[int(e_num)] = numpy.uint8(element)
+                etalon_cluster[int(d_num)] = listToNumpy_ndarray(desc)
+            self._etalon[int(c_num) - 1] = listToNumpy_ndarray(etalon_cluster)
+        logger.logger.debug("Database loading finished.")
 
     def exportSources(self):
         sources = dict()
@@ -498,6 +506,47 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
     def detect(self, data):
         if self.data_detect(data):
             data['clustering'] = drawClusters(data['true_clusters'], data['roi'])
+
+    def importSettings(self, settings):
+        info = dict()
+        detector = settings.get('Detector Settings', dict())
+        if settings.get('Detector Type') == 'BRISK':
+            self.kodsettings.detector_type = BRISKDetectorType
+            self.kodsettings.brisk_settings.thresh = detector['Thresh']
+            self.kodsettings.brisk_settings.octaves = detector['Octaves']
+            self.kodsettings.brisk_settings.patternScale = detector['Pattern Scale']
+            info['Detector Settings'] = settings
+        elif settings.get('Detector Type') == 'ORB':
+            self.kodsettings.detector_type = ORBDetectorType
+            self.kodsettings.orb_settings.features = detector['Number of features']
+            self.kodsettings.orb_settings.scaleFactor = detector['Scale Factor']
+            self.kodsettings.orb_settings.nlevels = detector['Number of levels']
+
+    def exportSettings(self):
+        info = dict()
+        info['Database Size'] = str(len(self._hash)) + " images"
+        settings = dict()
+        if self.kodsettings.detector_type == BRISKDetectorType:
+            info['Detector Type'] = 'BRISK'
+            settings['Thresh'] = self.kodsettings.brisk_settings.thresh
+            settings['Octaves'] = self.kodsettings.brisk_settings.octaves
+            settings['Pattern Scale'] = self.kodsettings.brisk_settings.patternScale
+        elif self.kodsettings.detector_type == ORBDetectorType:
+            info['Detector Type'] = 'ORB'
+            settings['Number of features'] = self.kodsettings.orb_settings.features
+            settings['Scale Factor'] = self.kodsettings.orb_settings.scaleFactor
+            settings['Number of levels'] = self.kodsettings.orb_settings.nlevels
+        info['Detector Settings'] = settings
+        face_cascade = dict()
+        face_cascade['Cascades'] = self._cascadeROI.cascades()
+        face_settings = dict()
+        face_settings['Scale Factor'] = self._cascadeROI.classifierSettings.scaleFactor
+        face_settings['Minimum Neighbors'] = self._cascadeROI.classifierSettings.minNeighbors
+        face_settings['Minimum Size'] = self._cascadeROI.classifierSettings.minSize
+        face_cascade['Settings'] = face_settings
+        info['Face Cascade Detector'] = face_cascade
+        info['Database Source'] = "Extended Yale Face Database B. Person Yale12"
+        return info
 
     @verifying
     def verify(self, data):
@@ -602,16 +651,19 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         # ROI cutting
         lefteye = (rect[0] + rect[3], rect[1] + rect[3] / 2)
         righteye = (rect[0] + rect[2] - rect[3], rect[1] + rect[3] / 2)
+        centereye = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, lefteye[1] + (righteye[0] - lefteye[0]) / 2)
         center = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, rect[1] + 2 * rect[3])
-        # out = drawLine(data['roi'], (lefteye[0], lefteye[1], righteye[0], righteye[1]), (255, 0, 0))
-        # out = drawLine(out, (lefteye[0], lefteye[1], center[0], center[1]), (255, 0, 0))
-        # out = drawLine(out, (righteye[0], righteye[1], center[0], center[1]), (255, 0, 0))
-        #     drawImage(out)
-        centers = [lefteye, righteye, center]
+        out = drawLine(data['roi'], (lefteye[0], lefteye[1], centereye[0], centereye[1]), (255, 0, 0))
+        out = drawLine(out, (centereye[0], centereye[1], righteye[0], righteye[1]), (255, 0, 0))
+        out = drawLine(out, (lefteye[0], lefteye[1], center[0], center[1]), (255, 0, 0))
+        out = drawLine(out, (righteye[0], righteye[1], center[0], center[1]), (255, 0, 0))
+            # drawImage(out)
+        centers = [lefteye, righteye, centereye, center]
         self.filter_keypoints(data)
 
         clusters = KMeans(data['keypoints'], 0, centers)
-        # showClusters(clusters, out)
+        # clusters = FOREL(obj['keypoints'], 40)
+        showClusters(clusters, out)
         data['true_clusters'] = clusters
         descriptors = []
         for cluster in clusters:

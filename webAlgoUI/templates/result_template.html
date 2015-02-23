@@ -1,0 +1,18 @@
+<div>
+    <p>Image that was selected for test:</p>
+    <img id="image_preview" src="{{ url_for('static', filename='media_images/') }}{{ person }}/{{ image }}">
+</div>
+<div>
+    <p>Result: {{ algo_result.result }}</p>
+    <p>Algorithm result log: </p>
+    <p>{{ algo_result.log | safe }}</p>
+</div>
+<script>
+    var settings_caption = $('#settings_caption');
+    settings_caption.text('Algorithm result: ');
+    if('{{ algo_result.result }}' == 'True'){
+        settings_caption.text(settings_caption.text() + 'Verification succeeded!');
+    }else{
+        settings_caption.text(settings_caption.text() + 'Verification result is False');
+    }
+</script>
