@@ -5,13 +5,15 @@ from algorithms.features.classifiers import CascadeClassifierSettings
 from algorithms.recognition.detcreator import (DetectorCreator,
                                                ClustersObjectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
+from algorithms.cvtools.system import saveNumpyImage
 from algorithms.imgobj import loadImageObject
-
+import time
 import os
 
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 CASCADE_PATH = os.path.join(APP_ROOT, '../../algorithms/data/')
+MEDIA_PATH = os.path.join(APP_ROOT, '../../webAlgoUI/static/out')
 
 VerificationAlgorithm = {'name': 'Keypoints Verification Algorithm',
                          'pk': 0}
@@ -105,6 +107,10 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
         data = loadImageObject(settings['data'])
         result = dict()
         result['result'] = self._keysrecg_detector.verify(data)
-        result['image'] = data['visualize']
+        if not os.path.exists(MEDIA_PATH):
+            os.mkdir(MEDIA_PATH)
+        path = os.path.join(MEDIA_PATH, "image" + str(int(round(time.time() * 1000))) + ".png")
+        if saveNumpyImage(path, data['visualize']):
+            result['image'] = path
         result['log'] = self._keysrecg_detector.log()
         return result
