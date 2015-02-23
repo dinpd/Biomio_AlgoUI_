@@ -658,7 +658,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         out = drawLine(out, (centereye[0], centereye[1], righteye[0], righteye[1]), (255, 0, 0))
         out = drawLine(out, (lefteye[0], lefteye[1], centernose[0], centernose[1]), (255, 0, 0))
         out = drawLine(out, (righteye[0], righteye[1], centernose[0], centernose[1]), (255, 0, 0))
-            # drawImage(out)
+        # drawImage(out)
         centers = [lefteye, righteye, centereye, centernose, mouth]
         self.filter_keypoints(data)
 
@@ -671,6 +671,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             desc = detector.computeImage(data['roi'], cluster['items'])
             descriptors.append(desc['descriptors'])
         data['clusters'] = descriptors
+        data['visualize'] = drawClusters(clusters, data['roi'])
         return True
 
     def filter_keypoints(self, data):

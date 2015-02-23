@@ -102,7 +102,9 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
             error['type'] = '010'
             error['settings_key'] = 'max_neigh'
             return error
+        data = loadImageObject(settings['data'])
         result = dict()
-        result['result'] = self._keysrecg_detector.verify(loadImageObject(settings['data']))
+        result['result'] = self._keysrecg_detector.verify(data)
+        result['image'] = data['visualize']
         result['log'] = self._keysrecg_detector.log()
         return result
