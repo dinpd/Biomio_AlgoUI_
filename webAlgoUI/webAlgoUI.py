@@ -100,7 +100,3 @@ def _slugify(string):
         return ""
     return slugify(string)
 
-
-if __name__ == '__main__':
-    app.debug = True
-    app.run()

@@ -1,4 +1,6 @@
-#Required debian packages before installation - apt-get install gfortran libopenblas-dev liblapack-dev freetype* libpng-dev
+# Required debian packages before installation - apt-get install gfortran libopenblas-dev liblapack-dev freetype* libpng-dev
+# OpenCV follow this manual https://medium.com/@manuganji/installation-of-opencv-numpy-scipy-inside-a-virtualenv-bf4d82220313
+#
 Flask==0.10.1
 Yapsy==1.10.423
 numpy==1.9.1
