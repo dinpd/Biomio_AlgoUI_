@@ -4,7 +4,7 @@ from algorithms.features.classifiers import (getROIImage,
                                              RectsIntersect, RectsFiltering)
 from algorithms.recognition.features import (FeatureDetector,
                                              BRISKDetectorType, ORBDetectorType)
-from algorithms.cvtools.visualization import showClusters, drawLine
+from algorithms.cvtools.visualization import (showClusters, drawLine, drawClusters)
 from algorithms.features.matchers import FlannMatcher
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
 # from algorithms.hashing.nearpy_hash import NearPyHash
@@ -651,19 +651,20 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         # ROI cutting
         lefteye = (rect[0] + rect[3], rect[1] + rect[3] / 2)
         righteye = (rect[0] + rect[2] - rect[3], rect[1] + rect[3] / 2)
-        centereye = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, lefteye[1] + (righteye[0] - lefteye[0]) / 2)
-        center = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, rect[1] + 2 * rect[3])
+        centereye = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, lefteye[1] + (righteye[1] - lefteye[1]) / 2)
+        centernose = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, rect[1] + 2 * rect[3])
+        mouth = (centernose[0], centernose[1] + rect[3])
         out = drawLine(data['roi'], (lefteye[0], lefteye[1], centereye[0], centereye[1]), (255, 0, 0))
         out = drawLine(out, (centereye[0], centereye[1], righteye[0], righteye[1]), (255, 0, 0))
-        out = drawLine(out, (lefteye[0], lefteye[1], center[0], center[1]), (255, 0, 0))
-        out = drawLine(out, (righteye[0], righteye[1], center[0], center[1]), (255, 0, 0))
+        out = drawLine(out, (lefteye[0], lefteye[1], centernose[0], centernose[1]), (255, 0, 0))
+        out = drawLine(out, (righteye[0], righteye[1], centernose[0], centernose[1]), (255, 0, 0))
             # drawImage(out)
-        centers = [lefteye, righteye, centereye, center]
+        centers = [lefteye, righteye, centereye, centernose, mouth]
         self.filter_keypoints(data)
 
         clusters = KMeans(data['keypoints'], 0, centers)
         # clusters = FOREL(obj['keypoints'], 40)
-        showClusters(clusters, out)
+        # showClusters(clusters, out)
         data['true_clusters'] = clusters
         descriptors = []
         for cluster in clusters:
