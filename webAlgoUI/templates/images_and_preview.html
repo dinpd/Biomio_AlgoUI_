@@ -1,5 +1,5 @@
 <label for="image_selector_id"> Select image to test.</label>
-<select name="image_selector" id="image_selector_id" size="5">
+<select name="image_selector" id="image_selector_id" size="10">
     {% for image in images %}
         <option value="{{ image }}"
                 {% if loop.index == 1 %}selected="selected"{% endif %}>{{ image }}</option>

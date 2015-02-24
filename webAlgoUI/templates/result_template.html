@@ -3,6 +3,10 @@
     <img id="image_preview" src="{{ url_for('static', filename='media_images/') }}{{ person }}/{{ image }}">
 </div>
 <div>
+    <p>Result image:</p>
+    <img id="image_preview" src="{{ url_for('static', filename='out/') }}/{{ result_image }}">
+</div>
+<div>
     <p>Result: {{ algo_result.result }}</p>
     <p>Algorithm result log: </p>
     <p>{{ algo_result.log | safe }}</p>

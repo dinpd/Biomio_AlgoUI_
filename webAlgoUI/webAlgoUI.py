@@ -46,8 +46,9 @@ def run_algorithm(algo_id, db_id):
                 algo_settings.update({key: value})
     algo_result = algorithms_interface.apply_algorithm(algo_id, algo_settings)
     algo_result.update({'log': algo_result.get('log').replace('\n', '<br>')})
+    result_image = algo_result.get('image', '').split('/')[-1]
     return render_template('result_template.html', person=form['person_selector'], image=form['image_selector'],
-                           algo_result=algo_result)
+                           algo_result=algo_result, result_image=result_image)
 
 
 @app.route('/', methods=['POST'])
@@ -60,6 +61,7 @@ def show_algo_properties():
     db_id = int(request.form['db_id'])
     algo_settings = algorithms_interface.get_settings_template(algo_id)
     print algo_settings
+    print algorithms_interface.get_database_settings(db_id)
     return render_template('algo_db_settings.html', algo_id=algo_id, db_id=db_id,
                            db_settings=algorithms_interface.get_database_settings(db_id),
                            selects=algo_settings.get('selects', None), inputs=algo_settings.get('inputs', None),
