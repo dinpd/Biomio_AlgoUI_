@@ -3,7 +3,7 @@ import sys
 from tools import distance, mass_center
 
 
-def KMeans(items, cluster_count, init_centers=[]):
+def KMeans(items, cluster_count, init_centers=[], max_distance=0):
     clusters = []
     cents = []
     currs = []
@@ -57,8 +57,12 @@ def KMeans(items, cluster_count, init_centers=[]):
         currs = []
         for cluster in clusters:
             c = mass_center(cluster['items'])
-            currs.append(c)
-            cluster['center'] = c
-            news.append(cluster)
+            if (max_distance > 0) and (distance(c, cluster['center']) < max_distance):
+                currs.append(c)
+                cluster['center'] = c
+                news.append(cluster)
+            else:
+                currs.append(cluster['center'])
+                news.append(cluster)
         clusters = news
     return clusters

@@ -64,7 +64,7 @@ class ImageManager(QObject):
     def save_image(self, filename, i):
         image = self._images[i]
         if image is not None:
-            saveImage(filename, image.data())
+            saveNumpyImage(filename, image.data())
 
     def get_view(self):
         return self._view

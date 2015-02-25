@@ -423,8 +423,8 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             for index in range(0, len(self._etalon)):
                 et_cluster = self._etalon[index]
                 dt_cluster = data['clusters'][index]
-                matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=2)
-                matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=2)
+                matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=3)
+                matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=3)
 
                 good = []
                 # for v in matches:
@@ -458,13 +458,13 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                                             good.append(self._etalon[index][m.queryIdx])
                                             good.append(data['clusters'][index][n.queryIdx])
                 self._etalon[index] = listToNumpy_ndarray(good)
-            local_clusters = []
-            for cl_set in self._etalon:
-                cl = dict()
-                cl['center'] = (0, 0)
-                cl['items'] = cl_set
-                local_clusters.append(cl)
-            showClusters(local_clusters, data['roi'])
+            # local_clusters = []
+            # for cl_set in self._etalon:
+            #     cl = dict()
+            #     cl['center'] = (0, 0)
+            #     cl['items'] = cl_set
+            #     local_clusters.append(cl)
+            # showClusters(local_clusters, data['roi'])
 
     def importSources(self, source):
         self._etalon = []
@@ -600,8 +600,8 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         for index in range(0, len(self._etalon)):
             et_cluster = self._etalon[index]
             dt_cluster = data['clusters'][index]
-            matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=2)
-            matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=2)
+            matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=3)
+            matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=3)
             ms = []
             # for v in matches:
             #     if len(v) >= 1:
@@ -653,18 +653,21 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         righteye = (rect[0] + rect[2] - rect[3], rect[1] + rect[3] / 2)
         centereye = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, lefteye[1] + (righteye[1] - lefteye[1]) / 2)
         centernose = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, rect[1] + 2 * rect[3])
-        mouth = (centernose[0], centernose[1] + rect[3])
-        out = drawLine(data['roi'], (lefteye[0], lefteye[1], centereye[0], centereye[1]), (255, 0, 0))
-        out = drawLine(out, (centereye[0], centereye[1], righteye[0], righteye[1]), (255, 0, 0))
-        out = drawLine(out, (lefteye[0], lefteye[1], centernose[0], centernose[1]), (255, 0, 0))
+        centermouth = (centernose[0], centernose[1] + rect[3])
+        leftmouth = (lefteye[0], centermouth[1])
+        rightmouth = (righteye[0], centermouth[1])
+        out = drawLine(data['roi'], (lefteye[0], lefteye[1], centernose[0], centernose[1]), (255, 0, 0))
+        out = drawLine(out, (centereye[0], centereye[1], centernose[0], centernose[1]), (255, 0, 0))
         out = drawLine(out, (righteye[0], righteye[1], centernose[0], centernose[1]), (255, 0, 0))
-            # drawImage(out)
-        centers = [lefteye, righteye, centereye, centernose, mouth]
+        out = drawLine(out, (centermouth[0], centermouth[1], centernose[0], centernose[1]), (255, 0, 0))
+        out = drawLine(out, (leftmouth[0], leftmouth[1], centernose[0], centernose[1]), (255, 0, 0))
+        out = drawLine(out, (rightmouth[0], rightmouth[1], centernose[0], centernose[1]), (255, 0, 0))
+        centers = [lefteye, righteye, centereye, centernose, leftmouth, rightmouth]
         self.filter_keypoints(data)
 
-        clusters = KMeans(data['keypoints'], 0, centers)
+        clusters = KMeans(data['keypoints'], 0, centers, 3)
         # clusters = FOREL(obj['keypoints'], 40)
-        # showClusters(clusters, out)
+        showClusters(clusters, out)
         data['true_clusters'] = clusters
         descriptors = []
         for cluster in clusters:
