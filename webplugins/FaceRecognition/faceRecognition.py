@@ -109,8 +109,9 @@ class FaceRecognitionPlugin(IAlgorithmPlugin):
         result['result'] = self._keysrecg_detector.verify(data)
         if not os.path.exists(MEDIA_PATH):
             os.mkdir(MEDIA_PATH)
-        path = os.path.join(MEDIA_PATH, "image" + str(int(round(time.time() * 1000))) + ".png")
+        img = "image" + str(int(round(time.time() * 1000))) + ".png"
+        path = os.path.join(MEDIA_PATH, img)
         if saveNumpyImage(path, data['visualize']):
-            result['image'] = path
+            result['image'] = img
         result['log'] = self._keysrecg_detector.log()
         return result
