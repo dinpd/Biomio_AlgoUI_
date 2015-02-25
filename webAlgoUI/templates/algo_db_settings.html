@@ -5,27 +5,49 @@
 
     <div class="settings_header">
         <table id="db_settings_table">
-            <tr>
-                <td>Detector type:</td>
-                <td>{{ db_settings.get('Detector Type') }}</td>
-            </tr>
-            <tr>
-                <td>Detector Settings:</td>
-                {% with detector_settings=db_settings.get('Detector Settings') %}
-                    <td>
-                        <table>
-                            {% for detector_settings_key in detector_settings.keys() %}
-                                <tr>
-                                    <td>{{ detector_settings_key }}:</td>
-                                    <td>{{ detector_settings.get(detector_settings_key) }}</td>
-                                </tr>
-                            {% endfor %}
-                        </table>
-                    </td>
-                {% endwith %}
-            </tr>
+
+            {% for key in db_settings.keys() %}
+                <tr>
+                    <td>{{ key }}</td>
+                    {% with db_settings_value=db_settings.get(key) %}
+                        {% if db_settings_value is mapping %}
+                            <td>
+                                <table>
+                                    {% for db_set_value_key in db_settings_value.keys() %}
+                                        <tr>
+                                            <td>{{ db_set_value_key }}:</td>
+                                            {% with db_set_value=db_settings_value.get(db_set_value_key) %}
+                                                {% if db_set_value is mapping %}
+                                                    <td>
+                                                        <table>
+                                                            {% for db_set_key in db_set_value.keys() %}
+                                                                <tr>
+                                                                    <td>{{ db_set_key }}:</td>
+                                                                    <td>{{ db_set_value.get(db_set_key) }}</td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                        </table>
+                                                    </td>
+                                                {% elif db_set_value is iterable %}
+                                                    <td>{{ db_set_value|join(', ') }}</td>
+                                                {% else %}
+                                                    <td>{{ db_set_value }}</td>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+                            </td>
+                        {% elif db_settings_value is iterable and db_settings_value is not string%}
+                            <td>{{ db_settings_value|join(', ') }}</td>
+                        {% else %}
+                            <td>{{ db_settings_value }}</td>
+                        {% endif %}
+                    {% endwith %}
+                </tr>
+            {% endfor %}
         </table>
-        {% if settings_parameters is defined %}
+        <div>{% if settings_parameters is defined %}
             <label for="person_selector_id"> Select person with images.</label>
             <select name="person_selector" id="person_selector_id">
                 {% for person in persons %}
@@ -34,7 +56,8 @@
                 {% endfor %}
             </select>
             <div id="image_selector_html"></div>
-        {% endif %}
+        {% endif %}</div>
+
     </div>
     <p class="block_header_text">---=== Algorithm Settings ===---</p>
 

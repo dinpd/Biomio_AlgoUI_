@@ -22,7 +22,7 @@ body {
 }
 
 .settings_header {
-    display: -webkit-inline-box;
+    display: inline-block;
     padding-bottom: 40px;
     background-color: darkgrey;
 }
