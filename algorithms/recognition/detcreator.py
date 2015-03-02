@@ -46,7 +46,7 @@ class DetectorCreator:
             detector = ObjectsMatchingDetector()
         elif self._type == ClustersObjectMatching:
             detector = ClustersMatchingDetector()
-        detector.setUseTemplate(True)
+        detector.setUseTemplate(False)
         detector._cascadeROI = self._classifiers[FaceCascadeClassifier]
         detector._eyeROI = self._classifiers[EyesCascadeClassifier]
         return detector

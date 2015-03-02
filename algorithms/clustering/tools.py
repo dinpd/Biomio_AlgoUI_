@@ -13,3 +13,12 @@ def mass_center(items):
         massaY += point[1]
     result = (massaX / len(items), massaY / len(items))
     return result
+
+
+def sort_clusters(clusters):
+    clus = []
+    for i in range(0, len(clusters), 1):
+        clus.append(dict())
+    for cluster in clusters:
+        clus[cluster['id']] = cluster
+    return clus

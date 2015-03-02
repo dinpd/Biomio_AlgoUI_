@@ -9,6 +9,7 @@ import cv2
 
 BRISKDetectorType = 'BRISK'
 ORBDetectorType = 'ORB'
+BRISKORBDetectorType = 'BRISK/ORB'
 
 
 class FeatureDetector:

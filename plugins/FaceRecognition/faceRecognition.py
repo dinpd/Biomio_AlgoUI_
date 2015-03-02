@@ -322,6 +322,12 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             detector.kodsettings.orb_settings = self.settings_dialog.orb()
             detector.detect(data)
             print data.keys()
+            imag = ImageProperties()
+            imag.title(str('ROI::' + curr.title()))
+            imag.data(data['roi'])
+            imag.height(data['roi'].shape[1])
+            imag.width(data['roi'].shape[0])
+            self._imanager.add_image(imag)
             image = ImageProperties()
             image.title(str('Keypoints Object Detector::' + curr.title()))
             image.data(data['clustering'])
@@ -342,7 +348,9 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt2.xml")
         creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt.xml")
         creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_default.xml")
-        creator.addClassifier(EyesCascadeClassifier)
+        settings = CascadeClassifierSettings()
+        settings.minNeighbors = 1
+        creator.addClassifier(EyesCascadeClassifier, settings)
         creator.addCascade(EyesCascadeClassifier, "algorithms/data/haarcascades/haarcascade_mcs_eyepair_big.xml")
         self._keysrecg_detector = creator.detector()
 
@@ -419,6 +427,10 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         verify_button.setText(_('Verify'))
         self.connect(verify_button, SIGNAL("clicked()"), self.verify)
 
+        verify_all_button = QPushButton(keysrecg_widget)
+        verify_all_button.setText(_('Verify All'))
+        self.connect(verify_all_button, SIGNAL("clicked()"), self.verify_all)
+
         import_button = QPushButton(keysrecg_widget)
         import_button.setText(_('Import'))
         self.connect(import_button, SIGNAL("clicked()"), self.import_database)
@@ -432,6 +444,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         identify_layout.addWidget(identify_button)
         identify_layout.addWidget(iden_all_button)
         identify_layout.addWidget(verify_button)
+        identify_layout.addWidget(verify_all_button)
 
         load_layout = QHBoxLayout()
         load_layout.addStretch(2)
@@ -524,6 +537,31 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
             self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
             self._keysrecg_detector.verify(data)
+
+    def verify_all(self):
+        if self._imanager:
+            rtrue = 0
+            rfalse = 0
+            for curr in self._imanager.images():
+                logger.debug(curr.path())
+                data = {
+                    'path': curr.path(),
+                    'name': curr.title(),
+                    'data': curr.data()
+                }
+                self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
+                self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
+                self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
+                self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+                res = self._keysrecg_detector.verify(data)
+                if res == ("yaleB12" == os.path.split(os.path.split(curr.path())[0])[1]):
+                    rtrue += 1
+                else:
+                    rfalse += 1
+            logger.debug("Positive verification: " + str(rtrue) + "\t"
+                         + str((rtrue / (1.0 * (rtrue + rfalse))) * 100))
+            logger.debug("Negative verification: " + str(rfalse) + "\t"
+                         + str((rfalse / (1.0 * (rtrue + rfalse))) * 100))
 
     def export_database(self):
         source = self._keysrecg_detector.exportSources()

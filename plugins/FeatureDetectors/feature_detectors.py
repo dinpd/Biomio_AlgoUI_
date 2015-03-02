@@ -102,6 +102,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
             fea['data'] = curr.data()
             keypoints = detector.detect(curr.data())
             fea['keypoints'] = keypoints
+            logger.debug(len(keypoints))
             image.data(drawKeypoints(fea))
             image.height(curr.height())
             image.width(curr.width())
@@ -156,6 +157,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
             fea['data'] = curr.data()
             keypoints, descriptors = detector.detectAndCompute(curr.data())
             fea['keypoints'] = keypoints
+            logger.debug(len(keypoints))
             fea['descriptors'] = descriptors
             image.data(drawKeypoints(fea))
             image.height(curr.height())

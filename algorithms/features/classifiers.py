@@ -32,7 +32,7 @@ def getROIImage(image, rectangle):
 class CascadeClassifierSettings:
     scaleFactor = 1.1
     minNeighbors = 2
-    minSize = (10, 10)
+    minSize = (30, 30)
     flags = cv2.cv.CV_HAAR_SCALE_IMAGE
 
 
@@ -83,7 +83,7 @@ class CascadeROIDetector:
 
     def detectAndJoin(self, image, as_list=False, algorithm=RectsUnion):
         rects = self.detect(image, as_list)
-        if len(rects) is 0:
+        if len(rects) == 0:
             logger.debug("ROI is not found for image")
         return self.joinRectangles(rects, algorithm)
 

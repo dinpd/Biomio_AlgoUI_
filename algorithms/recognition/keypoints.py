@@ -4,7 +4,8 @@ from algorithms.features.classifiers import (getROIImage,
                                              RectsIntersect, RectsFiltering)
 from algorithms.recognition.features import (FeatureDetector,
                                              BRISKDetectorType, ORBDetectorType)
-from algorithms.cvtools.visualization import (showClusters, drawLine, drawClusters)
+from algorithms.cvtools.system import saveNumpyImage
+from algorithms.cvtools.visualization import (showClusters, showNumpyImage, drawLine, drawClusters, drawKeypoints)
 from algorithms.features.matchers import FlannMatcher
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
 # from algorithms.hashing.nearpy_hash import NearPyHash
@@ -28,6 +29,7 @@ class KODSettings:
     detector_type = BRISKDetectorType
     brisk_settings = BRISKDetectorSettings()
     orb_settings = ORBDetectorSettings()
+    probability = 20
 
 
 def identifying(fn):
@@ -101,9 +103,10 @@ class KeypointsObjectDetector:
     def data_detect(self, data):
         # ROI detection
         rect = self._cascadeROI.detectAndJoin(data['data'], False, RectsFiltering)
+        if len(rect) <= 0:
+            return False
         # ROI cutting
         data['roi'] = getROIImage(data['data'], rect)
-        # showNumpyImage(data['roi'])
         # Keypoints detection
         detector = FeatureDetector()
         if self.kodsettings.detector_type is BRISKDetectorType:
@@ -116,7 +119,11 @@ class KeypointsObjectDetector:
                                        self.kodsettings.orb_settings.scaleFactor,
                                        self.kodsettings.orb_settings.nlevels)
             detector.set_detector(orb_detector)
-        obj = detector.detectAndComputeImage(data['roi'])
+        try:
+            obj = detector.detectAndComputeImage(data['roi'])
+        except Exception as err:
+            logger.logger.debug(err.message)
+            return False
         data['keypoints'] = obj['keypoints']
         data['descriptors'] = obj['descriptors']
         if data['descriptors'] is None:
@@ -415,7 +422,10 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         del data['keypoints']
         del data['descriptors']
         self._hash.append(data)
-        ##############################################
+        if self._use_etalon:
+            self.update_hash_etalon(data)
+
+    def update_hash_etalon(self, data):
         if len(self._etalon) == 0:
             self._etalon = data['clusters']
         else:
@@ -423,48 +433,53 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             for index in range(0, len(self._etalon)):
                 et_cluster = self._etalon[index]
                 dt_cluster = data['clusters'][index]
-                matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=3)
-                matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=3)
+                if et_cluster is None or len(et_cluster) == 0:
+                    self._etalon[index] = et_cluster
+                elif dt_cluster is None or len(dt_cluster) == 0:
+                    self._etalon[index] = et_cluster
+                else:
+                    matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=3)
+                    matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=3)
 
-                good = []
-                # for v in matches:
-                #     if len(v) >= 1:
-                    # if len(v) >= 2:
-                    #     m = v[0]
-                    #     n = v[1]
-                    #     good.append(self.etalon[m.queryIdx])
-                    #     if m.distance < self.kodsettings.neighbours_distance:
-                    #         good.append(self.etalon[m.queryIdx])
-                    #     good.append(data['descriptors'][m.queryIdx])
-                    #     good.append(self.etalon[m.trainIdx])
-                    #
-                    #     if m.distance < self.kodsettings.neighbours_distance * n.distance:
-                    #         good.append(self.etalon[m.queryIdx])
-                    #     else:
-                    #         good.append(self.etalon[m.queryIdx])
-                    #         good.append(data['descriptors'][m.trainIdx])
-                    #         good.append(data['descriptors'][m.queryIdx])
-                    #         good.append(self.etalon[m.trainIdx])
+                    good = []
+                    # for v in matches:
+                    #     if len(v) >= 1:
+                        # if len(v) >= 2:
+                        #     m = v[0]
+                        #     n = v[1]
+                        #     good.append(self.etalon[m.queryIdx])
+                        #     if m.distance < self.kodsettings.neighbours_distance:
+                        #         good.append(self.etalon[m.queryIdx])
+                        #     good.append(data['descriptors'][m.queryIdx])
+                        #     good.append(self.etalon[m.trainIdx])
+                        #
+                        #     if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                        #         good.append(self.etalon[m.queryIdx])
+                        #     else:
+                        #         good.append(self.etalon[m.queryIdx])
+                        #         good.append(data['descriptors'][m.trainIdx])
+                        #         good.append(data['descriptors'][m.queryIdx])
+                        #         good.append(self.etalon[m.trainIdx])
 
-                for v in matches1:
-                    if len(v) >= 1:
-                        for m in v:
-                        # m = v[0]
-                            for c in matches2:
-                                if len(c) >= 1:
-                                    for n in c:
-                                        # n = c[0]
-                                        if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
-                                            good.append(self._etalon[index][m.queryIdx])
-                                            good.append(data['clusters'][index][n.queryIdx])
-                self._etalon[index] = listToNumpy_ndarray(good)
-            # local_clusters = []
-            # for cl_set in self._etalon:
-            #     cl = dict()
-            #     cl['center'] = (0, 0)
-            #     cl['items'] = cl_set
-            #     local_clusters.append(cl)
-            # showClusters(local_clusters, data['roi'])
+                    for v in matches1:
+                        if len(v) >= 1:
+                            for m in v:
+                            # m = v[0]
+                                for c in matches2:
+                                    if len(c) >= 1:
+                                        for n in c:
+                                            # n = c[0]
+                                            if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+                                                good.append(et_cluster[m.queryIdx])
+                                                good.append(dt_cluster[m.trainIdx])
+                    self._etalon[index] = listToNumpy_ndarray(good)
+        print "=========================="
+        for etalon in self._etalon:
+            if etalon is not None:
+                print len(etalon)
+            else:
+                print 0
+        print "=========================="
 
     def importSources(self, source):
         self._etalon = []
@@ -561,29 +576,42 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         self._log += "Test: " + data['path'] + "\n"
         for d in self._hash:
             res = []
-            logger.logger.debug("Source: " + d['path'])
+            # logger.logger.debug("Source: " + d['path'])
             self._log += "Source: " + d['path'] + "\n"
             for i in range(0, len(d['clusters'])):
                 test = data['clusters'][i]
                 source = d['clusters'][i]
-                matches = matcher.knnMatch(test, source, k=1)
-
-                ms = []
-                for v in matches:
-                    if len(v) >= 1:
-                        # if len(v) >= 2:
-                        m = v[0]
-                        # n = v[1]
-                        if m.distance < self.kodsettings.neighbours_distance:
-                            ms.append(m)
-                prob = len(ms) / (1.0 * len(matches))
-                res.append(prob * 100)
-                logger.logger.debug("Part #" + str(i + 1) + ": " + str(prob * 100) + "%")
-                self._log += "Part #" + str(i + 1) + ": " + str(prob * 100) + "%" + "\n"
+                if (test is None) or (source is None):
+                    # logger.logger.debug("Part #" + str(i + 1) + ": Invalid")
+                    self._log += "Part #" + str(i + 1) + ": Invalid\n"
+                else:
+                    matches = matcher.knnMatch(test, source, k=1)
+                    dataTest = dict()
+                    dataTest['data'] = data['roi']
+                    dataTest['keypoints'] = data['true_clusters'][i]['items']
+                    saveNumpyImage("D:/Test/imageData" + str(i) + ".png", drawKeypoints(dataTest))
+                    dTest = dict()
+                    dTest['data'] = d['roi']
+                    dTest['keypoints'] = d['true_clusters'][i]['items']
+                    saveNumpyImage("D:/Test/imageD" + str(i) + ".png", drawKeypoints(dTest))
+                    ms = []
+                    for v in matches:
+                        if len(v) >= 1:
+                            # if len(v) >= 2:
+                            m = v[0]
+                            # n = v[1]
+                            if m.distance < self.kodsettings.neighbours_distance:
+                                ms.append(m)
+                    prob = len(ms) / (1.0 * len(matches))
+                    res.append(prob * 100)
+                    # logger.logger.debug("Part #" + str(i + 1) + " (Size: " + str(len(source)) + "): "
+                    #                     + str(prob * 100) + "%")
+                    self._log += "Part #" + str(i + 1) + " (Size: " + str(len(source)) + "): " + str(prob * 100) \
+                                 + "%" + "\n"
             suma = 0
             for val in res:
                 suma += val
-            logger.logger.debug("Total for image: " + str(suma / len(res)))
+            # logger.logger.debug("Total for image: " + str(suma / len(res)))
             self._log += "Total for image: " + str(suma / len(res)) + "\n"
             gres.append(suma / len(res))
         s = 0
@@ -591,56 +619,62 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             s += val
         logger.logger.debug("Total: " + str(s / len(gres)))
         self._log += "\nTotal: " + str(s / len(gres)) + "\n\n"
-        return True
+        if s / len(gres) > self.kodsettings.probability:
+            return True
+        else:
+            return False
 
     def verify_etalon(self, data):
         matcher = FlannMatcher()
         res = []
-        self._log += "Test: " + data['path'] + "\n"
-        for index in range(0, len(self._etalon)):
-            et_cluster = self._etalon[index]
-            dt_cluster = data['clusters'][index]
-            matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=3)
-            matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=3)
-            ms = []
-            # for v in matches:
-            #     if len(v) >= 1:
-                # if len(v) >= 2:
-                #     m = v[0]
-                    # n = v[1]
-                    # logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
-                    #                     + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
-                    # if m.distance < self.kodsettings.neighbours_distance:
-                    # if m.distance < self.kodsettings.neighbours_distance * n.distance:
-                    #     ms.append(m)
-                    # else:
-                    #     ms.append(m)
-                    #     ms.append(n)
-            for v in matches1:
-                if len(v) >= 1:
-                    for m in v:
-                    # m = v[0]
-                        for c in matches2:
-                            if len(c) >= 1:
-                                for n in c:
-                                    # n = c[0]
-                                    if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
-                                        ms.append(m)
-            res.append(ms)
-
         prob = 0
+        self._log += "Test: " + data['path'] + "\n"
         logger.logger.debug("Image: " + data['path'])
         logger.logger.debug("Template size: ")
         self._log += "Template size: " + "\n"
         for index in range(0, len(self._etalon)):
-            val = (len(res[index]) / (1.0 * len(self._etalon[index]))) * 100
-            logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
-                                + " Positive: " + str(len(res[index])) + " Probability: " + str(val))
-            self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))\
-                         + " Positive: " + str(len(res[index])) + " Probability: " + str(val) + "\n"
-            prob += val
-        logger.logger.debug("Probability: " + str((prob / (1.0 * len(self._etalon)))))
-        self._log += "Probability: " + str((prob / (1.0 * len(self._etalon)))) + "\n"
+            et_cluster = self._etalon[index]
+            dt_cluster = data['clusters'][index]
+            ms = []
+            if len(et_cluster) > 0 and len(dt_cluster) > 0:
+                matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=2)
+                matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=2)
+                # for v in matches:
+                #     if len(v) >= 1:
+                # if len(v) >= 2:
+                #     m = v[0]
+                # n = v[1]
+                # logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
+                #                     + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
+                # if m.distance < self.kodsettings.neighbours_distance:
+                # if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                #     ms.append(m)
+                # else:
+                #     ms.append(m)
+                #     ms.append(n)
+                for v in matches1:
+                    if len(v) >= 1:
+                        for m in v:
+                            # m = v[0]
+                            for c in matches2:
+                                if len(c) >= 1:
+                                    for n in c:
+                                        # n = c[0]
+                                        if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+                                            ms.append(m)
+                res.append(ms)
+                val = (len(res[index]) / (1.0 * len(self._etalon[index]))) * 100
+                logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
+                                    + " Positive: " + str(len(res[index])) + " Probability: " + str(val))
+                self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))\
+                             + " Positive: " + str(len(res[index])) + " Probability: " + str(val) + "\n"
+                prob += val
+            else:
+                logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
+                                    + " Invalid.")
+                self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) + " Invalid.\n"
+        logger.logger.debug("Probability: " + str((prob / (1.0 * len(res)))))
+        self._log += "Probability: " + str((prob / (1.0 * len(res)))) + "\n"
         return True
 
     def _detect(self, data, detector):
@@ -667,7 +701,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
         clusters = KMeans(data['keypoints'], 0, centers, 3)
         # clusters = FOREL(obj['keypoints'], 40)
-        showClusters(clusters, out)
+        # showClusters(clusters, out)
         data['true_clusters'] = clusters
         descriptors = []
         for cluster in clusters:
@@ -677,17 +711,11 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         return True
 
     def filter_keypoints(self, data):
-        logger.logger.debug(len(data['keypoints']))
         clusters = FOREL(data['keypoints'], 20)
-        logger.logger.debug(len(data['keypoints']))
         keypoints = []
         # cls = []
         for cluster in clusters:
-            # logger.logger.debug(cluster['items'])
-            logger.logger.debug(len(cluster['items']))
             p = len(cluster['items']) / (1.0 * len(data['keypoints']))
-            logger.logger.debug(p)
-            # logger.logger.debug(cluster['center'])
             img = dict()
             img['data'] = data['roi']
             img['keypoints'] = cluster['items']

@@ -1,6 +1,6 @@
 import random
 import sys
-from tools import distance, mass_center
+from tools import distance, mass_center, sort_clusters
 
 
 def KMeans(items, cluster_count, init_centers=[], max_distance=0):
@@ -24,6 +24,7 @@ def KMeans(items, cluster_count, init_centers=[], max_distance=0):
             cluster = dict()
             cluster['center'] = item.pt
             cluster['items'] = []
+            cluster['id'] = i
             clusters.append(cluster)
         else:
             item = init_centers[i]
@@ -31,6 +32,7 @@ def KMeans(items, cluster_count, init_centers=[], max_distance=0):
             cluster = dict()
             cluster['center'] = item
             cluster['items'] = []
+            cluster['id'] = i
             clusters.append(cluster)
 
     while cents != currs:
@@ -56,13 +58,17 @@ def KMeans(items, cluster_count, init_centers=[], max_distance=0):
         news = []
         currs = []
         for cluster in clusters:
-            c = mass_center(cluster['items'])
-            if (max_distance > 0) and (distance(c, cluster['center']) < max_distance):
-                currs.append(c)
-                cluster['center'] = c
-                news.append(cluster)
+            if len(cluster['items']) > 0:
+                c = mass_center(cluster['items'])
+                if (max_distance > 0) and (distance(c, cluster['center']) < max_distance):
+                    currs.append(c)
+                    cluster['center'] = c
+                    news.append(cluster)
+                else:
+                    currs.append(cluster['center'])
+                    news.append(cluster)
             else:
                 currs.append(cluster['center'])
                 news.append(cluster)
         clusters = news
-    return clusters
+    return sort_clusters(clusters)
