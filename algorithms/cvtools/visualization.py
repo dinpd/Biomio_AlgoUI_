@@ -116,8 +116,10 @@ def drawClusters(clusters, image):
     """
     out = image
     for cluster in clusters:
+        r = random.randint(0, 255)
+        g = random.randint(0, 255)
+        b = random.randint(0, 255)
+        cluster['color'] = str(r) + ',' + str(g) + ',' + str(b)
         out = cv2.drawKeypoints(out, cluster['items'], None,
-                                cv2.cv.Scalar(random.randint(0, 255),
-                                              random.randint(0, 255),
-                                              random.randint(0, 255)))
+                                cv2.cv.Scalar(r, g, b))
     return out

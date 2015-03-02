@@ -633,14 +633,16 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         logger.logger.debug("Template size: ")
         self._log += "Template size: " + "\n"
         for index in range(0, len(self._etalon)):
+            cluster = data['true_clusters'][index]
             val = (len(res[index]) / (1.0 * len(self._etalon[index]))) * 100
-            logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
-                                + " Positive: " + str(len(res[index])) + " Probability: " + str(val))
-            self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))\
-                         + " Positive: " + str(len(res[index])) + " Probability: " + str(val) + "\n"
+            logger.logger.debug("Cluster #" + str(index + 1) + ": Size of " + str(len(self._etalon[index]))
+                                + "descriptors. Positive: " + str(len(res[index])) + " Probability: " + str(val))
+            self._log += "<p data-color=\"" + cluster['color'] + "\">Cluster #" + str(index + 1) + ": Size of " \
+                         + str(len(self._etalon[index])) + " descriptors. Positive: " + str(len(res[index])) \
+                         + " matches. Probability: " + str(val) + "%</p>"
             prob += val
         logger.logger.debug("Probability: " + str((prob / (1.0 * len(self._etalon)))))
-        self._log += "Probability: " + str((prob / (1.0 * len(self._etalon)))) + "\n"
+        self._log += "Probability: " + str((prob / (1.0 * len(self._etalon))))
         return True
 
     def _detect(self, data, detector):
