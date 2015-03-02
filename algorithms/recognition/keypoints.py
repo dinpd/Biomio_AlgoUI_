@@ -458,13 +458,6 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                                             good.append(self._etalon[index][m.queryIdx])
                                             good.append(data['clusters'][index][n.queryIdx])
                 self._etalon[index] = listToNumpy_ndarray(good)
-            local_clusters = []
-            for cl_set in self._etalon:
-                cl = dict()
-                cl['center'] = (0, 0)
-                cl['items'] = cl_set
-                local_clusters.append(cl)
-            showClusters(local_clusters, data['roi'])
 
     def importSources(self, source):
         self._etalon = []
@@ -653,15 +646,15 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         # ROI cutting
         lefteye = (rect[0] + rect[3], rect[1] + rect[3] / 2)
         righteye = (rect[0] + rect[2] - rect[3], rect[1] + rect[3] / 2)
-        centereye = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, lefteye[1] + (righteye[1] - lefteye[1]) / 2)
+        # centereye = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, lefteye[1] + (righteye[1] - lefteye[1]) / 2)
         centernose = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, rect[1] + 2 * rect[3])
-        mouth = (centernose[0], centernose[1] + rect[3])
-        out = drawLine(data['roi'], (lefteye[0], lefteye[1], centereye[0], centereye[1]), (255, 0, 0))
-        out = drawLine(out, (centereye[0], centereye[1], righteye[0], righteye[1]), (255, 0, 0))
-        out = drawLine(out, (lefteye[0], lefteye[1], centernose[0], centernose[1]), (255, 0, 0))
-        out = drawLine(out, (righteye[0], righteye[1], centernose[0], centernose[1]), (255, 0, 0))
+        # mouth = (centernose[0], centernose[1] + rect[3])
+        # out = drawLine(data['roi'], (lefteye[0], lefteye[1], centereye[0], centereye[1]), (255, 0, 0))
+        # out = drawLine(out, (centereye[0], centereye[1], righteye[0], righteye[1]), (255, 0, 0))
+        # out = drawLine(out, (lefteye[0], lefteye[1], centernose[0], centernose[1]), (255, 0, 0))
+        # out = drawLine(out, (righteye[0], righteye[1], centernose[0], centernose[1]), (255, 0, 0))
         # drawImage(out)
-        centers = [lefteye, righteye, centereye, centernose, mouth]
+        centers = [lefteye, righteye, centernose]
         self.filter_keypoints(data)
 
         clusters = KMeans(data['keypoints'], 0, centers)
