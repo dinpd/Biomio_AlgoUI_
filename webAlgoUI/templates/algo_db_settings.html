@@ -38,7 +38,7 @@
                                     {% endfor %}
                                 </table>
                             </td>
-                        {% elif db_settings_value is iterable and db_settings_value is not string%}
+                        {% elif db_settings_value is iterable and db_settings_value is not string %}
                             <td>{{ db_settings_value|join(', ') }}</td>
                         {% else %}
                             <td>{{ db_settings_value }}</td>
@@ -176,6 +176,7 @@
             type: form.attr('method'),
             success: function (response) {
                 $('#algo_result_data').html(response);
+                setTextColor();
             },
             error: function (error) {
                 console.log(error);
@@ -203,5 +204,15 @@
                 console.log(error);
             }
         });
+    }
+
+    function setTextColor() {
+        var texts = $('#algo_result_data').find('p');
+        for (var i = 0; i < texts.length; i++) {
+            var currentP = $(texts[i]);
+            if(currentP.attr('data-color')){
+                currentP.css('color', 'rgb(' + currentP.attr('data-color') + ')');
+            }
+        }
     }
 </script>
