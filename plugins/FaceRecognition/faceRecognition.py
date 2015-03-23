@@ -14,10 +14,11 @@ from imageproperties import ImageProperties
 import algorithms.faces.biom.faces as fs
 from algorithms.cvtools.visualization import drawRectangle
 from algorithms.features.classifiers import CascadeROIDetector, getROIImage, CascadeClassifierSettings
+from algorithms.features.matchers import FlannMatcher
 from algorithms.faces.biom.utils import files_list
 from plugins.FaceRecognition.detdialog import DetectorSettingsDialog
 from algorithms.recognition.detcreator import (DetectorCreator,
-                                               ClustersObjectMatching,
+                                               ClustersObjectMatching, IntersectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
 from algorithms.imgobj import loadImageObject
 from guiqwt.config import _
@@ -335,7 +336,6 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             image.width(data['clustering'].shape[0])
             self._imanager.add_image(image)
 
-
     def init_keysrecg_algorithm(self):
         self.settings_dialog = DetectorSettingsDialog()
         self.settings_dialog.setWindowTitle(_("Keypoints Detector Settings"))
@@ -383,9 +383,16 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         self._neighBox.setMaximum(10000)
         self._neighBox.setValue(1.0)
 
+        self._probBox = QDoubleSpinBox(self._settings_box)
+        self._probBox.setSingleStep(1.0)
+        self._probBox.setMinimum(0)
+        self._probBox.setMaximum(100)
+        self._probBox.setValue(10.0)
+
         settings_layout = QFormLayout()
         settings_layout.addRow(_("Keypoints Detector Settings:"), change_button)
         settings_layout.addRow(_("Max Neighbours Distance:"), self._neighBox)
+        settings_layout.addRow(_("Min Probability:"), self._probBox)
         self._settings_box.setLayout(settings_layout)
 
         self._sources_box = QGroupBox(keysrecg_widget)
@@ -401,6 +408,9 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         add_button = QPushButton(keysrecg_widget)
         add_button.setText('Add')
         self.connect(add_button, SIGNAL("clicked()"), self.add_source)
+        add_img_button = QPushButton(keysrecg_widget)
+        add_img_button.setText('Add Images')
+        self.connect(add_img_button, SIGNAL("clicked()"), self.add_source_images)
         clear_button = QPushButton(keysrecg_widget)
         clear_button.setText(_('Clear'))
         self.connect(clear_button, SIGNAL("clicked()"), self.clear_detector)
@@ -408,6 +418,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         top_layout = QHBoxLayout()
         top_layout.addWidget(self._load_bar)
         top_layout.addWidget(add_button)
+        top_layout.addWidget(add_img_button)
         top_layout.addWidget(clear_button)
 
         sources_layout = QVBoxLayout()
@@ -463,6 +474,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
 
     def add_source(self):
         self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
+        self._keysrecg_detector.kodsettings.probability = self._probBox.value()
         filedir = QFileDialog.getExistingDirectory(None, "Select source directory", ".")
         if not filedir.isEmpty():
             logger.debug("Loading started...")
@@ -478,6 +490,29 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._load_label.setText("Loading finished.")
             self._load_bar.setValue(100)
             logger.debug("Loading finished.")
+
+    def add_source_images(self):
+        self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
+        self._keysrecg_detector.kodsettings.probability = self._probBox.value()
+        filelist = QFileDialog.getOpenFileNames(None, "Select source images", ".")
+        if not filelist.isEmpty():
+            logger.debug("Loading started...")
+            i = 0
+            for imfile in filelist:
+                i += 1
+                obj = loadImageObject(str(imfile))
+                self._keysrecg_detector.addSource(obj)
+                self._load_label.setText("Load file: " + imfile)
+                self._load_bar.setValue((i * 100) / len(filelist))
+                QCoreApplication.processEvents()
+            self._load_label.setText("Loading finished.")
+            self._load_bar.setValue(100)
+            logger.debug("Loading finished.")
+            logger.debug("Database updating...")
+            self._load_label.setText("Database updating...")
+            self._keysrecg_detector.update_database()
+            self._load_label.setText("Database updated.")
+            logger.debug("Database updated.")
 
     def clear_detector(self):
         self.init_detector()
@@ -495,6 +530,8 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
             self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
             self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            self._keysrecg_detector.kodsettings.probability = self._probBox.value()
+            self._keysrecg_detector.setUseROIDetection(True)
             self._keysrecg_detector.identify(data)
 
     def identify_all(self):
@@ -512,6 +549,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
                 self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
                 self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+                self._keysrecg_detector.kodsettings.probability = self._probBox.value()
                 res = self._keysrecg_detector.identify(data)
                 logger.debug("Result: " + os.path.split(res)[1] + "\t"
                              + os.path.split(os.path.split(curr.path())[0])[1])
@@ -536,6 +574,8 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
             self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
             self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            self._keysrecg_detector.kodsettings.probability = self._probBox.value()
+            self._keysrecg_detector.setUseROIDetection(True)
             self._keysrecg_detector.verify(data)
 
     def verify_all(self):
@@ -553,11 +593,18 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
                 self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
                 self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+                self._keysrecg_detector.kodsettings.probability = self._probBox.value()
                 res = self._keysrecg_detector.verify(data)
-                if res == ("yaleB12" == os.path.split(os.path.split(curr.path())[0])[1]):
-                    rtrue += 1
-                else:
-                    rfalse += 1
+                if res is not False:
+                    print "yaleB11" == os.path.split(os.path.split(curr.path())[0])[1]
+                    print res > self._keysrecg_detector.kodsettings.probability
+                    print self._keysrecg_detector.kodsettings.probability
+                    print res
+                    if ("yaleB11" == os.path.split(os.path.split(curr.path())[0])[1]) == \
+                            (res > self._keysrecg_detector.kodsettings.probability):
+                        rtrue += 1
+                    else:
+                        rfalse += 1
             logger.debug("Positive verification: " + str(rtrue) + "\t"
                          + str((rtrue / (1.0 * (rtrue + rfalse))) * 100))
             logger.debug("Negative verification: " + str(rfalse) + "\t"
@@ -609,6 +656,24 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         compare_dock.setVisible(False)
         self.compare_opened.connect(compare_dock.setVisible)
         compare_widget = QWidget(compare_dock)
+        self._keysett_box = QGroupBox(compare_widget)
+        self._keysett_box.setTitle(_("Settings:"))
+
+        change_button = QPushButton(compare_widget)
+        change_button.setText(_("Change"))
+        self.connect(change_button, SIGNAL("clicked()"), self.det_change)
+
+        self._compare_neighBox = QDoubleSpinBox(compare_widget)
+        self._compare_neighBox.setSingleStep(0.10)
+        self._compare_neighBox.setMinimum(0)
+        self._compare_neighBox.setMaximum(10000)
+        self._compare_neighBox.setValue(1.0)
+
+        keysett_layout = QFormLayout()
+        keysett_layout.addRow(_("Keypoints Detector: "), change_button)
+        keysett_layout.addRow(_("Max Neighbours Distance:"), self._compare_neighBox)
+        self._keysett_box.setLayout(keysett_layout)
+
         self._first_box = QGroupBox(compare_widget)
         self._first_box.setTitle(_("First Image:"))
 
@@ -648,6 +713,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         bottom_layout.addWidget(compare_button)
 
         widget_layout = QVBoxLayout()
+        widget_layout.addWidget(self._keysett_box)
         widget_layout.addWidget(self._first_box)
         widget_layout.addWidget(self._second_box)
         widget_layout.addLayout(bottom_layout)
@@ -667,12 +733,13 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._simage_edit.setText(filename)
 
     def compare(self):
-        first = ImageProperties(str(self._fimage_edit.text()))
-        first_data = {'path': first.path(), 'name': first.title(), 'data': first.data()}
-        second = ImageProperties(str(self._simage_edit.text()))
-        second_data = {'path': second.path(), 'name': second.title(), 'data': second.data()}
-        detector = KeypointsObjectDetector(NearPyHash, SpiralKeypointsVector)
-        detector.addSource(first_data)
-        detector.addSource(second_data)
-        logger.debug(first_data['keypoints'])
-        logger.debug(second_data['keypoints'])
+        if (not self._fimage_edit.text().isEmpty()) and (not self._simage_edit.text().isEmpty()):
+            first_data = loadImageObject(str(self._fimage_edit.text()))
+            second_data = loadImageObject(str(self._simage_edit.text()))
+            self._keysrecg_detector.kodsettings.neighbours_distance = self._compare_neighBox.value()
+            self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
+            self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
+            self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            self._keysrecg_detector.kodsettings.probability = self._probBox.value()
+            self._keysrecg_detector.setUseROIDetection(True)
+            res = self._keysrecg_detector.compare(first_data, second_data)
