@@ -70,7 +70,8 @@ class KeypointsObjectDetector:
         self._cascadeROI = None
         self._detector = None
         self._eyeROI = None
-        self._use_etalon = False
+        self._use_template = False
+        self._template_layer = 0
         self._use_roi = True
         self._log = ""
 
@@ -78,7 +79,10 @@ class KeypointsObjectDetector:
         return self._log
 
     def setUseTemplate(self, use):
-        self._use_etalon = use
+        self._use_template = use
+
+    def setTemplateLayer(self, layer):
+        self._template_layer = layer
 
     def setUseROIDetection(self, use):
         self._use_roi = use
@@ -92,27 +96,24 @@ class KeypointsObjectDetector:
             self.addSource(data)
 
     def importSources(self, data):
-        pass
+        logger.logger.debug("Detector cannot import sources.")
 
     def exportSources(self):
-        pass
+        logger.logger.debug("Detector cannot export sources.")
 
     @identifying
     def identify(self, data):
-        pass
+        logger.logger.debug("Detector doesn't support image identification.")
 
     @verifying
     def verify(self, data):
         logger.logger.debug("Detector doesn't support image verification.")
-        pass
 
     def detect(self, data):
         logger.logger.debug("Detector doesn't support image detection.")
-        pass
 
     def compare(self, f_imgobj, s_imgobj):
         logger.logger.debug("Detector doesn't support image comparison.")
-        pass
 
     def data_detect(self, data):
         # ROI detection
@@ -152,7 +153,7 @@ class KeypointsObjectDetector:
         return True
 
     def update_hash(self, data):
-        pass
+        logger.logger.debug("The hash does not need to be updated!")
 
     def update_database(self):
         logger.logger.debug("The database does not need to be updated!")
@@ -443,7 +444,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         del data['keypoints']
         del data['descriptors']
         self._hash.append(data)
-        if self._use_etalon:
+        if self._use_template:
             self.update_hash_etalon(data)
 
     def update_hash_etalon(self, data):
@@ -586,7 +587,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
     @verifying
     def verify(self, data):
-        if self._use_etalon:
+        if self._use_template:
             return self.verify_etalon(data)
         else:
             return self.verify_database(data)
