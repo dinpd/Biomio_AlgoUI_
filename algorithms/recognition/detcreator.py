@@ -1,7 +1,7 @@
 from algorithms.features.classifiers import CascadeClassifierSettings, CascadeROIDetector
 from algorithms.recognition.keypoints import (KeypointsObjectDetector, FeaturesMatchingDetector,
                                               SpiralKeypointsVectorDetector, ObjectsMatchingDetector,
-                                              ClustersMatchingDetector)
+                                              ClustersMatchingDetector, IntersectMatchingDetector)
 from logger import logger
 
 
@@ -14,6 +14,7 @@ FeaturesMatching = 0
 SpiralKeypointsVector = 1
 ObjectsFlannMatching = 2
 ClustersObjectMatching = 3
+IntersectMatching = 4
 
 
 class DetectorCreator:
@@ -46,7 +47,9 @@ class DetectorCreator:
             detector = ObjectsMatchingDetector()
         elif self._type == ClustersObjectMatching:
             detector = ClustersMatchingDetector()
-        detector.setUseTemplate(False)
+        elif self._type == IntersectMatching:
+            detector = IntersectMatchingDetector()
+        detector.setUseTemplate(True)
         detector._cascadeROI = self._classifiers[FaceCascadeClassifier]
         detector._eyeROI = self._classifiers[EyesCascadeClassifier]
         return detector

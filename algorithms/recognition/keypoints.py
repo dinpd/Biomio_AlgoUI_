@@ -5,14 +5,17 @@ from algorithms.features.classifiers import (getROIImage,
 from algorithms.recognition.features import (FeatureDetector,
                                              BRISKDetectorType, ORBDetectorType)
 from algorithms.cvtools.system import saveNumpyImage
-from algorithms.cvtools.visualization import (showClusters, showNumpyImage, drawLine, drawClusters, drawKeypoints)
+from algorithms.cvtools.visualization import (showClusters, showNumpyImage, showMatches,
+                                              drawLine, drawClusters, drawKeypoints)
 from algorithms.features.matchers import FlannMatcher
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
 # from algorithms.hashing.nearpy_hash import NearPyHash
 from algorithms.clustering.forel import FOREL
 from algorithms.clustering.kmeans import KMeans
+from algorithms.recognition.tools import minDistance, meanDistance, medianDistance
 import logger
 import numpy
+import sys
 import os
 
 
@@ -29,7 +32,7 @@ class KODSettings:
     detector_type = BRISKDetectorType
     brisk_settings = BRISKDetectorSettings()
     orb_settings = ORBDetectorSettings()
-    probability = 20
+    probability = 25
 
 
 def identifying(fn):
@@ -41,6 +44,7 @@ def identifying(fn):
                 res = fn(self, data)
         logger.logger.debug("Identifying finished.")
         return res
+
     return wrapped
 
 
@@ -54,6 +58,7 @@ def verifying(fn):
                 res = fn(self, data)
         logger.logger.debug("Verifying finished.")
         return res
+
     return wrapped
 
 
@@ -66,6 +71,7 @@ class KeypointsObjectDetector:
         self._detector = None
         self._eyeROI = None
         self._use_etalon = False
+        self._use_roi = True
         self._log = ""
 
     def log(self):
@@ -73,6 +79,9 @@ class KeypointsObjectDetector:
 
     def setUseTemplate(self, use):
         self._use_etalon = use
+
+    def setUseROIDetection(self, use):
+        self._use_roi = use
 
     def addSource(self, data):
         if self.data_detect(data):
@@ -98,15 +107,24 @@ class KeypointsObjectDetector:
         pass
 
     def detect(self, data):
+        logger.logger.debug("Detector doesn't support image detection.")
+        pass
+
+    def compare(self, f_imgobj, s_imgobj):
+        logger.logger.debug("Detector doesn't support image comparison.")
         pass
 
     def data_detect(self, data):
         # ROI detection
-        rect = self._cascadeROI.detectAndJoin(data['data'], False, RectsFiltering)
-        if len(rect) <= 0:
-            return False
-        # ROI cutting
-        data['roi'] = getROIImage(data['data'], rect)
+        if self._use_roi:
+            rect = self._cascadeROI.detectAndJoin(data['data'], False, RectsFiltering)
+            if len(rect) <= 0:
+                return False
+            print rect
+            # ROI cutting
+            data['roi'] = getROIImage(data['data'], rect)
+        else:
+            data['roi'] = data['data']
         # Keypoints detection
         detector = FeatureDetector()
         if self.kodsettings.detector_type is BRISKDetectorType:
@@ -131,10 +149,13 @@ class KeypointsObjectDetector:
         return self._detect(data, detector)
 
     def _detect(self, data, detector):
-        pass
+        return True
 
     def update_hash(self, data):
         pass
+
+    def update_database(self):
+        logger.logger.debug("The database does not need to be updated!")
 
 
 class FeaturesMatchingDetector(KeypointsObjectDetector):
@@ -239,7 +260,7 @@ class ObjectsMatchingDetector(KeypointsObjectDetector):
         del data['roi']
         del data['keypoints']
         self._hash.append(data)
-        ##############################################
+        # #############################################
         if len(self.etalon) == 0:
             self.etalon = data['descriptors']
         else:
@@ -250,22 +271,22 @@ class ObjectsMatchingDetector(KeypointsObjectDetector):
             good = []
             # for v in matches:
             #         if len(v) >= 1:
-                    # if len(v) >= 2:
-                    #     m = v[0]
-                    # n = v[1]
-                    # good.append(self.etalon[m.queryIdx])
-                    #     if m.distance < self.kodsettings.neighbours_distance:
-                    #         good.append(self.etalon[m.queryIdx])
-                    # good.append(data['descriptors'][m.queryIdx])
-                    # good.append(self.etalon[m.trainIdx])
-                    #
-                    # if m.distance < self.kodsettings.neighbours_distance * n.distance:
-                    #     good.append(self.etalon[m.queryIdx])
-                    # else:
-                    #     good.append(self.etalon[m.queryIdx])
-                    #     good.append(data['descriptors'][m.trainIdx])
-                    # good.append(data['descriptors'][m.queryIdx])
-                    # good.append(self.etalon[m.trainIdx])
+            # if len(v) >= 2:
+            #     m = v[0]
+            # n = v[1]
+            # good.append(self.etalon[m.queryIdx])
+            #     if m.distance < self.kodsettings.neighbours_distance:
+            #         good.append(self.etalon[m.queryIdx])
+            # good.append(data['descriptors'][m.queryIdx])
+            # good.append(self.etalon[m.trainIdx])
+            #
+            # if m.distance < self.kodsettings.neighbours_distance * n.distance:
+            #     good.append(self.etalon[m.queryIdx])
+            # else:
+            #     good.append(self.etalon[m.queryIdx])
+            #     good.append(data['descriptors'][m.trainIdx])
+            # good.append(data['descriptors'][m.queryIdx])
+            # good.append(self.etalon[m.trainIdx])
 
             for v in matches1:
                 if len(v) >= 1:
@@ -285,7 +306,7 @@ class ObjectsMatchingDetector(KeypointsObjectDetector):
         for d in self._hash:
             matches = matcher.knnMatch(d['descriptors'],
                                        data['descriptors'],
-                                        k=2)
+                                       k=2)
             good = []
             count = len(matches)
             for v in matches:
@@ -316,25 +337,25 @@ class ObjectsMatchingDetector(KeypointsObjectDetector):
         ms = []
         for v in matches:
             if len(v) >= 1:
-            # if len(v) >= 2:
+                # if len(v) >= 2:
                 m = v[0]
                 # n = v[1]
                 # logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
                 # + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
                 if m.distance < self.kodsettings.neighbours_distance:
-                # if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                    # if m.distance < self.kodsettings.neighbours_distance * n.distance:
                     ms.append(m)
-                # else:
-                #     ms.append(m)
-                #     ms.append(n)
-            # for v in matches1:
-            # if len(v) >= 1:
-            #         m = v[0]
-            #         for c in matches2:
-            #             if len(c) >= 1:
-            #                 n = c[0]
-            #                 if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
-            #                     ms.append(m)
+                    # else:
+                    # ms.append(m)
+                    #     ms.append(n)
+                    # for v in matches1:
+                    # if len(v) >= 1:
+                    #         m = v[0]
+                    #         for c in matches2:
+                    #             if len(c) >= 1:
+                    #                 n = c[0]
+                    #                 if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+                    #                     ms.append(m)
 
         logger.logger.debug("Image: " + data['path'])
         logger.logger.debug("Template size: " + str(len(self.etalon)) + " descriptors.")
@@ -443,28 +464,28 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
                     good = []
                     # for v in matches:
-                    #     if len(v) >= 1:
-                        # if len(v) >= 2:
-                        #     m = v[0]
-                        #     n = v[1]
-                        #     good.append(self.etalon[m.queryIdx])
-                        #     if m.distance < self.kodsettings.neighbours_distance:
-                        #         good.append(self.etalon[m.queryIdx])
-                        #     good.append(data['descriptors'][m.queryIdx])
-                        #     good.append(self.etalon[m.trainIdx])
-                        #
-                        #     if m.distance < self.kodsettings.neighbours_distance * n.distance:
-                        #         good.append(self.etalon[m.queryIdx])
-                        #     else:
-                        #         good.append(self.etalon[m.queryIdx])
-                        #         good.append(data['descriptors'][m.trainIdx])
-                        #         good.append(data['descriptors'][m.queryIdx])
-                        #         good.append(self.etalon[m.trainIdx])
+                    # if len(v) >= 1:
+                    # if len(v) >= 2:
+                    #     m = v[0]
+                    #     n = v[1]
+                    #     good.append(self.etalon[m.queryIdx])
+                    #     if m.distance < self.kodsettings.neighbours_distance:
+                    #         good.append(self.etalon[m.queryIdx])
+                    #     good.append(data['descriptors'][m.queryIdx])
+                    #     good.append(self.etalon[m.trainIdx])
+                    #
+                    #     if m.distance < self.kodsettings.neighbours_distance * n.distance:
+                    #         good.append(self.etalon[m.queryIdx])
+                    #     else:
+                    #         good.append(self.etalon[m.queryIdx])
+                    #         good.append(data['descriptors'][m.trainIdx])
+                    #         good.append(data['descriptors'][m.queryIdx])
+                    #         good.append(self.etalon[m.trainIdx])
 
                     for v in matches1:
                         if len(v) >= 1:
                             for m in v:
-                            # m = v[0]
+                                # m = v[0]
                                 for c in matches2:
                                     if len(c) >= 1:
                                         for n in c:
@@ -576,14 +597,14 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         self._log += "Test: " + data['path'] + "\n"
         for d in self._hash:
             res = []
-            # logger.logger.debug("Source: " + d['path'])
+            logger.logger.debug("Source: " + d['path'])
             self._log += "Source: " + d['path'] + "\n"
             for i in range(0, len(d['clusters'])):
                 test = data['clusters'][i]
                 source = d['clusters'][i]
                 if (test is None) or (source is None):
-                    # logger.logger.debug("Part #" + str(i + 1) + ": Invalid")
-                    self._log += "Part #" + str(i + 1) + ": Invalid\n"
+                    logger.logger.debug("Cluster #" + str(i + 1) + ": Invalid")
+                    self._log += "Cluster #" + str(i + 1) + ": Invalid\n"
                 else:
                     matches = matcher.knnMatch(test, source, k=1)
                     dataTest = dict()
@@ -604,14 +625,14 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                                 ms.append(m)
                     prob = len(ms) / (1.0 * len(matches))
                     res.append(prob * 100)
-                    # logger.logger.debug("Part #" + str(i + 1) + " (Size: " + str(len(source)) + "): "
-                    #                     + str(prob * 100) + "%")
-                    self._log += "Part #" + str(i + 1) + " (Size: " + str(len(source)) + "): " + str(prob * 100) \
+                    logger.logger.debug("Cluster #" + str(i + 1) + " (Size: " + str(len(source)) + "): "
+                                        + str(prob * 100) + "%")
+                    self._log += "Cluster #" + str(i + 1) + " (Size: " + str(len(source)) + "): " + str(prob * 100) \
                                  + "%" + "\n"
             suma = 0
             for val in res:
                 suma += val
-            # logger.logger.debug("Total for image: " + str(suma / len(res)))
+            logger.logger.debug("Total for image: " + str(suma / len(res)))
             self._log += "Total for image: " + str(suma / len(res)) + "\n"
             gres.append(suma / len(res))
         s = 0
@@ -619,10 +640,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             s += val
         logger.logger.debug("Total: " + str(s / len(gres)))
         self._log += "\nTotal: " + str(s / len(gres)) + "\n\n"
-        if s / len(gres) > self.kodsettings.probability:
-            return True
-        else:
-            return False
+        return s / len(gres)
 
     def verify_etalon(self, data):
         matcher = FlannMatcher()
@@ -636,11 +654,13 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             et_cluster = self._etalon[index]
             dt_cluster = data['clusters'][index]
             ms = []
+            if et_cluster is None or dt_cluster is None:
+                break
             if len(et_cluster) > 0 and len(dt_cluster) > 0:
                 matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=2)
                 matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=2)
                 # for v in matches:
-                #     if len(v) >= 1:
+                # if len(v) >= 1:
                 # if len(v) >= 2:
                 #     m = v[0]
                 # n = v[1]
@@ -666,7 +686,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                 val = (len(res[index]) / (1.0 * len(self._etalon[index]))) * 100
                 logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
                                     + " Positive: " + str(len(res[index])) + " Probability: " + str(val))
-                self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))\
+                self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) \
                              + " Positive: " + str(len(res[index])) + " Probability: " + str(val) + "\n"
                 prob += val
             else:
@@ -675,7 +695,87 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                 self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) + " Invalid.\n"
         logger.logger.debug("Probability: " + str((prob / (1.0 * len(res)))))
         self._log += "Probability: " + str((prob / (1.0 * len(res)))) + "\n"
-        return True
+        return prob / (1.0 * len(res))
+
+    def compare(self, f_imgobj, s_imgobj):
+        if not self.data_detect(f_imgobj):
+            logger.logger.debug("First image data isn't valid.")
+            return False
+        if not self.data_detect(s_imgobj):
+            logger.logger.debug("Second image data isn't valid.")
+            return False
+        # matcher = FlannMatcher()
+        # gres = []
+        # for i in range(0, len(f_imgobj['clusters'])):
+        # first = f_imgobj['clusters'][i]
+        #     second = s_imgobj['clusters'][i]
+        #     res = []
+        #     if (first is None) or (second is None):
+        #         logger.logger.debug("Cluster #" + str(i + 1) + ": Invalid")
+        #         self._log += "Cluster #" + str(i + 1) + ": Invalid\n"
+        #     else:
+        #         matches = matcher.knnMatch(first, second, k=1)
+        #         ms = []
+        #         for v in matches:
+        #             if len(v) >= 1:
+        #                 # if len(v) >= 2:
+        #                 m = v[0]
+        #                 # n = v[1]
+        #                 if m.distance < self.kodsettings.neighbours_distance:
+        #                     ms.append(m)
+        #         prob = len(ms) / (1.0 * len(matches))
+        #         res.append(prob * 100)
+        #         logger.logger.debug("Cluster #" + str(i + 1) + " (Size: " + str(len(second)) + "): "
+        #                             + str(prob * 100) + "%")
+        #         self._log += "Cluster #" + str(i + 1) + " (Size: " + str(len(second)) + "): " + str(prob * 100) \
+        #                      + "%" + "\n"
+        #     suma = 0
+        #     for val in res:
+        #         suma += val
+        #     logger.logger.debug("Total for image: " + str(suma / len(res)))
+        #     self._log += "Total for image: " + str(suma / len(res)) + "\n"
+        #     gres.append(suma / len(res))
+        # s = 0
+        # for val in gres:
+        #     s += val
+        # logger.logger.debug("Total: " + str(s / len(gres)))
+        # self._log += "\nTotal: " + str(s / len(gres)) + "\n\n"
+        self._compare_descriptors(f_imgobj, s_imgobj)
+
+    def _compare_descriptors(self, f_imgobj, s_imgobj):
+        matcher = FlannMatcher()
+        matches = matcher.knnMatch(f_imgobj['descriptors'], s_imgobj['descriptors'], k=1)
+        logger.logger.debug("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        stat = dict()
+        for v in matches:
+            if len(v) >= 1:
+                # if len(v) >= 2:
+                m = v[0]
+                logger.logger.debug("Query Index: " + str(m.queryIdx) + " Train Index: " + str(m.trainIdx)
+                                    + " Distance: " + str(m.distance))
+                for i in range(0, 100, 1):
+                    if m.distance <= i * 10:
+                        val = stat.get(str(i * 10), 0)
+                        val += 1
+                        stat[str(i * 10)] = val
+                        break
+        logger.logger.debug("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        for k, z in stat.iteritems():
+            logger.logger.debug(k + ": " + str(z))
+        logger.logger.debug("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        logger.logger.debug("First image descriptors number: " + str(len(f_imgobj['descriptors'])))
+        logger.logger.debug("Second image descriptors number: " + str(len(s_imgobj['descriptors'])))
+        ms = []
+        for v in matches:
+            if len(v) >= 1:
+                # if len(v) >= 2:
+                m = v[0]
+                # n = v[1]
+                if m.distance < self.kodsettings.neighbours_distance:
+                    ms.append(m)
+        prob = len(ms) / (1.0 * len(matches))
+        logger.logger.debug("Positive matches: " + str(len(ms)) + " Probability: " + str(prob * 100))
+        logger.logger.debug("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
     def _detect(self, data, detector):
         # ROI detection
@@ -724,3 +824,282 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                 for item in cluster['items']:
                     keypoints.append(item)
         data['keypoints'] = keypoints
+
+
+class TubeSet:
+    def __init__(self):
+        self._keypoints = []
+        self._descriptors = []
+        self._info = []
+        self._base_distance = -1
+
+    def add(self, keypoint, descriptor, info=""):
+        self._keypoints.append(keypoint)
+        self._descriptors.append(descriptor)
+        self._info.append(info)
+        return len(self._keypoints) - 1
+
+    def set_basic_distance(self, distance):
+        self._base_distance = distance
+
+    def basic_distance(self):
+        return self._base_distance
+
+    def count(self):
+        return len(self._keypoints)
+
+    def get(self, index):
+        return [self._keypoints[index], self._descriptors[index], self._info[index]]
+
+    def get_keypoint(self, index):
+        return self._keypoints[index]
+
+    def get_descriptor(self, index):
+        return self._descriptors[index]
+
+    def get_info(self, index):
+        return self._info[index]
+
+    def keypoints(self):
+        return self._keypoints
+
+    def descriptors(self):
+        return self._descriptors
+
+    def info(self):
+        return self._info
+
+    def printSet(self):
+        print self
+        print "Keypoints: \tDescriptors: \tInfo:"
+        for index in range(0, len(self._keypoints), 1):
+            line = str(self._keypoints[index])
+            if index < len(self._descriptors):
+                line += "\t" + str(self._descriptors[index])
+            if index < len(self._info):
+                line += "\t" + str(self._info[index])
+            print line
+
+
+class IntersectMatchingDetector(KeypointsObjectDetector):
+    def __init__(self):
+        KeypointsObjectDetector.__init__(self)
+        self._hash = []
+        self._max_set = []
+        self._base_pair = []
+        self._db = []
+        self._item_index = 0
+
+    def update_hash(self, data):
+        # del data['data']
+        # del data['roi']
+        # del data['keypoints']
+        # del data['descriptors']
+        self._hash.append(data)
+
+    def update_database(self):
+        if len(self._hash) > 1:
+            self.update_base()
+            for item in self._hash:
+                self.add_to_db(item)
+            # for tube_set in self._db:
+            #     tube_set.printSet()
+            # showMatches(self._base_pair[0], self._base_pair[1], self._max_set, 'roi')
+
+    def update_base(self):
+        self._db = []
+        matcher = FlannMatcher()
+        for item1 in self._hash:
+            for item2 in self._hash:
+                if item1['path'] != item2['path']:
+                    matches = matcher.knnMatch(item1['descriptors'], item2['descriptors'], k=1)
+                    opt_matches = []
+                    mean = meanDistance(matches)
+                    for match in matches:
+                        for m in match:
+                            dx = (int(item1['keypoints'][m.queryIdx].pt[0]) -
+                                  int(item2['keypoints'][m.trainIdx].pt[0]))
+                            dy = (int(item1['keypoints'][m.queryIdx].pt[1]) -
+                                  int(item2['keypoints'][m.trainIdx].pt[1]))
+                            if abs(dx) + abs(dy) < 10 and abs(dy) < 4 and m.distance < mean:
+                                # if pow(pow(dx, 2) + pow(dy, 2), 0.5) < 40:
+                                # if m.distance < mean * 0.5:
+                                opt_matches.append([m])
+                    if len(self._max_set) < len(opt_matches):
+                        self._max_set = opt_matches
+                        self._base_pair = (item1, item2)
+            first_item = []
+            second_item = []
+            for match in self._max_set:
+                for m in match:
+                    first_item.append(m.queryIdx)
+                    second_item.append(m.trainIdx)
+                    tube = TubeSet()
+                    tube.add(self._base_pair[0]['keypoints'][m.queryIdx],
+                             self._base_pair[0]['descriptors'][m.queryIdx], "1")
+                    tube.add(self._base_pair[1]['keypoints'][m.trainIdx],
+                             self._base_pair[1]['descriptors'][m.trainIdx], "2")
+                    tube.set_basic_distance(m.distance)
+                    self._db.append(tube)
+            for index in range(0, len(self._base_pair[0]['keypoints']), 1):
+                if not first_item.__contains__(index):
+                    tube = TubeSet()
+                    tube.add(self._base_pair[0]['keypoints'][index],
+                             self._base_pair[0]['descriptors'][index], "1")
+                    self._db.append(tube)
+            for index in range(0, len(self._base_pair[1]['keypoints']), 1):
+                if not second_item.__contains__(index):
+                    tube = TubeSet()
+                    tube.add(self._base_pair[1]['keypoints'][index],
+                             self._base_pair[1]['descriptors'][index], "2")
+                    self._db.append(tube)
+        self._item_index = 2
+
+    def add_to_db(self, item):
+        if (item['path'] != self._base_pair[0]['path']
+            and item['path'] != self._base_pair[1]['path']):
+            matcher = FlannMatcher()
+            self._item_index += 1
+            for tube_set in self._db:
+                matches = matcher.knnMatch(listToNumpy_ndarray(tube_set.descriptors()),
+                                           listToNumpy_ndarray(item['descriptors']), k=1)
+                local_set = dict()
+                match_set = dict()
+                for match in matches:
+                    for m in match:
+                        value = local_set.get(m.trainIdx, 0)
+                        value += 1
+                        local_set[m.trainIdx] = value
+                        mset = match_set.get(m.trainIdx, [])
+                        mset.append(m)
+                        match_set[m.trainIdx] = mset
+                max_value = 0
+                max_keys = []
+                for k, v in local_set.iteritems():
+                    if max_value < v:
+                        max_keys = []
+                        max_value = v
+                        max_keys.append(k)
+                    elif max_value == v:
+                        max_keys.append(k)
+                best = -1
+                max_dis = 0
+                m_dis = []
+                best_dist = sys.maxint
+                for key in max_keys:
+                    m_max = match_set[key]
+                    m_dis.append(m_max)
+                    dist = 0
+                    dis = 0
+                    for m in m_max:
+                        dist += m.distance
+                        if dis < m.distance:
+                            dis = m.distance
+                    if best_dist > dist:
+                        best_dist = dist
+                        best = key
+                        max_dis = dis
+                d_dist = 0.8 * meanDistance(m_dis)
+                if tube_set.basic_distance() >= 0:
+                    if tube_set.basic_distance() < d_dist:
+                        if max_dis <= tube_set.basic_distance() + d_dist:
+                            tube_set.add(item['keypoints'][best], item['descriptors'][best], str(self._item_index))
+                    else:
+                        if max_dis <= tube_set.basic_distance():
+                            tube_set.add(item['keypoints'][best], item['descriptors'][best], str(self._item_index))
+                else:
+                    dx = (int(tube_set.get_keypoint(0).pt[0]) - int(item['keypoints'][best].pt[0]))
+                    dy = (int(tube_set.get_keypoint(0).pt[1]) - int(item['keypoints'][best].pt[1]))
+                    size = tube_set.get_keypoint(0).size
+                    if size > item['keypoints'][best].size:
+                        size = item['keypoints'][best].size
+                    if pow(pow(dx, 2) + pow(dy, 2), 0.5) < size / 2.0 and abs(dy) < pow(size / 2.0, 0.5):
+                        tube_set.add(item['keypoints'][best], item['descriptors'][best], str(self._item_index))
+                        matches = matcher.knnMatch(listToNumpy_ndarray([item['descriptors'][best]]),
+                                                   listToNumpy_ndarray(tube_set.descriptors()), k=1)
+                        tube_set.set_basic_distance(matches[0][0].distance)
+
+    @verifying
+    def verify(self, data):
+        matcher = FlannMatcher()
+        ni = []
+        ci = []
+        Nmax = 0
+        for tube_set in self._db:
+            if tube_set.count() > 1:
+                ni.append(tube_set.count())
+                Nmax += tube_set.count()
+                self._item_index += 1
+                matches = matcher.knnMatch(listToNumpy_ndarray(tube_set.descriptors()),
+                                           listToNumpy_ndarray(data['descriptors']), k=1)
+                local_set = dict()
+                match_set = dict()
+                key_set = dict()
+                for match in matches:
+                    for m in match:
+                        value = local_set.get(m.trainIdx, 0)
+                        value += 1
+                        local_set[m.trainIdx] = value
+                        mset = match_set.get(m.trainIdx, [])
+                        mset.append(m)
+                        match_set[m.trainIdx] = mset
+                        kset = key_set.get(m.trainIdx, [])
+                        kset.append(data['keypoints'][m.trainIdx])
+                        key_set[m.trainIdx] = kset
+                max_value = 0
+                max_keys = []
+                for k, v in local_set.iteritems():
+                    if max_value < v:
+                        max_keys = []
+                        max_value = v
+                        max_keys.append(k)
+                    elif max_value == v:
+                        max_keys.append(k)
+                best = -1
+                max_dis = 0
+                m_dis = []
+                best_dist = sys.maxint
+                for key in max_keys:
+                    m_max = match_set[key]
+                    m_dis.append(m_max)
+                    dist = 0
+                    dis = 0
+                    for m in m_max:
+                        dist += m.distance
+                        if dis < m.distance:
+                            dis = m.distance
+                    if best_dist > dist:
+                        best_dist = dist
+                        best = key
+                        max_dis = dis
+                d_dist = 0.5 * meanDistance(m_dis)
+                if tube_set.basic_distance() >= 0:
+                    if tube_set.basic_distance() < d_dist:
+                        if max_dis <= tube_set.basic_distance() + d_dist:
+                            ci.append(True)
+                        else:
+                            ci.append(False)
+                    else:
+                        if max_dis <= tube_set.basic_distance():
+                            ci.append(True)
+                        else:
+                            ci.append(False)
+                else:
+                    dx = (int(tube_set.get_keypoint(0).pt[0]) - int(data['keypoints'][best].pt[0]))
+                    dy = (int(tube_set.get_keypoint(0).pt[1]) - int(data['keypoints'][best].pt[1]))
+                    size = tube_set.get_keypoint(0).size
+                    if size > data['keypoints'][best].size:
+                        size = data['keypoints'][best].size
+                    if pow(pow(dx, 2) + pow(dy, 2), 0.5) < size / 2.0 and abs(dy) < pow(size / 2.0, 0.5):
+                        ci.append(True)
+                    else:
+                        ci.append(False)
+        prob = 0
+        for index in range(0, len(ci), 1):
+            if ci[index]:
+                prob += ni[index]
+        prob /= 1.0 * Nmax
+        print "Max count " + str(Nmax)
+        print "Length of set " + str(len(ni))
+        print "Probability: " + str(prob) + " %"
+        return prob * 100.0
