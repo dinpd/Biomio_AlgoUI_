@@ -1,6 +1,10 @@
 import defines
 import cv2
 
+BruteForceMatcherType = 0
+FlannBasedMatcherType = 1
+
+BruteForceHammingMatcher = 2
 
 def MatcherCreator(descriptorMatcherType):
     """
@@ -41,11 +45,35 @@ def MatcherCreator(descriptorMatcherType):
 def FlannMatcher():
     # index_params = dict(algorithm=defines.FLANN_INDEX_KDTREE,
     #                     trees=5)
-    index_params = dict(algorithm=defines.FLANN_INDEX_LSH,
-                        table_number=12,       # 12
-                        key_size=20,          # 20
-                        multi_probe_level=2)  # 2
+    index_params = defaultFlannBasedLSHIndexParams()
 
     search_params = dict(checks=100)
 
-    return cv2.FlannBasedMatcher(index_params, search_params)
+    # matcher = cv2.FlannBasedMatcher(index_params, search_params)
+    matcher = cv2.BFMatcher(normType=2, crossCheck=False)
+    return matcher
+
+
+def defaultFlannBasedLSHIndexParams():
+    return dict(algorithm=defines.FLANN_INDEX_LSH,
+                table_number=12,       # 12
+                key_size=20,          # 20
+                multi_probe_level=2)  # 2
+
+
+def createMatcher(type=BruteForceMatcherType):
+    if type == BruteForceMatcherType:
+        matcher = cv2.BFMatcher(normType=BruteForceHammingMatcher, crossCheck=False)
+        return matcher
+    else:
+        index_params = defaultFlannBasedLSHIndexParams()
+        search_params = dict(checks=100)
+        matcher = cv2.FlannBasedMatcher(index_params, search_params)
+        return matcher
+
+
+def LowesMatchingScheme(match1, match2, threshold=0.5):
+    if (match1 is not None) and (match2 is not None):
+        return m.distance < threshold * match2.distance
+    else:
+        return False
