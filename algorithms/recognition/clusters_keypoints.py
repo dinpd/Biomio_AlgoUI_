@@ -90,6 +90,17 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         # print "=========================="
 
     def update_hash_templateL1(self, data):
+        """
+
+        max_weight = se*suma(i=1,k-1: 1+2*i) + k*(n-k)*se,
+        where
+            n - count of images,
+            k - count of identical matches, k <= n,
+            se - single estimate, I used se=1
+
+        :param data:
+        :return:
+        """
         if len(self._hash) == 1:
             self._etalon = []
             for cluster in data['clusters']:

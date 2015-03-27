@@ -1,7 +1,10 @@
 from algorithms.features.classifiers import CascadeClassifierSettings, CascadeROIDetector
-from algorithms.recognition.keypoints import (KeypointsObjectDetector, FeaturesMatchingDetector,
-                                              SpiralKeypointsVectorDetector, ObjectsMatchingDetector,
-                                              ClustersMatchingDetector, IntersectMatchingDetector)
+from algorithms.recognition.keypoints import KeypointsObjectDetector
+from algorithms.recognition.fmd_keypoints import FeaturesMatchingDetector
+from algorithms.recognition.spiral_keypoints import SpiralKeypointsVectorDetector
+from algorithms.recognition.objects_keypoints import ObjectsMatchingDetector
+from algorithms.recognition.clusters_keypoints import ClustersMatchingDetector
+from algorithms.recognition.intersect_keypoints import IntersectMatchingDetector
 from logger import logger
 
 
