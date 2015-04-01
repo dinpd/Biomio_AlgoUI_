@@ -20,11 +20,57 @@ class KODSettings:
     Keypoints Object Detector's Settings class
     """
     neighbours_distance = 1.0
-    max_hash_length = 600
+    # max_hash_length = 600
     detector_type = BRISKDetectorType
     brisk_settings = BRISKDetectorSettings()
     orb_settings = ORBDetectorSettings()
-    probability = 25
+    probability = 25.0
+
+    def exportSettings(self):
+        info = dict()
+        info['Neighbours Distance'] = self.neighbours_distance
+        info['Probability'] = self.probability
+        settings = dict()
+        if self.detector_type == BRISKDetectorType:
+            info['Detector Type'] = 'BRISK'
+            settings['Thresh'] = self.brisk_settings.thresh
+            settings['Octaves'] = self.brisk_settings.octaves
+            settings['Pattern Scale'] = self.brisk_settings.patternScale
+        elif self.detector_type == ORBDetectorType:
+            info['Detector Type'] = 'ORB'
+            settings['Number of features'] = self.orb_settings.features
+            settings['Scale Factor'] = self.orb_settings.scaleFactor
+            settings['Number of levels'] = self.orb_settings.nlevels
+        info['Detector Settings'] = settings
+        return info
+
+    def importSettings(self, settings):
+        self.neighbours_distance = settings['Neighbours Distance']
+        self.probability = settings['Probability']
+        detector = settings.get('Detector Settings', dict())
+        if settings.get('Detector Type') == 'BRISK':
+            self.detector_type = BRISKDetectorType
+            self.brisk_settings.thresh = detector['Thresh']
+            self.brisk_settings.octaves = detector['Octaves']
+            self.brisk_settings.patternScale = detector['Pattern Scale']
+        elif settings.get('Detector Type') == 'ORB':
+            self.detector_type = ORBDetectorType
+            self.orb_settings.features = detector['Number of features']
+            self.orb_settings.scaleFactor = detector['Scale Factor']
+            self.orb_settings.nlevels = detector['Number of levels']
+
+    def dump(self):
+        logger.logger.debug('Neighbours Distance: %f' % self.neighbours_distance)
+        logger.logger.debug('Probability: %f' % self.probability)
+        logger.logger.debug('Detector Type: %s' % self.detector_type)
+        logger.logger.debug('BRISK Detector Settings')
+        logger.logger.debug('   Thresh: %d' % self.brisk_settings.thresh)
+        logger.logger.debug('   Octaves: %d' % self.brisk_settings.octaves)
+        logger.logger.debug('   Pattern Scale: %f' % self.brisk_settings.patternScale)
+        logger.logger.debug('ORB Detector Settings')
+        logger.logger.debug('   Number of features: %d' % self.orb_settings.features)
+        logger.logger.debug('   Scale Factor: %f' % self.orb_settings.scaleFactor)
+        logger.logger.debug('   Number of levels: %d' % self.orb_settings.nlevels)
 
 
 def identifying(fn):
@@ -92,6 +138,12 @@ class KeypointsObjectDetector:
 
     def exportSources(self):
         logger.logger.debug("Detector cannot export sources.")
+
+    def importSettings(self, settings):
+        logger.logger.debug("Detector cannot import settings.")
+
+    def exportSettings(self):
+        logger.logger.debug("Detector cannot export settings.")
 
     @identifying
     def identify(self, data):

@@ -35,6 +35,23 @@ class CascadeClassifierSettings:
     minSize = (30, 30)
     flags = cv2.cv.CV_HAAR_SCALE_IMAGE
 
+    def exportSettings(self):
+        face_settings = dict()
+        face_settings['Scale Factor'] = self.scaleFactor
+        face_settings['Minimum Neighbors'] = self.minNeighbors
+        face_settings['Minimum Size'] = self.minSize
+        return face_settings
+
+    def importSettings(self, settings):
+        self.scaleFactor = settings['Scale Factor']
+        self.minNeighbors = settings['Minimum Neighbors']
+        self.minSize = (settings['Minimum Size'][0], settings['Minimum Size'][1])
+
+    def dump(self):
+        logger.debug('Scale Factor: %f' % self.scaleFactor)
+        logger.debug('Minimum Neighbors: %d' % self.minNeighbors)
+        logger.debug('Minimum Size: %s' % str(self.minSize))
+
 
 class CascadeROIDetector:
     classifierSettings = CascadeClassifierSettings()
@@ -54,8 +71,19 @@ class CascadeROIDetector:
     def cascades(self):
         cascades = []
         for cascade in self._cascades_list:
-            cascades.append(os.path.split(cascade)[1])
+            cascades.append(cascade)
         return cascades
+
+    def exportSettings(self):
+        face_cascade = dict()
+        face_cascade['ROI Cascades'] = self.cascades()
+        face_cascade['Settings'] = self.classifierSettings.exportSettings()
+        return face_cascade
+
+    def importSettings(self, settings):
+        for cascade in settings['ROI Cascades']:
+            self.add_cascade(cascade)
+        self.classifierSettings.importSettings(settings['Settings'])
 
     def detect(self, img, as_list=False):
         rects = list()
@@ -63,11 +91,13 @@ class CascadeROIDetector:
         if len(self.__cascades) == 0:
             logger.debug("Detection impossible. Any cascade not found.")
             return rects
+        settings = CascadeClassifierSettings()
         for cascade in self.__cascades:
             lrects = cascade.detectMultiScale(
                 gray,
                 scaleFactor=self.classifierSettings.scaleFactor,
                 minNeighbors=self.classifierSettings.minNeighbors,
+                # minSize=settings.minSize,
                 minSize=self.classifierSettings.minSize,
                 flags=self.classifierSettings.flags)
             # if len(lrects) != 0:

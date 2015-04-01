@@ -571,9 +571,9 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 'data': curr.data()
             }
             self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
-            self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
-            self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
-            self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            # self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
+            # self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
+            # self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
             self._keysrecg_detector.kodsettings.probability = self._probBox.value()
             self._keysrecg_detector.setUseROIDetection(True)
             self._keysrecg_detector.verify(data)
@@ -613,6 +613,8 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
     def export_database(self):
         source = self._keysrecg_detector.exportSources()
         info = self._keysrecg_detector.exportSettings()
+        print source
+        print info
         json_encoded = json.dumps(source)
         info_encoded = json.dumps(info)
         filedir = QFileDialog.getExistingDirectory(None, "Select database directory", ".")
@@ -633,6 +635,15 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             with open(source_file, "r") as data_file:
                 source = json.load(data_file)
                 self._keysrecg_detector.importSources(source)
+            info_file = os.path.join(str(filedir), 'info.json')
+            with open(info_file, "r") as info_data_file:
+                info = json.load(info_data_file)
+                self._keysrecg_detector.importSettings(info)
+            self._neighBox.setValue(self._keysrecg_detector.kodsettings.neighbours_distance)
+            self._probBox.setValue(self._keysrecg_detector.kodsettings.probability)
+            self._keysrecg_detector.kodsettings.dump()
+            self._keysrecg_detector._cascadeROI.classifierSettings.dump()
+            self._keysrecg_detector._eyeROI.classifierSettings.dump()
 
     def det_change(self):
         if self.settings_dialog.exec_():

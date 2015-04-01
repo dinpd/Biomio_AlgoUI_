@@ -4,13 +4,15 @@ from algorithms.features.matchers import FlannMatcher
 from algorithms.clustering.forel import FOREL
 from algorithms.clustering.kmeans import KMeans
 from algorithms.cvtools.system import saveNumpyImage
+from algorithms.features.classifiers import CascadeROIDetector
 from keypoints import (KeypointsObjectDetector,
                        drawClusters, drawKeypoints, drawLine,
-                       listToNumpy_ndarray,
+                       listToNumpy_ndarray, numpy_ndarrayToList,
                        BRISKDetectorType, ORBDetectorType,
                        verifying)
 import logger
 import numpy
+import sys
 
 
 class ClustersMatchingDetector(KeypointsObjectDetector):
@@ -101,12 +103,13 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         :param data:
         :return:
         """
+        logger.logger.debug("update_hash_templateL1")
         if len(self._hash) == 1:
             self._etalon = []
             for cluster in data['clusters']:
                 weight_cluster = []
                 for desc in cluster:
-                    weight_cluster.append((desc, 0))
+                    weight_cluster.append((desc, 1))
                 self._etalon.append(weight_cluster)
         else:
             matcher = FlannMatcher()
@@ -115,17 +118,17 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                 if dt_cluster is None or len(dt_cluster) == 0:
                     break
                 et_cluster = self._etalon[index]
-                for dt in dt_cluster:
-                    dt_is = False
-                    weight_cluster = []
-                    for d, c in et_cluster:
-                        if numpy.array_equal(d, dt):
-                            c += 1
-                            dt_is = True
-                        weight_cluster.append((d, c))
-                    if not dt_is:
-                        weight_cluster.append((dt, 0))
-                    et_cluster = weight_cluster
+                # for dt in dt_cluster:
+                #     dt_is = False
+                #     weight_cluster = []
+                #     for d, c in et_cluster:
+                #         if numpy.array_equal(d, dt):
+                ##             c += 1
+                            # dt_is = True
+                        # weight_cluster.append((d, c))
+                    # if not dt_is:
+                    #     weight_cluster.append((dt, 0))
+                    # et_cluster = weight_cluster
                 for obj in self._hash:
                     if data['path'] == obj['path']:
                         break
@@ -133,42 +136,85 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                     if ob_cluster is None or len(ob_cluster) == 0:
                         break
                     matches1 = matcher.knnMatch(listToNumpy_ndarray(ob_cluster),
-                                                listToNumpy_ndarray(dt_cluster), k=1)
-                    matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster),
-                                                listToNumpy_ndarray(ob_cluster), k=1)
+                                                listToNumpy_ndarray(dt_cluster), k=5)
+                    # matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster),
+                    #                             listToNumpy_ndarray(ob_cluster), k=5)
                     good = []
 
                     for v in matches1:
                         if len(v) >= 1:
+                            best = None
+                            dist = -1
                             for m in v:
-                                # m = v[0]
-                                for c in matches2:
-                                    if len(c) >= 1:
-                                        for n in c:
-                                            # n = c[0]
-                                            if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
-                                                ob_is = False
-                                                dt_is = False
-                                                new_cluster = []
-                                                for d, c in et_cluster:
-                                                    if numpy.array_equal(d, ob_cluster[m.queryIdx]):
-                                                        c += 1
-                                                        ob_is = True
-                                                    if numpy.array_equal(d, dt_cluster[m.trainIdx]):
-                                                        c += 1
-                                                        dt_is = True
-                                                    new_cluster.append((d, c))
-                                                if not ob_is:
-                                                    new_cluster.append((ob_cluster[m.queryIdx], 1))
-                                                if not dt_is:
-                                                    new_cluster.append((dt_cluster[m.trainIdx], 1))
-                                                et_cluster = new_cluster
+                                if m.distance == 0:
+                                    best = m
+                                    dist = 0
+                                else:
+                                    for d, c in et_cluster:
+                                        # if numpy.array_equal(d, dt_cluster[m.trainIdx]):
+                                        if dist < c / (1.0 * m.distance):
+                                            dist = c / (1.0 * m.distance)
+                                            best = m
+                                        break
+                            ob_is = False
+                            dt_is = False
+                            new_cluster = []
+                            for d, c in et_cluster:
+                                if numpy.array_equal(d, ob_cluster[best.queryIdx]):
+                                    c += 1
+                                    ob_is = True
+                                if numpy.array_equal(d, dt_cluster[best.trainIdx]):
+                                    c += 1
+                                    dt_is = True
+                                new_cluster.append((d, c))
+                            if not ob_is:
+                                new_cluster.append((ob_cluster[best.queryIdx], 1))
+                            if not dt_is:
+                                new_cluster.append((dt_cluster[best.trainIdx], 1))
+                            et_cluster = new_cluster
+                    # for v in matches1:
+                    #     if len(v) >= 1:
+                    #         for m in v:
+                    #             # m = v[0]
+                    #             for c in matches2:
+                    #                 if len(c) >= 1:
+                    #                     for n in c:
+                    #                         # n = c[0]
+                    #                         if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+                    #                             ob_is = False
+                    #                             dt_is = False
+                    #                             new_cluster = []
+                    #                             for d, c in et_cluster:
+                    #                                 if numpy.array_equal(d, ob_cluster[m.queryIdx]):
+                    #                                     c += 1
+                    #                                     ob_is = True
+                    #                                 if numpy.array_equal(d, dt_cluster[m.trainIdx]):
+                    #                                     c += 1
+                    #                                     dt_is = True
+                    #                                 new_cluster.append((d, c))
+                    #                             if not ob_is:
+                    #                                 new_cluster.append((ob_cluster[m.queryIdx], 1))
+                    #                             if not dt_is:
+                    #                                 new_cluster.append((dt_cluster[m.trainIdx], 1))
+                    #                             et_cluster = new_cluster
                     self._etalon[index] = et_cluster
 
     def importSources(self, source):
         self._etalon = []
-        etalon = source['etalon']
         logger.logger.debug("Database loading started...")
+        if self._use_template:
+            if self._template_layer == 0:
+                self.importSources_L0Template(source)
+            elif self._template_layer == 1:
+                self.importSources_L1Template(source)
+            else:
+                logger.logger.debug("Detector doesn't has such template layer.")
+        else:
+            self.importSources_Database(source)
+        logger.logger.debug("Database loading finished.")
+
+    def importSources_Database(self, source):
+        etalon = source['etalon']
         for j in range(0, len(etalon.keys())):
             self._etalon.append([])
         for c_num, cluster in etalon.iteritems():
@@ -183,9 +229,41 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                     desc[int(e_num)] = numpy.uint8(element)
                 etalon_cluster[int(d_num)] = listToNumpy_ndarray(desc)
             self._etalon[int(c_num) - 1] = listToNumpy_ndarray(etalon_cluster)
-        logger.logger.debug("Database loading finished.")
+
+    def importSources_L0Template(self, source):
+        for j in range(0, len(source.keys())):
+            self._etalon.append([])
+        for c_num, cluster in source.iteritems():
+            etalon_cluster = []
+            for d_num, descriptor in cluster.iteritems():
+                etalon_cluster.append(listToNumpy_ndarray(descriptor))
+            self._etalon[int(c_num)] = etalon_cluster
+
+    def importSources_L1Template(self, source):
+        for j in range(0, len(source.keys())):
+            self._etalon.append([])
+        for c_num, cluster in source.iteritems():
+            etalon_cluster = []
+            for k in range(0, len(cluster.keys())):
+                etalon_cluster.append([])
+            for d_num, desc_dict in cluster.iteritems():
+                etalon_cluster[int(d_num)] = (listToNumpy_ndarray(desc_dict['descriptor']),
+                                              int(desc_dict['count']))
+            self._etalon[int(c_num)] = etalon_cluster
 
     def exportSources(self):
+        if self._use_template:
+            if self._template_layer == 0:
+                return self.exportSources_L0Template()
+            elif self._template_layer == 1:
+                return self.exportSources_L1Template()
+            else:
+                logger.logger.debug("Detector doesn't has such template layer.")
+        else:
+            return self.exportSources_Database()
+        return dict()
+
+    def exportSources_Database(self):
         sources = dict()
         etalon = dict()
         i = 0
@@ -202,26 +280,54 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         sources["etalon"] = etalon
         return sources
 
+    def exportSources_L0Template(self):
+        sources = dict()
+        for index in range(0, len(self._etalon)):
+            cluster = self._etalon[index]
+            cluster_dict = dict()
+            i_desc = 0
+            for descriptor in cluster:
+                cluster_dict[i_desc] = numpy_ndarrayToList(descriptor)
+                i_desc += 1
+            sources[str(index)] = cluster_dict
+        return sources
+
+    def exportSources_L1Template(self):
+        sources = dict()
+        for index in range(0, len(self._etalon)):
+            et_weight_cluster = self._etalon[index]
+            cluster = dict()
+            i = 0
+            for d, c in et_weight_cluster:
+                obj = dict()
+                # desc_dict = dict()
+                # for indx in range(0, len(d)):
+                #     desc_dict[str(indx)] = str(d[indx])
+                obj['descriptor'] = numpy_ndarrayToList(d)
+                obj['count'] = c
+                cluster[str(i)] = obj
+                i += 1
+            sources[str(index)] = cluster
+        return sources
+
     def detect(self, data):
         if self.data_detect(data):
             data['clustering'] = drawClusters(data['true_clusters'], data['roi'])
 
-    def importSettings(self, settings):
-        info = dict()
+    def importDBSettings(self, settings):
         detector = settings.get('Detector Settings', dict())
         if settings.get('Detector Type') == 'BRISK':
             self.kodsettings.detector_type = BRISKDetectorType
             self.kodsettings.brisk_settings.thresh = detector['Thresh']
             self.kodsettings.brisk_settings.octaves = detector['Octaves']
             self.kodsettings.brisk_settings.patternScale = detector['Pattern Scale']
-            info['Detector Settings'] = settings
         elif settings.get('Detector Type') == 'ORB':
             self.kodsettings.detector_type = ORBDetectorType
             self.kodsettings.orb_settings.features = detector['Number of features']
             self.kodsettings.orb_settings.scaleFactor = detector['Scale Factor']
             self.kodsettings.orb_settings.nlevels = detector['Number of levels']
 
-    def exportSettings(self):
+    def exportDBSettings(self):
         info = dict()
         info['Database Size'] = str(len(self._hash)) + " images"
         settings = dict()
@@ -245,6 +351,24 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         face_cascade['Settings'] = face_settings
         info['Face Cascade Detector'] = face_cascade
         info['Database Source'] = "Extended Yale Face Database B. Person Yale12"
+        return info
+
+    def importSettings(self, settings):
+        logger.logger.debug("Settings loading started...")
+        self.kodsettings.importSettings(settings['KODSettings'])
+        if self._cascadeROI is None:
+            self._cascadeROI = CascadeROIDetector()
+        self._cascadeROI.importSettings(settings['Face Cascade Detector'])
+        if self._eyeROI is None:
+            self._eyeROI = CascadeROIDetector()
+        self._eyeROI.importSettings(settings['Eye Cascade Detector'])
+        logger.logger.debug("Settings loading finished.")
+
+    def exportSettings(self):
+        info = dict()
+        info['KODSettings'] = self.kodsettings.exportSettings()
+        info['Face Cascade Detector'] = self._cascadeROI.exportSettings()
+        info['Eye Cascade Detector'] = self._eyeROI.exportSettings()
         return info
 
     @verifying
@@ -275,14 +399,14 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                     self._log += "Cluster #" + str(i + 1) + ": Invalid\n"
                 else:
                     matches = matcher.knnMatch(test, source, k=1)
-                    dataTest = dict()
-                    dataTest['data'] = data['roi']
-                    dataTest['keypoints'] = data['true_clusters'][i]['items']
-                    saveNumpyImage("D:/Test/imageData" + str(i) + ".png", drawKeypoints(dataTest))
-                    dTest = dict()
-                    dTest['data'] = d['roi']
-                    dTest['keypoints'] = d['true_clusters'][i]['items']
-                    saveNumpyImage("D:/Test/imageD" + str(i) + ".png", drawKeypoints(dTest))
+                    # dataTest = dict()
+                    # dataTest['data'] = data['roi']
+                    # dataTest['keypoints'] = data['true_clusters'][i]['items']
+                    # saveNumpyImage("D:/Test/imageData" + str(i) + ".png", drawKeypoints(dataTest))
+                    # dTest = dict()
+                    # dTest['data'] = d['roi']
+                    # dTest['keypoints'] = d['true_clusters'][i]['items']
+                    # saveNumpyImage("D:/Test/imageD" + str(i) + ".png", drawKeypoints(dTest))
                     ms = []
                     for v in matches:
                         if len(v) >= 1:
@@ -325,8 +449,10 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             if et_cluster is None or dt_cluster is None:
                 break
             if len(et_cluster) > 0 and len(dt_cluster) > 0:
-                matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=2)
-                matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=2)
+                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster),
+                                            listToNumpy_ndarray(dt_cluster), k=2)
+                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster),
+                                            listToNumpy_ndarray(et_cluster), k=2)
                 # for v in matches:
                 # if len(v) >= 1:
                 # if len(v) >= 2:
@@ -378,7 +504,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             et_cluster = []
             cluster_weight = 0
             for d, c in et_weight_cluster:
-                if c > 1:
+                if c > 0:
                     et_cluster.append(d)
                     cluster_weight += c
             dt_cluster = data['clusters'][index]
@@ -386,10 +512,8 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             if et_cluster is None or dt_cluster is None:
                 break
             if len(et_cluster) > 0 and len(dt_cluster) > 0:
-                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster),
-                                            listToNumpy_ndarray(dt_cluster), k=2)
-                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster),
-                                            listToNumpy_ndarray(et_cluster), k=2)
+                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster), listToNumpy_ndarray(dt_cluster), k=2)
+                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster), listToNumpy_ndarray(et_cluster), k=2)
                 # for v in matches:
                 # if len(v) >= 1:
                 # if len(v) >= 2:
@@ -526,12 +650,12 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         centermouth = (centernose[0], centernose[1] + rect[3])
         leftmouth = (lefteye[0], centermouth[1])
         rightmouth = (righteye[0], centermouth[1])
-        out = drawLine(data['roi'], (lefteye[0], lefteye[1], centernose[0], centernose[1]), (255, 0, 0))
-        out = drawLine(out, (centereye[0], centereye[1], centernose[0], centernose[1]), (255, 0, 0))
-        out = drawLine(out, (righteye[0], righteye[1], centernose[0], centernose[1]), (255, 0, 0))
-        out = drawLine(out, (centermouth[0], centermouth[1], centernose[0], centernose[1]), (255, 0, 0))
-        out = drawLine(out, (leftmouth[0], leftmouth[1], centernose[0], centernose[1]), (255, 0, 0))
-        out = drawLine(out, (rightmouth[0], rightmouth[1], centernose[0], centernose[1]), (255, 0, 0))
+        # out = drawLine(data['roi'], (lefteye[0], lefteye[1], centernose[0], centernose[1]), (255, 0, 0))
+        # out = drawLine(out, (centereye[0], centereye[1], centernose[0], centernose[1]), (255, 0, 0))
+        # out = drawLine(out, (righteye[0], righteye[1], centernose[0], centernose[1]), (255, 0, 0))
+        # out = drawLine(out, (centermouth[0], centermouth[1], centernose[0], centernose[1]), (255, 0, 0))
+        # out = drawLine(out, (leftmouth[0], leftmouth[1], centernose[0], centernose[1]), (255, 0, 0))
+        # out = drawLine(out, (rightmouth[0], rightmouth[1], centernose[0], centernose[1]), (255, 0, 0))
         centers = [lefteye, righteye, centereye, centernose, leftmouth, rightmouth]
         self.filter_keypoints(data)
 

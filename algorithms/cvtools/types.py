@@ -40,7 +40,7 @@ def numpy_ndarrayToList(source):
     :param source: numpy.ndarray object
     :return: list object
     """
-    return source.toList()
+    return source.tolist()
 
 
 def listToNumpy_ndarray(source):
@@ -51,7 +51,7 @@ def listToNumpy_ndarray(source):
     :param source: list object
     :return: numpy.ndarray object
     """
-    return numpy.array(source)
+    return numpy.array(source, dtype=numpy.uint8)
 
 
 def classKeyPointToArray(keypoint, with_points=False):
