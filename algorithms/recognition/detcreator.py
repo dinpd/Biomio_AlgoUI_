@@ -53,7 +53,7 @@ class DetectorCreator:
         elif self._type == IntersectMatching:
             detector = IntersectMatchingDetector()
         detector.setUseTemplate(True)
-        detector.setTemplateLayer(1)
+        detector.setTemplateLayer(0)
         detector._cascadeROI = self._classifiers[FaceCascadeClassifier]
         detector._eyeROI = self._classifiers[EyesCascadeClassifier]
         return detector

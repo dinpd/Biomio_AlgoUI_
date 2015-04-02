@@ -354,15 +354,18 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         return info
 
     def importSettings(self, settings):
-        logger.logger.debug("Settings loading started...")
-        self.kodsettings.importSettings(settings['KODSettings'])
-        if self._cascadeROI is None:
-            self._cascadeROI = CascadeROIDetector()
-        self._cascadeROI.importSettings(settings['Face Cascade Detector'])
-        if self._eyeROI is None:
-            self._eyeROI = CascadeROIDetector()
-        self._eyeROI.importSettings(settings['Eye Cascade Detector'])
-        logger.logger.debug("Settings loading finished.")
+        if len(settings.keys()) > 0:
+            logger.logger.debug("Settings loading started...")
+            self.kodsettings.importSettings(settings['KODSettings'])
+            if self._cascadeROI is None:
+                self._cascadeROI = CascadeROIDetector()
+            self._cascadeROI.importSettings(settings['Face Cascade Detector'])
+            if self._eyeROI is None:
+                self._eyeROI = CascadeROIDetector()
+            self._eyeROI.importSettings(settings['Eye Cascade Detector'])
+            logger.logger.debug("Settings loading finished.")
+            return True
+        return False
 
     def exportSettings(self):
         info = dict()
@@ -449,10 +452,10 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             if et_cluster is None or dt_cluster is None:
                 break
             if len(et_cluster) > 0 and len(dt_cluster) > 0:
-                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster),
-                                            listToNumpy_ndarray(dt_cluster), k=2)
-                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster),
-                                            listToNumpy_ndarray(et_cluster), k=2)
+                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, numpy.uint8),
+                                            listToNumpy_ndarray(dt_cluster, numpy.uint8), k=2)
+                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, numpy.uint8),
+                                            listToNumpy_ndarray(et_cluster, numpy.uint8), k=2)
                 # for v in matches:
                 # if len(v) >= 1:
                 # if len(v) >= 2:
