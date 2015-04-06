@@ -357,12 +357,17 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         if len(settings.keys()) > 0:
             logger.logger.debug("Settings loading started...")
             self.kodsettings.importSettings(settings['KODSettings'])
+            self.kodsettings.dump()
             if self._cascadeROI is None:
                 self._cascadeROI = CascadeROIDetector()
             self._cascadeROI.importSettings(settings['Face Cascade Detector'])
+            logger.logger.debug('Face Cascade Detector')
+            self._cascadeROI.classifierSettings.dump()
             if self._eyeROI is None:
                 self._eyeROI = CascadeROIDetector()
             self._eyeROI.importSettings(settings['Eye Cascade Detector'])
+            logger.logger.debug('Eye Cascade Detector')
+            self._eyeROI.classifierSettings.dump()
             logger.logger.debug("Settings loading finished.")
             return True
         return False
@@ -420,14 +425,14 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                                 ms.append(m)
                     prob = len(ms) / (1.0 * len(matches))
                     res.append(prob * 100)
-                    logger.logger.debug("Cluster #" + str(i + 1) + " (Size: " + str(len(source)) + "): "
-                                        + str(prob * 100) + "%")
+                    logger.sys_logger.debug("Cluster #" + str(i + 1) + " (Size: " + str(len(source)) + "): "
+                                            + str(prob * 100) + "%")
                     self._log += "Cluster #" + str(i + 1) + " (Size: " + str(len(source)) + "): " + str(prob * 100) \
                                  + "%" + "\n"
             suma = 0
             for val in res:
                 suma += val
-            logger.logger.debug("Total for image: " + str(suma / len(res)))
+            logger.sys_logger.debug("Total for image: " + str(suma / len(res)))
             self._log += "Total for image: " + str(suma / len(res)) + "\n"
             gres.append(suma / len(res))
         s = 0
@@ -442,8 +447,8 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         res = []
         prob = 0
         self._log += "Test: " + data['path'] + "\n"
-        logger.logger.debug("Image: " + data['path'])
-        logger.logger.debug("Template size: ")
+        logger.sys_logger.debug("Image: " + data['path'])
+        logger.sys_logger.debug("Template size: ")
         self._log += "Template size: " + "\n"
         for index in range(0, len(self._etalon)):
             et_cluster = self._etalon[index]
@@ -481,16 +486,16 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                                             ms.append(m)
                 res.append(ms)
                 val = (len(res[index]) / (1.0 * len(self._etalon[index]))) * 100
-                logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
-                                    + " Positive: " + str(len(res[index])) + " Probability: " + str(val))
+                logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
+                                        + " Positive: " + str(len(res[index])) + " Probability: " + str(val))
                 self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) \
                              + " Positive: " + str(len(res[index])) + " Probability: " + str(val) + "\n"
                 prob += val
             else:
-                logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
-                                    + " Invalid.")
+                logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
+                                        + " Invalid.")
                 self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) + " Invalid.\n"
-        logger.logger.debug("Probability: " + str((prob / (1.0 * len(res)))))
+        logger.sys_logger.debug("Probability: " + str((prob / (1.0 * len(res)))))
         self._log += "Probability: " + str((prob / (1.0 * len(res)))) + "\n"
         return prob / (1.0 * len(res))
 
@@ -499,8 +504,8 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         res = []
         prob = 0
         self._log += "Test: " + data['path'] + "\n"
-        logger.logger.debug("Image: " + data['path'])
-        logger.logger.debug("Template size: ")
+        logger.sys_logger.debug("Image: " + data['path'])
+        logger.sys_logger.debug("Template size: ")
         self._log += "Template size: " + "\n"
         for index in range(0, len(self._etalon)):
             et_weight_cluster = self._etalon[index]
@@ -547,16 +552,16 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                             c_val += c
                 res.append(c_val / cluster_weight)
                 val = (c_val / (1.0 * cluster_weight)) * 100
-                logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(cluster_weight)
-                                    + " Positive: " + str(c_val) + " Probability: " + str(val))
+                logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(cluster_weight)
+                                        + " Positive: " + str(c_val) + " Probability: " + str(val))
                 self._log += "Cluster #" + str(index + 1) + ": " + str(cluster_weight) \
                              + " Positive: " + str(c_val) + " Probability: " + str(val) + "\n"
                 prob += val
             else:
-                logger.logger.debug("Cluster #" + str(index + 1) + ": " + str(cluster_weight)
-                                    + " Invalid.")
+                logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(cluster_weight)
+                                        + " Invalid.")
                 self._log += "Cluster #" + str(index + 1) + ": " + str(cluster_weight) + " Invalid.\n"
-        logger.logger.debug("Probability: " + str((prob / (1.0 * len(res)))))
+        logger.sys_logger.debug("Probability: " + str((prob / (1.0 * len(res)))))
         self._log += "Probability: " + str((prob / (1.0 * len(res)))) + "\n"
         return prob / (1.0 * len(res))
 

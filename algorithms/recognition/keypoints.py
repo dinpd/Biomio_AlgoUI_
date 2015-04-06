@@ -60,6 +60,7 @@ class KODSettings:
             self.orb_settings.nlevels = detector['Number of levels']
 
     def dump(self):
+        logger.logger.debug('Keypoints Objects Detectors Settings')
         logger.logger.debug('Neighbours Distance: %f' % self.neighbours_distance)
         logger.logger.debug('Probability: %f' % self.probability)
         logger.logger.debug('Detector Type: %s' % self.detector_type)
