@@ -8,6 +8,10 @@ import cv2
 import os
 
 
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+ALGO_DB_PATH = os.path.join(APP_ROOT, 'algorithms', 'data')
+
+
 RectsUnion = 0
 RectsIntersect = 1
 RectsFiltering = 2
@@ -62,12 +66,14 @@ class CascadeROIDetector:
         self._cascades_list = []
 
     def add_cascade(self, path):
-        if os.path.exists(path):
-            self.__cascades.append(cv2.CascadeClassifier(path))
-            self._cascades_list.append(path)
+        abs_path = os.path.join(APP_ROOT, "../../", path)
+        logger.logger.debug("####### %s" % abs_path)
+        if os.path.exists(abs_path):
+            self.__cascades.append(cv2.CascadeClassifier(abs_path))
+            self._cascades_list.append(abs_path)
             # logger.debug("Cascade is loaded.")
         else:
-            logger.debug("Such file does not exist.")
+            logger.logger.debug("Such file does not exist.")
 
     def cascades(self):
         cascades = []
@@ -90,7 +96,7 @@ class CascadeROIDetector:
         rects = list()
         gray = grayscaleAndEqualize(img)
         if len(self.__cascades) == 0:
-            logger.debug("Detection impossible. Any cascade not found.")
+            logger.logger.debug("Detection impossible. Any cascade not found.")
             return rects
         settings = CascadeClassifierSettings()
         for cascade in self.__cascades:
@@ -112,10 +118,52 @@ class CascadeROIDetector:
             return []
         return rects
 
+    def _rotate(self, image):
+        rows = image.shape[0]
+        cols = image.shape[1]
+        M = cv2.getRotationMatrix2D((cols/2.0, cols/2.0), 90, 1)
+        img = cv2.warpAffine(image, M, (rows, cols))
+        return img
+
+    def detectAndJoinWithRotation(self, image, as_list=False, algorithm=RectsUnion):
+        rect = (0, 0, 0, 0)
+        img = image
+        c_rect = self.detectAndJoin(image, as_list, algorithm)
+        if len(c_rect) > 0:
+            if rect[2] < c_rect[2] and rect[3] < c_rect[3]:
+                rect = c_rect
+                img = image
+
+        # 90
+        img2 = self._rotate(image)
+        c_rect = self.detectAndJoin(img2, as_list, algorithm)
+        if len(c_rect) > 0:
+            if rect[2] < c_rect[2] and rect[3] < c_rect[3]:
+                rect = c_rect
+                img = img2
+
+        # 180
+        img3 = self._rotate(img2)
+        # c_rect = self.detectAndJoin(img3, as_list, algorithm)
+        # if len(c_rect) > 0:
+        #     if rect[2] < c_rect[2] and rect[3] < c_rect[3]:
+        #         rect = c_rect
+        #         img = img3
+
+        # 270
+        img4 = self._rotate(img3)
+        c_rect = self.detectAndJoin(img4, as_list, algorithm)
+        if len(c_rect) > 0:
+            if rect[2] < c_rect[2] and rect[3] < c_rect[3]:
+                rect = c_rect
+                img = img4
+
+        return img, rect
+
     def detectAndJoin(self, image, as_list=False, algorithm=RectsUnion):
         rects = self.detect(image, as_list)
         if len(rects) == 0:
-            logger.debug("ROI is not found for image")
+            logger.logger.debug("ROI is not found for image")
         return self.joinRectangles(rects, algorithm)
 
     @staticmethod

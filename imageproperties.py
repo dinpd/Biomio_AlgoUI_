@@ -1,6 +1,6 @@
 from guidata.dataset.datatypes import DataSet, GetAttrProp
 from guidata.dataset.dataitems import (IntItem, FloatArrayItem, StringItem)
-
+from scipy import ndimage
 from guiqwt.config import _
 from guiqwt import io
 
@@ -27,6 +27,11 @@ class ImageProperties:
             self._title = unicode(filepath)
             self._path = filepath
             self._data = cv2.imread(filepath, cv2.CV_LOAD_IMAGE_COLOR)
+            # img = cv2.imread(filepath, cv2.CV_LOAD_IMAGE_COLOR)
+            # rows = img.shape[0]
+            # cols = img.shape[1]
+            # M = cv2.getRotationMatrix2D((cols/2, rows/2), 270, 1)
+            # self._data = cv2.warpAffine(img, M, (max(rows, cols), max(rows, cols)))
             self._height = 0
             self._width = 0
             self._height, self._width = self._data.shape[0], self._data.shape[1]

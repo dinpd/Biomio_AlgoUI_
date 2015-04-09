@@ -198,6 +198,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                     #                                 new_cluster.append((dt_cluster[m.trainIdx], 1))
                     #                             et_cluster = new_cluster
                     self._etalon[index] = et_cluster
+        print self._etalon
 
     def importSources(self, source):
         self._etalon = []
