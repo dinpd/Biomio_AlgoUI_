@@ -7,12 +7,63 @@ from algorithms.cvtools.system import saveNumpyImage
 from algorithms.features.classifiers import CascadeROIDetector
 from keypoints import (KeypointsObjectDetector,
                        drawClusters, drawKeypoints, drawLine,
+                       showClusters,
                        listToNumpy_ndarray, numpy_ndarrayToList,
                        BRISKDetectorType, ORBDetectorType,
                        verifying)
+import multiprocessing as mp
 import logger
 import numpy
 import sys
+
+
+# def parallel_verify_template_L0(obj, etalon, data, index):
+#     return obj.parallel_verify_template_L0(etalon, data, index)
+def parallel_verify_template_L0(etalon, data, index):
+    matcher = FlannMatcher()
+    et_cluster = etalon[index]
+    dt_cluster = data[index]
+    ms = []
+    val = 0
+    if ((et_cluster is None or dt_cluster is None) or
+            (len(et_cluster) <= 0 or len(dt_cluster) <= 0)):
+        logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(etalon[index]))
+                                + " Invalid.")
+            # self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) + " Invalid.\n"
+    else:
+        matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, numpy.uint8),
+                                    listToNumpy_ndarray(dt_cluster, numpy.uint8), k=2)
+        matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, numpy.uint8),
+                                    listToNumpy_ndarray(et_cluster, numpy.uint8), k=2)
+            # for v in matches:
+            # if len(v) >= 1:
+            # if len(v) >= 2:
+            # m = v[0]
+            # n = v[1]
+            # logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
+            #                     + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
+            # if m.distance < self.kodsettings.neighbours_distance:
+            # if m.distance < self.kodsettings.neighbours_distance * n.distance:
+            #     ms.append(m)
+            #  else:
+            #     ms.append(m)
+            #     ms.append(n)
+        for v in matches1:
+            if len(v) >= 1:
+                for m in v:
+                    # m = v[0]
+                    for c in matches2:
+                        if len(c) >= 1:
+                            for n in c:
+                                # n = c[0]
+                                if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+                                    ms.append(m)
+        val = (len(ms) / (1.0 * len(etalon[index]))) * 100
+        logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(etalon[index]))
+                                + " Positive: " + str(len(ms)) + " Probability: " + str(val))
+            # self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) \
+            #              + " Positive: " + str(len(ms)) + " Probability: " + str(val) + "\n"
+    return val, len(ms)
 
 
 class ClustersMatchingDetector(KeypointsObjectDetector):
@@ -55,7 +106,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                     # for v in matches:
                     # if len(v) >= 1:
                     # if len(v) >= 2:
-                    #     m = v[0]
+                    # m = v[0]
                     #     n = v[1]
                     #     good.append(self.etalon[m.queryIdx])
                     #     if m.distance < self.kodsettings.neighbours_distance:
@@ -83,13 +134,13 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                                                 good.append(et_cluster[m.queryIdx])
                                                 good.append(dt_cluster[m.trainIdx])
                     self._etalon[index] = listToNumpy_ndarray(good)
-        # print "=========================="
-        # for etalon in self._etalon:
-        #     if etalon is not None:
-        #         print len(etalon)
-        #     else:
-        #         print 0
-        # print "=========================="
+                    # print "=========================="
+                    # for etalon in self._etalon:
+                    #     if etalon is not None:
+                    #         print len(etalon)
+                    #     else:
+                    #         print 0
+                    # print "=========================="
 
     def update_hash_templateL1(self, data):
         """
@@ -119,16 +170,16 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                     break
                 et_cluster = self._etalon[index]
                 # for dt in dt_cluster:
-                #     dt_is = False
+                # dt_is = False
                 #     weight_cluster = []
                 #     for d, c in et_cluster:
                 #         if numpy.array_equal(d, dt):
                 ##             c += 1
-                            # dt_is = True
-                        # weight_cluster.append((d, c))
-                    # if not dt_is:
-                    #     weight_cluster.append((dt, 0))
-                    # et_cluster = weight_cluster
+                # dt_is = True
+                # weight_cluster.append((d, c))
+                # if not dt_is:
+                #     weight_cluster.append((dt, 0))
+                # et_cluster = weight_cluster
                 for obj in self._hash:
                     if data['path'] == obj['path']:
                         break
@@ -303,7 +354,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                 obj = dict()
                 # desc_dict = dict()
                 # for indx in range(0, len(d)):
-                #     desc_dict[str(indx)] = str(d[indx])
+                # desc_dict[str(indx)] = str(d[indx])
                 obj['descriptor'] = numpy_ndarrayToList(d)
                 obj['count'] = c
                 cluster[str(i)] = obj
@@ -443,7 +494,86 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         self._log += "\nTotal: " + str(s / len(gres)) + "\n\n"
         return s / len(gres)
 
+    # @staticmethod
+    # def parallel_verify_template_L0(etalon, data, index):
+    #     matcher = FlannMatcher()
+    #     et_cluster = etalon[index]
+    #     dt_cluster = data[index]
+    #     ms = []
+    #     val = 0
+    #     if ((et_cluster is None or dt_cluster is None) or
+    #             (len(et_cluster) <= 0 or len(dt_cluster) <= 0)):
+    #         logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(etalon[index]))
+    #                                 + " Invalid.")
+    #         # self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) + " Invalid.\n"
+    #     else:
+    #         matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, numpy.uint8),
+    #                                     listToNumpy_ndarray(dt_cluster, numpy.uint8), k=2)
+    #         matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, numpy.uint8),
+    #                                     listToNumpy_ndarray(et_cluster, numpy.uint8), k=2)
+    #         # for v in matches:
+    #         # if len(v) >= 1:
+    #         # if len(v) >= 2:
+    #         # m = v[0]
+    #         # n = v[1]
+    #         # logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
+    #         #                     + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
+    #         # if m.distance < self.kodsettings.neighbours_distance:
+    #         # if m.distance < self.kodsettings.neighbours_distance * n.distance:
+    #         #     ms.append(m)
+    #         #  else:
+    #         #     ms.append(m)
+    #         #     ms.append(n)
+    #         for v in matches1:
+    #             if len(v) >= 1:
+    #                 for m in v:
+    #                     # m = v[0]
+    #                     for c in matches2:
+    #                         if len(c) >= 1:
+    #                             for n in c:
+    #                                 # n = c[0]
+    #                                 if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+    #                                     ms.append(m)
+    #         val = (len(ms) / (1.0 * len(etalon[index]))) * 100
+    #         logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(etalon[index]))
+    #                                 + " Positive: " + str(len(ms)) + " Probability: " + str(val))
+    #         # self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) \
+    #         #              + " Positive: " + str(len(ms)) + " Probability: " + str(val) + "\n"
+    #     return val, ms
+
     def verify_template_L0(self, data):
+        # return self.verify_template_L0_parallel(data)
+        return self.verify_template_L0_noparallel(data)
+
+    def verify_template_L0_parallel(self, data):
+        res = []
+        prob = 0
+        self._log += "Test: " + data['path'] + "\n"
+        logger.sys_logger.debug("Image: " + data['path'])
+        logger.sys_logger.debug("Template size: ")
+        self._log += "Template size: " + "\n"
+        # output = mp.Queue()
+        # processes = [mp.Process(target=parallel_verify_template_L0, args=(self._etalon, data['clusters'], x)) for x in
+        #              range(len(self._etalon))]
+
+        pool = mp.Pool(processes=4)
+        res = [pool.apply(parallel_verify_template_L0, args=(self._etalon, data['clusters'], x)) for x in range(len(self._etalon))]
+
+        # for p in processes:
+        #     p.start()
+        # for p in processes:
+        #     p.join()
+
+        # res = [output.get() for p in processes]
+        logger.logger.debug(res)
+        for r, c in res:
+            prob += r
+
+        logger.sys_logger.debug("Probability: " + str((prob / (1.0 * len(res)))))
+        self._log += "Probability: " + str((prob / (1.0 * len(res)))) + "\n"
+        return prob / (1.0 * len(res))
+
+    def verify_template_L0_noparallel(self, data):
         matcher = FlannMatcher()
         res = []
         prob = 0
@@ -526,7 +656,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                 # for v in matches:
                 # if len(v) >= 1:
                 # if len(v) >= 2:
-                #     m = v[0]
+                # m = v[0]
                 # n = v[1]
                 # logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
                 #                     + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
@@ -577,7 +707,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         # gres = []
         # for i in range(0, len(f_imgobj['clusters'])):
         # first = f_imgobj['clusters'][i]
-        #     second = s_imgobj['clusters'][i]
+        # second = s_imgobj['clusters'][i]
         #     res = []
         #     if (first is None) or (second is None):
         #         logger.logger.debug("Cluster #" + str(i + 1) + ": Invalid")

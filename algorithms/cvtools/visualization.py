@@ -66,8 +66,10 @@ def showClusters(clusters, image):
                                 cv2.cv.Scalar(random.randint(0, 255),
                                               random.randint(0, 255),
                                               random.randint(0, 255)))
-    plt.imshow(out)
-    plt.show()
+    # plt.imshow(out)
+    # plt.show()
+    cv2.imshow("Clusters Window", out)
+    cv2.waitKey()
 
 
 def showMatches(imgobj1, imgobj2, matches, key='data'):
