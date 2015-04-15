@@ -490,6 +490,11 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._load_label.setText("Loading finished.")
             self._load_bar.setValue(100)
             logger.debug("Loading finished.")
+            logger.debug("Database updating...")
+            self._load_label.setText("Database updating...")
+            self._keysrecg_detector.update_database()
+            self._load_label.setText("Database updated.")
+            logger.debug("Database updated.")
 
     def add_source_images(self):
         self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()

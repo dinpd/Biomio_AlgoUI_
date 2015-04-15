@@ -114,6 +114,9 @@ class KeypointsObjectDetector:
         self._use_roi = True
         self._log = ""
 
+    def threshold(self):
+        return self.kodsettings.probability
+
     def log(self):
         return self._log
 
