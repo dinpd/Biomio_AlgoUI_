@@ -166,11 +166,11 @@ class KeypointsObjectDetector:
         if self._use_roi:
             # rect = self._cascadeROI.detectAndJoin(data['data'], False, RectsFiltering)
             img, rect = self._cascadeROI.detectAndJoinWithRotation(data['data'], False, RectsFiltering)
-            data['data'] = img
             if len(rect) <= 0:
                 return False
             print rect
             # ROI cutting
+            data['data'] = img
             data['roi'] = getROIImage(data['data'], rect)
         else:
             data['roi'] = data['data']

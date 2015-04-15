@@ -16,9 +16,37 @@ import logger
 import numpy
 import sys
 
+PROCESS_COUNT = 8 # mp.cpu_count()
 
-# def parallel_verify_template_L0(obj, etalon, data, index):
-#     return obj.parallel_verify_template_L0(etalon, data, index)
+
+def parallel_update_hash_templateL0(etalon, data, index):
+    matcher = FlannMatcher()
+    et_cluster = etalon[index]
+    dt_cluster = data[index]
+    if et_cluster is None or len(et_cluster) == 0:
+        return index, et_cluster
+    elif dt_cluster is None or len(dt_cluster) == 0:
+        return index, et_cluster
+    else:
+        matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=3)
+        matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=3)
+
+        good = []
+
+        for v in matches1:
+            if len(v) >= 1:
+                for m in v:
+                    # m = v[0]
+                    for c in matches2:
+                        if len(c) >= 1:
+                            for n in c:
+                                # n = c[0]
+                                    if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+                                        good.append(et_cluster[m.queryIdx])
+                                        good.append(dt_cluster[m.trainIdx])
+        return index, listToNumpy_ndarray(good)
+
+
 def parallel_verify_template_L0(etalon, data, index):
     matcher = FlannMatcher()
     et_cluster = etalon[index]
@@ -87,6 +115,21 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                 logger.logger.debug("Detector doesn't has such template layer.")
 
     def update_hash_templateL0(self, data):
+        # self.update_hash_templateL0_parallel(data)
+        self.update_hash_templateL0_noparallel(data)
+
+    def update_hash_templateL0_parallel(self, data):
+        if len(self._etalon) == 0:
+            self._etalon = data['clusters']
+        else:
+            pool = mp.Pool(processes=PROCESS_COUNT)
+            res = [pool.apply(parallel_update_hash_templateL0, args=(self._etalon, data['clusters'], x))
+                   for x in range(len(self._etalon))]
+
+            for i, cluster in res:
+                self._etalon[i] = cluster
+
+    def update_hash_templateL0_noparallel(self, data):
         if len(self._etalon) == 0:
             self._etalon = data['clusters']
         else:
@@ -338,6 +381,8 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             cluster = self._etalon[index]
             cluster_dict = dict()
             i_desc = 0
+            if cluster is None:
+                cluster = []
             for descriptor in cluster:
                 cluster_dict[i_desc] = numpy_ndarrayToList(descriptor)
                 i_desc += 1
@@ -494,53 +539,6 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         self._log += "\nTotal: " + str(s / len(gres)) + "\n\n"
         return s / len(gres)
 
-    # @staticmethod
-    # def parallel_verify_template_L0(etalon, data, index):
-    #     matcher = FlannMatcher()
-    #     et_cluster = etalon[index]
-    #     dt_cluster = data[index]
-    #     ms = []
-    #     val = 0
-    #     if ((et_cluster is None or dt_cluster is None) or
-    #             (len(et_cluster) <= 0 or len(dt_cluster) <= 0)):
-    #         logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(etalon[index]))
-    #                                 + " Invalid.")
-    #         # self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) + " Invalid.\n"
-    #     else:
-    #         matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, numpy.uint8),
-    #                                     listToNumpy_ndarray(dt_cluster, numpy.uint8), k=2)
-    #         matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, numpy.uint8),
-    #                                     listToNumpy_ndarray(et_cluster, numpy.uint8), k=2)
-    #         # for v in matches:
-    #         # if len(v) >= 1:
-    #         # if len(v) >= 2:
-    #         # m = v[0]
-    #         # n = v[1]
-    #         # logger.logger.debug(str(m.distance) + " " + str(m.queryIdx) + " " + str(m.trainIdx) + " | "
-    #         #                     + str(n.distance) + " " + str(n.queryIdx) + " " + str(n.trainIdx))
-    #         # if m.distance < self.kodsettings.neighbours_distance:
-    #         # if m.distance < self.kodsettings.neighbours_distance * n.distance:
-    #         #     ms.append(m)
-    #         #  else:
-    #         #     ms.append(m)
-    #         #     ms.append(n)
-    #         for v in matches1:
-    #             if len(v) >= 1:
-    #                 for m in v:
-    #                     # m = v[0]
-    #                     for c in matches2:
-    #                         if len(c) >= 1:
-    #                             for n in c:
-    #                                 # n = c[0]
-    #                                 if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
-    #                                     ms.append(m)
-    #         val = (len(ms) / (1.0 * len(etalon[index]))) * 100
-    #         logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(etalon[index]))
-    #                                 + " Positive: " + str(len(ms)) + " Probability: " + str(val))
-    #         # self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) \
-    #         #              + " Positive: " + str(len(ms)) + " Probability: " + str(val) + "\n"
-    #     return val, ms
-
     def verify_template_L0(self, data):
         # return self.verify_template_L0_parallel(data)
         return self.verify_template_L0_noparallel(data)
@@ -552,19 +550,11 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         logger.sys_logger.debug("Image: " + data['path'])
         logger.sys_logger.debug("Template size: ")
         self._log += "Template size: " + "\n"
-        # output = mp.Queue()
-        # processes = [mp.Process(target=parallel_verify_template_L0, args=(self._etalon, data['clusters'], x)) for x in
-        #              range(len(self._etalon))]
 
-        pool = mp.Pool(processes=4)
-        res = [pool.apply(parallel_verify_template_L0, args=(self._etalon, data['clusters'], x)) for x in range(len(self._etalon))]
+        pool = mp.Pool(processes=PROCESS_COUNT)
+        res = [pool.apply(parallel_verify_template_L0, args=(self._etalon, data['clusters'], x))
+               for x in range(len(self._etalon))]
 
-        # for p in processes:
-        #     p.start()
-        # for p in processes:
-        #     p.join()
-
-        # res = [output.get() for p in processes]
         logger.logger.debug(res)
         for r, c in res:
             prob += r
@@ -581,12 +571,24 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         logger.sys_logger.debug("Image: " + data['path'])
         logger.sys_logger.debug("Template size: ")
         self._log += "Template size: " + "\n"
+        summ = 0
+        for index in range(0, len(self._etalon)):
+            et_cluster = self._etalon[index]
+            if et_cluster is not None:
+                summ += len(et_cluster)
         for index in range(0, len(self._etalon)):
             et_cluster = self._etalon[index]
             dt_cluster = data['clusters'][index]
             ms = []
-            if et_cluster is None or dt_cluster is None:
-                break
+            if et_cluster is None:
+                logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(-1)
+                                        + " Invalid. (Weight: 0)")
+                continue
+            if dt_cluster is None:
+                logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
+                                        + " Positive: 0 Probability: 0 (Weight: " +
+                                        str(len(et_cluster) / (1.0 * summ)) + ")")
+                continue
             if len(et_cluster) > 0 and len(dt_cluster) > 0:
                 matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, numpy.uint8),
                                             listToNumpy_ndarray(dt_cluster, numpy.uint8), k=2)
@@ -618,17 +620,22 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
                 res.append(ms)
                 val = (len(res[index]) / (1.0 * len(self._etalon[index]))) * 100
                 logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
-                                        + " Positive: " + str(len(res[index])) + " Probability: " + str(val))
+                                        + " Positive: " + str(len(res[index])) + " Probability: " + str(val) +
+                                        " (Weight: " + str(len(et_cluster) / (1.0 * summ)) + ")")
                 self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) \
                              + " Positive: " + str(len(res[index])) + " Probability: " + str(val) + "\n"
-                prob += val
+                prob += (len(et_cluster) / (1.0 * summ)) * val
             else:
+                res.append(ms)
                 logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
                                         + " Invalid.")
                 self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) + " Invalid.\n"
-        logger.sys_logger.debug("Probability: " + str((prob / (1.0 * len(res)))))
-        self._log += "Probability: " + str((prob / (1.0 * len(res)))) + "\n"
-        return prob / (1.0 * len(res))
+        # logger.sys_logger.debug("Probability: " + str((prob / (1.0 * len(res)))))
+        # self._log += "Probability: " + str((prob / (1.0 * len(res)))) + "\n"
+        # return prob / (1.0 * len(res))
+        logger.sys_logger.debug("Probability: " + str(prob))
+        self._log += "Probability: " + str(prob) + "\n"
+        return prob
 
     def verify_template_L1(self, data):
         matcher = FlannMatcher()
@@ -789,18 +796,18 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         centermouth = (centernose[0], centernose[1] + rect[3])
         leftmouth = (lefteye[0], centermouth[1])
         rightmouth = (righteye[0], centermouth[1])
-        # out = drawLine(data['roi'], (lefteye[0], lefteye[1], centernose[0], centernose[1]), (255, 0, 0))
-        # out = drawLine(out, (centereye[0], centereye[1], centernose[0], centernose[1]), (255, 0, 0))
-        # out = drawLine(out, (righteye[0], righteye[1], centernose[0], centernose[1]), (255, 0, 0))
-        # out = drawLine(out, (centermouth[0], centermouth[1], centernose[0], centernose[1]), (255, 0, 0))
-        # out = drawLine(out, (leftmouth[0], leftmouth[1], centernose[0], centernose[1]), (255, 0, 0))
-        # out = drawLine(out, (rightmouth[0], rightmouth[1], centernose[0], centernose[1]), (255, 0, 0))
+        out = drawLine(data['roi'], (lefteye[0], lefteye[1], centernose[0], centernose[1]), (255, 0, 0))
+        out = drawLine(out, (centereye[0], centereye[1], centernose[0], centernose[1]), (255, 0, 0))
+        out = drawLine(out, (righteye[0], righteye[1], centernose[0], centernose[1]), (255, 0, 0))
+        out = drawLine(out, (centermouth[0], centermouth[1], centernose[0], centernose[1]), (255, 0, 0))
+        out = drawLine(out, (leftmouth[0], leftmouth[1], centernose[0], centernose[1]), (255, 0, 0))
+        out = drawLine(out, (rightmouth[0], rightmouth[1], centernose[0], centernose[1]), (255, 0, 0))
         centers = [lefteye, righteye, centereye, centernose, leftmouth, rightmouth]
         self.filter_keypoints(data)
 
         clusters = KMeans(data['keypoints'], 0, centers, 3)
         # clusters = FOREL(obj['keypoints'], 40)
-        # showClusters(clusters, out)
+        showClusters(clusters, out)
         data['true_clusters'] = clusters
         descriptors = []
         for cluster in clusters:

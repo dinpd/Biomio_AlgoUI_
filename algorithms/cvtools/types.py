@@ -3,7 +3,6 @@ Open CV Tools
 Types Module
 Implementation of functions for basic type conversion based on OpenCV.
 """
-
 import cv2.cv as cv
 import numpy
 
