@@ -1,0 +1,10 @@
+[Core]
+Name = PalmRecognitionPlugin
+Module = palmRecognition
+
+[Documentation]
+Author = Vitalius Parubochyi
+Version = 0.1.0
+Website = www.test-plugin1.com
+Copyright = @2014
+Description = First Test Plugin
