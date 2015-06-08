@@ -1,6 +1,6 @@
-from logger import logger
+import json
+import os
 
-from aiplugins import IAlgorithmPlugin
 from guidata.qt.QtCore import SIGNAL, pyqtSignal
 from guidata.qt.QtGui import (QAction, QMenu,
                               QWidget, QDockWidget, QListWidget,
@@ -10,20 +10,19 @@ from guidata.qt.QtGui import (QAction, QMenu,
                               QSpinBox, QLabel, QProgressBar, QLineEdit)
 from guidata.qt.QtCore import QObject, QCoreApplication
 from guidata.configtools import get_icon
+from guiqwt.config import _
+
+from logger import logger
+from aiplugins import IAlgorithmPlugin
 from imageproperties import ImageProperties
-import algorithms.faces.biom.faces as fs
 from algorithms.cvtools.visualization import drawRectangle
 from algorithms.features.classifiers import CascadeROIDetector, getROIImage, CascadeClassifierSettings
-from algorithms.features.matchers import FlannMatcher
 from algorithms.faces.biom.utils import files_list
-from plugins.FaceRecognition.detdialog import DetectorSettingsDialog
+from ui.detdialog import DetectorSettingsDialog
 from algorithms.recognition.detcreator import (DetectorCreator,
                                                ClustersObjectMatching, IntersectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
 from algorithms.imgobj import loadImageObject
-from guiqwt.config import _
-import json
-import os
 
 
 VerificationAlgorithm = "KeypointsVerificationAlgorithm"

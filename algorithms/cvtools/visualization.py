@@ -32,8 +32,10 @@ def showNumpyImage(image):
 
     :param image: numpy.ndarray image object
     """
-    plt.imshow(image)
-    plt.show()
+    # plt.imshow(image)
+    # plt.show()
+    cv2.imshow("image", image)
+    cv2.waitKey()
 
 
 def showKeypoints(imgobj):

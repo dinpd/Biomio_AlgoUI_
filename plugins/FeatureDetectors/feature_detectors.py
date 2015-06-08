@@ -3,7 +3,7 @@ from guidata.qt.QtCore import SIGNAL, pyqtSignal
 from guidata.qt.QtGui import (QAction, QMenu,
                               QWidget, QDockWidget,
                               QFormLayout, QVBoxLayout, QHBoxLayout,
-                              QLineEdit, QPushButton, QGroupBox, QDial, QCheckBox,
+                              QLineEdit, QPushButton, QGroupBox, QDial, QCheckBox, QSpinBox,
                               QDoubleValidator, QIntValidator)
 from guidata.qt.QtCore import QObject
 from guidata.configtools import get_icon
@@ -12,11 +12,17 @@ from algorithms.cvtools.visualization import drawKeypoints
 from algorithms.features.detectors import BRISKDetector, ORBDetector
 from algorithms.features.gabor_threads import build_filters, process_kernel, process
 from logger import logger
+import algorithms.cvtools.dsp as dsp
+import cv2
 
 from guiqwt.config import _
 
 ACTION_TITLE = 'Action: %s Features Detector::'
 GF_ACTION_TITLE = 'Action: Gabor Filtering::'
+PD_ACTION_TITLE = 'Action: Palm Detection::'
+SPC_ACTION_TITLE = 'Action: Spectrum::'
+LPF_ACTION_TITLE = 'Action: Low Pass Filter::'
+HPF_ACTION_TITLE = 'Action: High Pass Filter::'
 
 
 class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
@@ -26,6 +32,8 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         self._setwigets.append(self.create_brisk_widget())
         self._setwigets.append(self.create_orb_widget())
         self._setwigets.append(self.create_gabor_widget())
+        self._setwigets.append(self.create_palm_widget())
+        self._setwigets.append(self.create_dsp_widget())
 
     def set_image_manager(self, manager):
         self._imanager = manager
@@ -36,7 +44,8 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
 
         detector_menu.addAction(self.add_brisk_action(detector_menu))
         detector_menu.addAction(self.add_orb_action(detector_menu))
-        return [detector_menu, self.add_gabor_filter_action(parent)]
+        return [detector_menu, self.add_gabor_filter_action(parent),
+                self.add_palm_detect_action(parent), self.add_dsp_action(parent)]
 
     def get_algorithms_list(self):
         return []
@@ -246,6 +255,144 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
                 else:
                     image.data(curr.data())
 
+            image.height(curr.height())
+            image.width(curr.width())
+            self._imanager.add_image(image)
+
+    def add_palm_detect_action(self, parent):
+        palm_action = QAction(parent)
+        palm_action.setText(_("Palm Detection"))
+        palm_action.setIcon(get_icon('palm.png'))
+        palm_action.setCheckable(True)
+        self.connect(palm_action, SIGNAL("triggered(bool)"), self.palm_opened)
+        return palm_action
+
+    palm_opened = pyqtSignal(bool, name='palmOpened')
+
+    def create_palm_widget(self):
+        palm_dock = QDockWidget()
+        palm_dock.setWindowTitle("Palm Detection Settings")
+        palm_dock.setVisible(False)
+        self.palm_opened.connect(palm_dock.setVisible)
+        palm_widget = QWidget(palm_dock)
+
+        accept = QPushButton(palm_widget)
+        accept.setText('Accept')
+        self.connect(accept, SIGNAL("clicked()"), self.palm_detect)
+        widget_layout = QVBoxLayout()
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(2)
+        button_layout.addWidget(accept)
+        widget_layout.addLayout(button_layout)
+        palm_widget.setLayout(widget_layout)
+        palm_dock.setWidget(palm_widget)
+        return palm_dock
+
+    def palm_detect(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(PD_ACTION_TITLE + curr.title())
+
+            gabor = build_filters()
+            images = list()
+            for i in range(0, len(gabor), 1):
+                logger.debug("Applying Gabor Filter. Kernel No. " + str(i))
+                images.append(cv2.threshold(process_kernel(curr.data(), gabor[i]), 5, 255, 0)[1])
+
+            result = images[0]
+            for j in range(0, curr.height(), 1):
+                for i in range(0, curr.width(), 1):
+                    b = 0
+                    g = 0
+                    r = 0
+                    for k in range(0, len(images), 1):
+                        img = images[k]
+                        pixel = img[j, i]
+                        b += pixel[0]
+                        g += pixel[1]
+                        r += pixel[2]
+                    result[j, i] = [b / len(images), g / len(images), r / len(images)]
+
+            image.data(cv2.threshold(result, 200, 255, 0)[1])
+            image.height(curr.height())
+            image.width(curr.width())
+            self._imanager.add_image(image)
+
+    def add_dsp_action(self, parent):
+        dsp_action = QAction(parent)
+        dsp_action.setText(_("Digital Signal Processing"))
+        dsp_action.setIcon(get_icon('dsp.png'))
+        dsp_action.setCheckable(True)
+        self.connect(dsp_action, SIGNAL("triggered(bool)"), self.dsp_opened)
+        return dsp_action
+
+    dsp_opened = pyqtSignal(bool, name='dspOpened')
+
+    def create_dsp_widget(self):
+        dsp_dock = QDockWidget()
+        dsp_dock.setWindowTitle("DSP Settings")
+        dsp_dock.setVisible(False)
+        self.dsp_opened.connect(dsp_dock.setVisible)
+        dsp_widget = QWidget(dsp_dock)
+
+        self._sizeBox = QSpinBox(dsp_widget)
+        self._sizeBox.setMinimum(0)
+        self._sizeBox.setMaximum(1000000)
+        self._sizeBox.setSingleStep(1)
+        self._sizeBox.setValue(30)
+
+        spc_apply = QPushButton(dsp_widget)
+        spc_apply.setText('Spectrum')
+        self.connect(spc_apply, SIGNAL("clicked()"), self.spc)
+        lpf_apply = QPushButton(dsp_widget)
+        lpf_apply.setText('Low Pass Filter')
+        self.connect(lpf_apply, SIGNAL("clicked()"), self.lpf)
+        hpf_apply = QPushButton(dsp_widget)
+        hpf_apply.setText('High Pass Filter')
+        self.connect(hpf_apply, SIGNAL("clicked()"), self.hpf)
+        widget_layout = QVBoxLayout()
+        control_layout = QFormLayout()
+        control_layout.addRow("Filter Kernel Size: ", self._sizeBox)
+        widget_layout.addLayout(control_layout)
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(spc_apply)
+        button_layout.addWidget(lpf_apply)
+        button_layout.addWidget(hpf_apply)
+        button_layout.addStretch(2)
+        widget_layout.addLayout(button_layout)
+        dsp_widget.setLayout(widget_layout)
+        dsp_dock.setWidget(dsp_widget)
+        return dsp_dock
+
+    def spc(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(SPC_ACTION_TITLE + curr.title())
+            image.data(dsp.dsp_spectrum(curr.data()))
+            image.height(curr.height())
+            image.width(curr.width())
+            self._imanager.add_image(image)
+
+    def lpf(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(LPF_ACTION_TITLE + curr.title())
+            mask = dsp.dsp_lpf_mask(curr.data(), self._sizeBox.value())
+            image.data(dsp.dsp_filter(curr.data(), mask))
+            image.height(curr.height())
+            image.width(curr.width())
+            self._imanager.add_image(image)
+
+    def hpf(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(HPF_ACTION_TITLE + curr.title())
+            mask = dsp.dsp_hpf_mask(curr.data(), self._sizeBox.value())
+            image.data(dsp.dsp_filter(curr.data(), mask))
             image.height(curr.height())
             image.width(curr.width())
             self._imanager.add_image(image)

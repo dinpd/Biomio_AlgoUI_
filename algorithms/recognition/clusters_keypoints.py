@@ -1,5 +1,3 @@
-__author__ = 'vitalius.parubochyi'
-
 from algorithms.features.matchers import FlannMatcher
 from algorithms.clustering.forel import FOREL
 from algorithms.clustering.kmeans import KMeans
@@ -212,8 +210,9 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             self._etalon = []
             for cluster in data['clusters']:
                 weight_cluster = []
-                for desc in cluster:
-                    weight_cluster.append((desc, 1))
+                if cluster is not None:
+                    for desc in cluster:
+                        weight_cluster.append((desc, 1))
                 self._etalon.append(weight_cluster)
         else:
             matcher = FlannMatcher()
@@ -317,7 +316,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         if len(self._hash) > 0:
             minv = sys.maxint
             for obj in self._hash:
-                res = self.verify(obj)
+                res = self.verify_template_L0(obj)
                 if minv > res:
                     minv = res
             self._prob = minv
@@ -338,21 +337,22 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         logger.logger.debug("Database loading finished.")
 
     def importSources_Database(self, source):
-        etalon = source['etalon']
-        for j in range(0, len(etalon.keys())):
-            self._etalon.append([])
-        for c_num, cluster in etalon.iteritems():
-            etalon_cluster = []
-            for k in range(0, len(cluster.keys())):
-                etalon_cluster.append([])
-            for d_num, descriptor in cluster.iteritems():
+        for j in range(0, len(source.keys())):
+            self._hash.append(dict())
+        for c_num, item in source.iteritems():
+            item_data = []
+            for k in range(0, len(item.keys())):
+                item_data.append([])
+            for d_num, cluster in item.iteritems():
                 desc = []
-                for i in range(0, len(descriptor.keys())):
+                for i in range(0, len(cluster.keys())):
                     desc.append([])
-                for e_num, element in descriptor.iteritems():
-                    desc[int(e_num)] = numpy.uint8(element)
-                etalon_cluster[int(d_num)] = listToNumpy_ndarray(desc)
-            self._etalon[int(c_num) - 1] = listToNumpy_ndarray(etalon_cluster)
+                for e_num, descriptor in cluster.iteritems():
+                    desc[int(e_num)] = listToNumpy_ndarray(descriptor)
+                item_data[int(d_num)] = desc
+            obj = dict()
+            obj["clusters"] = item_data
+            self._hash[int(c_num) - 1] = obj
 
     def importSources_L0Template(self, source):
         for j in range(0, len(source.keys())):
@@ -394,21 +394,20 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         return source
 
     def exportSources_Database(self):
-        sources = dict()
         etalon = dict()
         i = 0
-        for cluster in self._etalon:
+        for data in self._hash:
             i += 1
             elements = dict()
-            for index in range(0, len(cluster)):
-                descriptor = cluster[index]
-                desc_dict = dict()
-                for indx in range(0, len(descriptor)):
-                    desc_dict[str(indx)] = str(descriptor[indx])
-                elements[str(index)] = desc_dict
+            for index in range(0, len(data["clusters"])):
+                cluster = data["clusters"][index]
+                desc = dict()
+                if cluster is not None:
+                    for indx in range(0, len(cluster)):
+                        desc[indx] = numpy_ndarrayToList(cluster[indx])
+                elements[str(index)] = desc
             etalon[str(i)] = elements
-        sources["etalon"] = etalon
-        return sources
+        return etalon
 
     def exportSources_L0Template(self):
         sources = dict()
@@ -529,16 +528,19 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         self._log += "Test: " + data['path'] + "\n"
         for d in self._hash:
             res = []
-            logger.logger.debug("Source: " + d['path'])
-            self._log += "Source: " + d['path'] + "\n"
+            # logger.logger.debug("Source: " + d['path'])
+            # self._log += "Source: " + d['path'] + "\n"
             for i in range(0, len(d['clusters'])):
                 test = data['clusters'][i]
                 source = d['clusters'][i]
-                if (test is None) or (source is None):
+                if (test is None) or (source is None) or (len(test) == 0) or (len(source) == 0):
                     logger.logger.debug("Cluster #" + str(i + 1) + ": Invalid")
                     self._log += "Cluster #" + str(i + 1) + ": Invalid\n"
                 else:
-                    matches = matcher.knnMatch(test, source, k=1)
+                    print test
+                    print listToNumpy_ndarray(source, numpy.uint8)
+                    matches = matcher.knnMatch(listToNumpy_ndarray(test, numpy.uint8),
+                                               listToNumpy_ndarray(source, numpy.uint8), k=1)
                     # dataTest = dict()
                     # dataTest['data'] = data['roi']
                     # dataTest['keypoints'] = data['true_clusters'][i]['items']
@@ -616,10 +618,12 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             dt_cluster = data['clusters'][index]
             ms = []
             if et_cluster is None:
+                res.append(ms)
                 logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(-1)
                                         + " Invalid. (Weight: 0)")
                 continue
             if dt_cluster is None:
+                res.append(ms)
                 logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
                                         + " Positive: 0 Probability: 0 (Weight: " +
                                         str(len(et_cluster) / (1.0 * summ)) + ")")
@@ -691,10 +695,12 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             dt_cluster = data['clusters'][index]
             ms = []
             if et_cluster is None or dt_cluster is None:
-                break
+                continue
             if len(et_cluster) > 0 and len(dt_cluster) > 0:
-                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster), listToNumpy_ndarray(dt_cluster), k=2)
-                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster), listToNumpy_ndarray(et_cluster), k=2)
+                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, numpy.uint8),
+                                            listToNumpy_ndarray(dt_cluster, numpy.uint8), k=2)
+                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, numpy.uint8),
+                                            listToNumpy_ndarray(et_cluster, numpy.uint8), k=2)
                 # for v in matches:
                 # if len(v) >= 1:
                 # if len(v) >= 2:
@@ -852,7 +858,9 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         return True
 
     def filter_keypoints(self, data):
-        clusters = FOREL(data['keypoints'], 20)
+        def point(item):
+            return item.pt
+        clusters = FOREL(data['keypoints'], 20, point)
         keypoints = []
         # cls = []
         for cluster in clusters:
