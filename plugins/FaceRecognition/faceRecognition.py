@@ -20,7 +20,8 @@ from algorithms.features.classifiers import CascadeROIDetector, getROIImage, Cas
 from algorithms.faces.biom.utils import files_list
 from ui.detdialog import DetectorSettingsDialog
 from algorithms.recognition.detcreator import (DetectorCreator,
-                                               ClustersObjectMatching, IntersectMatching,
+                                               ClustersDatabaseObjectMatching, ClustersTemplateL0ObjectMatching,
+                                               ClustersTemplateL1ObjectMatching, IntersectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
 from algorithms.imgobj import loadImageObject
 
@@ -341,7 +342,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         self.init_detector()
 
     def init_detector(self):
-        creator = DetectorCreator(type=ClustersObjectMatching)
+        creator = DetectorCreator(type=ClustersDatabaseObjectMatching)
         creator.addClassifier(FaceCascadeClassifier)
         creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
         creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt2.xml")

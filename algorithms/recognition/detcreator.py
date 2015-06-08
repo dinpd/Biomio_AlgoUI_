@@ -3,7 +3,9 @@ from algorithms.recognition.keypoints import KeypointsObjectDetector
 from algorithms.recognition.fmd_keypoints import FeaturesMatchingDetector
 from algorithms.recognition.spiral_keypoints import SpiralKeypointsVectorDetector
 from algorithms.recognition.objects_keypoints import ObjectsMatchingDetector
-from algorithms.recognition.clusters_keypoints import ClustersMatchingDetector
+from algorithms.recognition.clusters_db_keypoints import ClustersDBMatchingDetector
+from algorithms.recognition.clusters_templateL0_keypoints import ClustersTemplateL0MatchingDetector
+from algorithms.recognition.clusters_templateL1_keypoints import ClustersTemplateL1MatchingDetector
 from algorithms.recognition.intersect_keypoints import IntersectMatchingDetector
 from logger import logger
 
@@ -16,8 +18,10 @@ EyesCascadeClassifier = "EyesCascadeClassifier"
 FeaturesMatching = 0
 SpiralKeypointsVector = 1
 ObjectsFlannMatching = 2
-ClustersObjectMatching = 3
+ClustersDatabaseObjectMatching = 3
 IntersectMatching = 4
+ClustersTemplateL0ObjectMatching = 5
+ClustersTemplateL1ObjectMatching = 6
 
 
 class DetectorCreator:
@@ -48,12 +52,14 @@ class DetectorCreator:
             detector = SpiralKeypointsVectorDetector()
         elif self._type == ObjectsFlannMatching:
             detector = ObjectsMatchingDetector()
-        elif self._type == ClustersObjectMatching:
-            detector = ClustersMatchingDetector()
+        elif self._type == ClustersDatabaseObjectMatching:
+            detector = ClustersDBMatchingDetector()
+        elif self._type == ClustersTemplateL0ObjectMatching:
+            detector = ClustersTemplateL0MatchingDetector()
+        elif self._type == ClustersTemplateL1ObjectMatching:
+            detector = ClustersTemplateL1MatchingDetector()
         elif self._type == IntersectMatching:
             detector = IntersectMatchingDetector()
-        detector.setUseTemplate(False)
-        detector.setTemplateLayer(0)
         detector._cascadeROI = self._classifiers[FaceCascadeClassifier]
         detector._eyeROI = self._classifiers[EyesCascadeClassifier]
         return detector

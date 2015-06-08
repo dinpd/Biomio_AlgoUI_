@@ -109,8 +109,6 @@ class KeypointsObjectDetector:
         self._cascadeROI = None
         self._detector = None
         self._eyeROI = None
-        self._use_template = False
-        self._template_layer = 0
         self._use_roi = True
         self._log = ""
 
@@ -119,12 +117,6 @@ class KeypointsObjectDetector:
 
     def log(self):
         return self._log
-
-    def setUseTemplate(self, use):
-        self._use_template = use
-
-    def setTemplateLayer(self, layer):
-        self._template_layer = layer
 
     def setUseROIDetection(self, use):
         self._use_roi = use
