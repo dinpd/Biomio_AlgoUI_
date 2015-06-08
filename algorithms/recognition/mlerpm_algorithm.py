@@ -1,5 +1,3 @@
-__author__ = 'vitalius.parubochyi'
-
 from algorithms.recognition.features import (FeatureDetector,
                                              BRISKDetectorType, ORBDetectorType)
 from algorithms.features.detectors import (BRISKDetector, ORBDetector,

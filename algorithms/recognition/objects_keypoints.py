@@ -1,5 +1,3 @@
-__author__ = 'vitalius.parubochyi'
-
 from algorithms.features.matchers import FlannMatcher
 from keypoints import (KeypointsObjectDetector,
                        listToNumpy_ndarray,

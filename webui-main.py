@@ -1,5 +1,3 @@
-__author__ = 'vitalius.parubochyi'
-
 # from algointerface import AlgorithmsInterface
 #
 #

@@ -1,6 +1,3 @@
-__author__ = 'vitalius.parubochyi'
-
-
 def minDistance(matches):
     dist = []
     for match in matches:

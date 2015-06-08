@@ -1,5 +1,3 @@
-__author__ = 'vitalius.parubochyi'
-
 from keypoints import KODSettings
 from clusters_keypoints import ClustersMatchingDetector
 from intersect_keypoints import IntersectMatchingDetector

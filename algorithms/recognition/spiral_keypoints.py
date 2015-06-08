@@ -1,5 +1,3 @@
-__author__ = 'vitalius.parubochyi'
-
 from keypoints import (KeypointsObjectDetector,
                        identifying)
 import logger
