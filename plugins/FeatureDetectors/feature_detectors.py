@@ -8,9 +8,7 @@ from guidata.qt.QtGui import (QAction, QMenu,
 from guidata.qt.QtCore import QObject
 from guidata.configtools import get_icon
 from imageproperties import ImageProperties
-from algorithms.clustering.pirel import PIREL
 from algorithms.cvtools.visualization import drawKeypoints
-from algorithms.recognition.palm.detection import palm_contour
 from algorithms.features.detectors import BRISKDetector, ORBDetector
 from algorithms.features.gabor_threads import build_filters, process_kernel, process
 from logger import logger

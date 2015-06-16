@@ -12,7 +12,7 @@ import cv2
 import sys
 
 
-def palm_contours(image):
+def getPalmContourClassic(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = cv2.equalizeHist(gray)
     # gray = image
@@ -46,7 +46,7 @@ def palm_contours(image):
             max_area = area
             ci = i
     cnt = contours[ci]
-    center, radius = inside_contours(cnt)
+    center, radius = getContourInnerRegion(cnt)
     hull = cv2.convexHull(cnt)
     moments = cv2.moments(cnt)
     if moments['m00'] != 0:
@@ -107,11 +107,10 @@ def palm_contours(image):
             cv2.line(image, start, end, [0, 255, 0], 2)
             cv2.circle(image, far, 5, [0, 0, 255], -1)
         i=0
-
     return drawing
 
 
-def inside_contours(contour):
+def getContourInnerRegion(contour):
     if contour is not None:
         x,y,w,h = cv2.boundingRect(contour)
         center_point = (0, 0)
@@ -141,15 +140,11 @@ def inside_contours(contour):
     return 0, 0
 
 
-def palm_contour(image):
-
+def getPalmContourHaar(image):
     cascade_detector = CascadeROIDetector()
     cascade_detector.add_cascade("algorithms/data/haarcascades/haarcascade-hand.xml")
     cascade_detector.add_cascade("algorithms/data/haarcascades/haarcascade_palm.xml")
     img, rect = cascade_detector.detectAndJoinWithRotation(image, False, RectsFiltering)
-    print rect
-    rect = None
-
     gabor = build_filters()
     images = list()
     for i in range(0, len(gabor), 1):
@@ -173,12 +168,10 @@ def palm_contour(image):
             result[j, i] = [b / len(images), g / len(images), r / len(images)]
 
     result = cv2.threshold(result, 200, 255, 0)[1]
-
     gray = grayscale(result)
     binary = binarization(gray)
 
     points = []
-
     R = 400
     imcenter = (w / 2, h / 2)
     maxLength = max(w, h)
@@ -206,9 +199,6 @@ def palm_contour(image):
             next_points.append(last)
         points.append(next_points)
     contour = [listToNumpy_ndarray([listToNumpy_ndarray([group[0][0], group[0][1]])]) for group in points]
-    # for group in points:
-        # for point in group:
-            # cv2.circle(binary, point, 3, (200, 200, 200), 1)
     contour.append(listToNumpy_ndarray([listToNumpy_ndarray([contour[0][0][0], contour[0][0][1]])]))
     prev = None
     for point in contour:
@@ -218,7 +208,6 @@ def palm_contour(image):
             cv2.line(binary, (prev[0][0], prev[0][1]), (point[0][0], point[0][1]), (120, 120, 120), 2)
             prev = point
 
-    center, radius = inside_contours(listToNumpy_ndarray(contour))
+    center, radius = getContourInnerRegion(listToNumpy_ndarray(contour))
     cv2.circle(binary, (int(center[0]), int(center[1])), int(radius), (50, 50, 50), 2)
-
     return binary

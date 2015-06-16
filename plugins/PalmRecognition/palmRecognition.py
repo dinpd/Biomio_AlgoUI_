@@ -17,7 +17,9 @@ from algorithms.faces.biom.utils import files_list
 from ui.detdialog import DetectorSettingsDialog
 from imageproperties import ImageProperties
 from algorithms.recognition.palm.palm_keypoints import PalmKeypointsDetector
-from algorithms.recognition.palm.detection import palm_contours
+from algorithms.recognition.palm.detection import getPalmContourClassic
+from algorithms.recognition.palm.detection import getPalmContourHaar
+from algorithms.clustering.pirel import PIREL
 from algorithms.imgobj import loadImageObject
 
 
@@ -408,7 +410,7 @@ class PalmRecognitionPlugin(QObject, IAlgorithmPlugin):
         if self._imanager and curr:
             image = ImageProperties()
             image.title(str(PALM_DETECTION + curr.title()))
-            image.data(palm_contours(curr.data()))
+            image.data(getPalmContourClassic(curr.data()))
             self._imanager.add_image(image)
 
     def add_palm_detect_action(self, parent):
@@ -451,7 +453,7 @@ class PalmRecognitionPlugin(QObject, IAlgorithmPlugin):
         if self._imanager and curr:
             image = ImageProperties()
             image.title(PD_ACTION_TITLE + curr.title())
-            image.data(palm_contour(curr.data()))
+            image.data(getPalmContourHaar(curr.data()))
             image.height(curr.height())
             image.width(curr.width())
             self._imanager.add_image(image)
