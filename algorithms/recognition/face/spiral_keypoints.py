@@ -1,5 +1,5 @@
-from keypoints import (KeypointsObjectDetector,
-                       identifying)
+from algorithms.recognition.keypoints import (KeypointsObjectDetector,
+                                              identifying)
 import logger
 
 

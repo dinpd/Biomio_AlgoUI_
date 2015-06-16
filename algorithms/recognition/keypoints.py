@@ -1,13 +1,9 @@
 from algorithms.features.detectors import (BRISKDetector, ORBDetector,
                                            BRISKDetectorSettings, ORBDetectorSettings)
 from algorithms.features.classifiers import (getROIImage,
-                                             RectsIntersect, RectsFiltering)
-from algorithms.recognition.features import (FeatureDetector,
+                                             RectsFiltering)
+from algorithms.recognition.face.features import (FeatureDetector,
                                              BRISKDetectorType, ORBDetectorType)
-from algorithms.cvtools.visualization import (showClusters, showNumpyImage, showMatches,
-                                              drawLine, drawClusters, drawKeypoints)
-from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
-from algorithms.recognition.tools import minDistance, meanDistance, medianDistance
 import logger
 
 

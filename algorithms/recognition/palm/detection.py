@@ -1,14 +1,20 @@
 from algorithms.clustering.forel import FOREL
 from algorithms.cvtools.visualization import showNumpyImage
+from algorithms.cvtools.types import listToNumpy_ndarray
+from algorithms.features.gabor_threads import build_filters, process_kernel, process
+from algorithms.cvtools.effects import grayscale, binarization
+from algorithms.features.classifiers import CascadeROIDetector, RectsFiltering
+from logger import logger
 import numpy as np
 import random
+import math
 import cv2
 import sys
 
 
 def palm_contours(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # gray = cv2.equalizeHist(gray)
+    gray = cv2.equalizeHist(gray)
     # gray = image
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
     ret, thresh1 = cv2.threshold(blur, 70, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
@@ -117,14 +123,14 @@ def inside_contours(contour):
                 if center_dist < max_dist:
                     center_point = max_point
                     center_dist = max_dist
-                w = float(w) / pow(2, 0.5)
+                w = float(w) / pow(1.21, 0.5)
                 x = center_point[0] - w / 2.0
-                h = float(h) / pow(2, 0.5)
+                h = float(h) / pow(1.21, 0.5)
                 y = center_point[1] - h / 2.0
                 if w < 1 or h < 1:
                     break
             dist = 0
-            for i in range(0, 100):
+            for i in range(0, 1000):
                 p = (random.uniform(x, w), random.uniform(y, h))
                 r = cv2.cv.PointPolygonTest(cv2.cv.fromarray(contour), p, True)
                 if r > 0 and dist < r:
@@ -133,3 +139,86 @@ def inside_contours(contour):
             max_dist = dist
         return center_point, center_dist
     return 0, 0
+
+
+def palm_contour(image):
+
+    cascade_detector = CascadeROIDetector()
+    cascade_detector.add_cascade("algorithms/data/haarcascades/haarcascade-hand.xml")
+    cascade_detector.add_cascade("algorithms/data/haarcascades/haarcascade_palm.xml")
+    img, rect = cascade_detector.detectAndJoinWithRotation(image, False, RectsFiltering)
+    print rect
+    rect = None
+
+    gabor = build_filters()
+    images = list()
+    for i in range(0, len(gabor), 1):
+        logger.debug("Applying Gabor Filter. Kernel No. " + str(i))
+        images.append(cv2.threshold(process_kernel(image, gabor[i]), 5, 255, 0)[1])
+    if rect is None:
+        h, w = image.shape[0], image.shape[1]
+    else:
+        h, w = rect[1] + rect[3] / 2, rect[0] + rect[2] / 2
+    result = images[0]
+    for j in range(0, h, 1):
+        for i in range(0, w, 1):
+            b = 0
+            g = 0
+            r = 0
+            for img in images:
+                pixel = img[j, i]
+                b += pixel[0]
+                g += pixel[1]
+                r += pixel[2]
+            result[j, i] = [b / len(images), g / len(images), r / len(images)]
+
+    result = cv2.threshold(result, 200, 255, 0)[1]
+
+    gray = grayscale(result)
+    binary = binarization(gray)
+
+    points = []
+
+    R = 400
+    imcenter = (w / 2, h / 2)
+    maxLength = max(w, h)
+    for angle in range(0, 360, 1):
+        y2 = imcenter[1] - R * math.sin((angle * math.pi) / 180.0)
+        x2 = imcenter[0] + R * math.cos((angle * math.pi) / 180.0)
+        dx = x2 - imcenter[0] + 0.001
+        dy = y2 - imcenter[1]
+        next_points = []
+        last = None
+        for r in range(0, maxLength, 1):
+            if angle == 90 or angle == 270:
+                xi = imcenter[0]
+                yi = imcenter[1] - r * math.sin((angle * math.pi) / 180.0)
+            else:
+                xi = imcenter[0] + r * math.cos((angle * math.pi) / 180.0)
+                yi = (dy / dx) * (xi - imcenter[0]) + imcenter[1]
+            xi = int(xi)
+            yi = int(yi)
+            if 0 < xi < w and 0 < yi < h:
+                last = (xi, yi)
+                if binary[yi, xi] != 255:
+                    next_points.append((xi, yi))
+        if len(next_points) == 0:
+            next_points.append(last)
+        points.append(next_points)
+    contour = [listToNumpy_ndarray([listToNumpy_ndarray([group[0][0], group[0][1]])]) for group in points]
+    # for group in points:
+        # for point in group:
+            # cv2.circle(binary, point, 3, (200, 200, 200), 1)
+    contour.append(listToNumpy_ndarray([listToNumpy_ndarray([contour[0][0][0], contour[0][0][1]])]))
+    prev = None
+    for point in contour:
+        if prev is None:
+            prev = point
+        else:
+            cv2.line(binary, (prev[0][0], prev[0][1]), (point[0][0], point[0][1]), (120, 120, 120), 2)
+            prev = point
+
+    center, radius = inside_contours(listToNumpy_ndarray(contour))
+    cv2.circle(binary, (int(center[0]), int(center[1])), int(radius), (50, 50, 50), 2)
+
+    return binary

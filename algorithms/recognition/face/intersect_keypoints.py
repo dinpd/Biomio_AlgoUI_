@@ -1,8 +1,7 @@
 from algorithms.features.matchers import FlannMatcher
-from keypoints import (KeypointsObjectDetector,
-                       meanDistance,
-                       listToNumpy_ndarray,
-                       verifying)
+from algorithms.recognition.keypoints import KeypointsObjectDetector, verifying
+from algorithms.recognition.face.tools import meanDistance
+from algorithms.cvtools.types import listToNumpy_ndarray
 import logger
 import sys
 

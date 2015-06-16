@@ -1,5 +1,5 @@
-from keypoints import (KeypointsObjectDetector, BRISKDetectorType,
-                       identifying)
+from algorithms.recognition.keypoints import (KeypointsObjectDetector, BRISKDetectorType,
+                                              identifying)
 
 
 class FeaturesMatchingDetector(KeypointsObjectDetector):

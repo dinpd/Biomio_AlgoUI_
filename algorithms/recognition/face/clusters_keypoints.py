@@ -3,16 +3,10 @@ from algorithms.clustering.forel import FOREL
 from algorithms.clustering.kmeans import KMeans
 from algorithms.cvtools.system import saveNumpyImage
 from algorithms.features.classifiers import CascadeROIDetector
-from keypoints import (KeypointsObjectDetector,
-                       drawClusters, drawKeypoints, drawLine,
-                       showClusters,
-                       listToNumpy_ndarray, numpy_ndarrayToList,
-                       BRISKDetectorType, ORBDetectorType,
-                       verifying)
-import multiprocessing as mp
+from algorithms.recognition.keypoints import (KeypointsObjectDetector,
+                                              BRISKDetectorType, ORBDetectorType)
+from algorithms.cvtools.visualization import (drawClusters)
 import logger
-import numpy
-import sys
 
 
 class ClustersMatchingDetector(KeypointsObjectDetector):

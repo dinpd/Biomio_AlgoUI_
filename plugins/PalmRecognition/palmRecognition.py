@@ -22,6 +22,8 @@ from algorithms.imgobj import loadImageObject
 
 
 PALM_DETECTION = "Action:: Palm Detection:: "
+PD_ACTION_TITLE = 'Action: Palm Detection::'
+PL_ACTION_TITLE = 'Action: PIREL Detection::'
 
 
 class PalmRecognitionPlugin(QObject, IAlgorithmPlugin):
@@ -30,6 +32,7 @@ class PalmRecognitionPlugin(QObject, IAlgorithmPlugin):
         self._setwigets = []
         self.init_keysrecg_algorithm()
         self._setwigets.append(self.create_keysrecg_widget())
+        self._setwigets.append(self.create_palm_widget())
 
     def set_image_manager(self, manager):
         self._imanager = manager
@@ -40,6 +43,7 @@ class PalmRecognitionPlugin(QObject, IAlgorithmPlugin):
 
         recognition_menu.addAction(self.add_keysrecg_action(recognition_menu))
         recognition_menu.addAction(self.add_detection_action(recognition_menu))
+        recognition_menu.addAction(self.add_palm_detect_action(parent))
         return [recognition_menu]
 
     def get_algorithms_list(self):
@@ -405,4 +409,78 @@ class PalmRecognitionPlugin(QObject, IAlgorithmPlugin):
             image = ImageProperties()
             image.title(str(PALM_DETECTION + curr.title()))
             image.data(palm_contours(curr.data()))
+            self._imanager.add_image(image)
+
+    def add_palm_detect_action(self, parent):
+        palm_action = QAction(parent)
+        palm_action.setText(_("Detection Algorithms"))
+        palm_action.setIcon(get_icon('palm.png'))
+        palm_action.setCheckable(True)
+        self.connect(palm_action, SIGNAL("triggered(bool)"), self.palm_opened)
+        return palm_action
+
+    palm_opened = pyqtSignal(bool, name='palmOpened')
+
+    def create_palm_widget(self):
+        palm_dock = QDockWidget()
+        palm_dock.setWindowTitle("Methods")
+        palm_dock.setVisible(False)
+        self.palm_opened.connect(palm_dock.setVisible)
+        palm_widget = QWidget(palm_dock)
+
+        accept = QPushButton(palm_widget)
+        accept.setText('Gabor Palm Detection')
+        self.connect(accept, SIGNAL("clicked()"), self.gpalm_detect)
+
+        pirelbutt = QPushButton(palm_widget)
+        pirelbutt.setText('PIREL Clustering')
+        self.connect(pirelbutt, SIGNAL("clicked()"), self.pirel)
+
+        widget_layout = QVBoxLayout()
+        button_layout = QHBoxLayout()
+        button_layout.addStretch(2)
+        button_layout.addWidget(accept)
+        button_layout.addWidget(pirelbutt)
+        widget_layout.addLayout(button_layout)
+        palm_widget.setLayout(widget_layout)
+        palm_dock.setWidget(palm_widget)
+        return palm_dock
+
+    def gpalm_detect(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(PD_ACTION_TITLE + curr.title())
+            image.data(palm_contour(curr.data()))
+            image.height(curr.height())
+            image.width(curr.width())
+            self._imanager.add_image(image)
+
+    def pirel(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(PL_ACTION_TITLE + curr.title())
+
+            result = curr.data().copy()
+            pixels = []
+            for i in range(curr.height()):
+                for j in range(curr.width()):
+                    pixel = dict()
+                    pixel["pos"] = (i, j)
+                    pixel["color"] = result[i, j]
+                    pixels.append(pixel)
+            logger.debug("Start PIREL")
+            clusters = PIREL(pixels, 20)
+            logger.debug("Finish PIREL")
+            for cluster in clusters:
+                center = cluster["center"]
+                items = cluster["items"]
+                for pixel in items:
+                    pos = pixel["pos"]
+                    result[pos[0], pos[1]] = center
+
+            image.data(result)
+            image.height(curr.height())
+            image.width(curr.width())
             self._imanager.add_image(image)

@@ -1,13 +1,10 @@
-from algorithms.features.matchers import FlannMatcher
-from algorithms.clustering.forel import FOREL
-from algorithms.clustering.kmeans import KMeans
-from algorithms.features.classifiers import CascadeROIDetector
-from algorithms.recognition.clusters_keypoints import ClustersMatchingDetector
-from keypoints import (listToNumpy_ndarray, numpy_ndarrayToList,
-                       BRISKDetectorType, ORBDetectorType,
-                       verifying)
-import logger
 import numpy
+
+from algorithms.features.matchers import FlannMatcher
+from algorithms.recognition.face.clusters_keypoints import ClustersMatchingDetector
+from algorithms.recognition.keypoints import verifying
+from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
+import logger
 
 
 class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):

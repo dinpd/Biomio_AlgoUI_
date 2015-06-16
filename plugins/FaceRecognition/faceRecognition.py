@@ -19,12 +19,10 @@ from algorithms.cvtools.visualization import drawRectangle
 from algorithms.features.classifiers import CascadeROIDetector, getROIImage, CascadeClassifierSettings
 from algorithms.faces.biom.utils import files_list
 from ui.detdialog import DetectorSettingsDialog
-from algorithms.recognition.detcreator import (DetectorCreator,
-                                               ClustersDatabaseObjectMatching, ClustersTemplateL0ObjectMatching,
-                                               ClustersTemplateL1ObjectMatching, IntersectMatching,
+from algorithms.recognition.face.detcreator import (DetectorCreator,
+                                               ClustersDatabaseObjectMatching, IntersectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
 from algorithms.imgobj import loadImageObject
-
 
 VerificationAlgorithm = "KeypointsVerificationAlgorithm"
 

@@ -1,7 +1,7 @@
 from algorithms.features.matchers import FlannMatcher
-from keypoints import (KeypointsObjectDetector,
-                       listToNumpy_ndarray,
-                       identifying, verifying)
+from algorithms.recognition.keypoints import (KeypointsObjectDetector,
+                                              identifying, verifying)
+from algorithms.cvtools.types import listToNumpy_ndarray
 import logger
 
 

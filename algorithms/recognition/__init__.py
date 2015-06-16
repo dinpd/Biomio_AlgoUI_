@@ -1,6 +1,6 @@
 from keypoints import KODSettings
-from clusters_keypoints import ClustersMatchingDetector
-from intersect_keypoints import IntersectMatchingDetector
+from algorithms.recognition.face.clusters_keypoints import ClustersMatchingDetector
+from algorithms.recognition.face.intersect_keypoints import IntersectMatchingDetector
 
 
 def getClustersMatchingDetectorWithoutTemplate():

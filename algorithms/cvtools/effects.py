@@ -3,6 +3,7 @@ Open CV Tools
 Effects Module
 Implementation of functions for image processing based on OpenCV.
 """
+from types import iplImageToNumpy_darray, numpy_darrayToIplImage
 import cv2
 
 
@@ -40,3 +41,8 @@ def grayscaleAndEqualize(image):
     """
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return cv2.equalizeHist(gray)
+
+
+def binarization(image):
+    res, binary = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY)
+    return binary

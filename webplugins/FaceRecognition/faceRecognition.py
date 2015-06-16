@@ -1,14 +1,11 @@
-from logger import logger
+import os
 
 from aiplugins import IAlgorithmPlugin
 from algorithms.features.classifiers import CascadeClassifierSettings
-from algorithms.recognition.detcreator import (DetectorCreator,
+from algorithms.recognition.face.detcreator import (DetectorCreator,
                                                ClustersObjectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
 from algorithms.imgobj import loadImageObject
-
-import os
-
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 CASCADE_PATH = os.path.join(APP_ROOT, '../../algorithms/data/')

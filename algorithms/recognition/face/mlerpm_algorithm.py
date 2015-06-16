@@ -1,13 +1,14 @@
-from algorithms.recognition.features import (FeatureDetector,
-                                             BRISKDetectorType, ORBDetectorType)
+import math
+
+import numpy
+
+from algorithms.recognition.face.features import (FeatureDetector,
+                                             BRISKDetectorType)
 from algorithms.features.detectors import (BRISKDetector, ORBDetector,
                                            BRISKDetectorSettings, ORBDetectorSettings)
 from algorithms.features.matchers import (createMatcher,
-                                          BruteForceMatcherType, FlannBasedMatcherType,
-                                          LowesMatchingScheme)
+                                          BruteForceMatcherType, LowesMatchingScheme)
 import logger
-import numpy
-import math
 
 
 class MLERPMSettings:
