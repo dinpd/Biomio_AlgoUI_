@@ -1,7 +1,5 @@
-from algorithms.clustering.forel import FOREL
-from algorithms.cvtools.visualization import showNumpyImage
 from algorithms.cvtools.types import listToNumpy_ndarray
-from algorithms.features.gabor_threads import build_filters, process_kernel, process
+from algorithms.features.gabor_threads import build_filters, process_kernel
 from algorithms.cvtools.effects import grayscale, binarization
 from algorithms.features.classifiers import CascadeROIDetector, RectsFiltering
 from logger import logger
@@ -9,36 +7,17 @@ import numpy as np
 import random
 import math
 import cv2
-import sys
 
 
 def getPalmContourClassic(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray = cv2.equalizeHist(gray)
     # gray = image
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
     ret, thresh1 = cv2.threshold(blur, 70, 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
     # thresh1 = gray
 
     contours, hierarchy = cv2.findContours(thresh1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    drawing = np.zeros(image.shape, np.uint8)
     max_area = 0
-    eps = 5
-    cntr = list()
-    last = None
-    # file = open("D:/Projects/Biomio/images/realpalm/contours.txt", "w")
-    for i in range(len(contours)):
-        for point in contours[i]:
-            # file.write(str(point))
-            if last is None:
-                last = point
-            else:
-                if abs(last[0][0] - point[0][0]) > eps and abs(last[0][1] - point[0][1]) > eps:
-                    cntr.append(point)
-                    last = point
-        # file.write("\n")
-    # file.close()
-
     for i in range(len(contours)):
         cnt = contours[i]
         area = cv2.contourArea(cnt)
@@ -52,21 +31,21 @@ def getPalmContourClassic(image):
     if moments['m00'] != 0:
         cx = int(moments['m10']/moments['m00']) # cx = M10/M00
         cy = int(moments['m01']/moments['m00']) # cy = M01/M00
+    centr = (cx, cy)
 
     points = list()
     for i in range(len(contours)):
         for point in contours[i]:
             points.append(point)
 
-    def gpoint(element):
-        return element[0][0], element[0][1]
-    # clusters = FOREL(points, 5, gpoint)
-
-    centr = (cx, cy)
+    drawing = np.zeros(image.shape, np.uint8)
     cv2.circle(image, centr, 5, [0, 0, 255], 2)
     cv2.drawContours(drawing, [cnt], 0, (0, 255, 0), 2)
     cv2.drawContours(drawing, [hull], 0, (0, 0, 255), 2)
     cv2.circle(drawing, (int(center[0]), int(center[1])), int(radius), (255, 255, 255), 2)
+    for i in range(len(contours)):
+        for point in contours[i]:
+            cv2.circle(drawing, (point[0][0], point[0][1]), 3, (255, 0, 0))
     poi = None
     draws = list()
     r = min(drawing.shape[0], drawing.shape[1]) / 10
@@ -87,9 +66,6 @@ def getPalmContourClassic(image):
         if pow((center[0] - p[0][0])**2 + (center[1] - p[0][1])**2, 0.5) > 2 * radius:
             draws.append(p)
             cv2.line(drawing, (int(center[0]), int(center[1])), (p[0][0], p[0][1]), (255, 255, 255), 2)
-    for i in range(len(contours)):
-        for point in contours[i]:
-            cv2.circle(drawing, (point[0][0], point[0][1]), 3, (255, 0, 0))
 
     cnt = cv2.approxPolyDP(cnt, 0.01*cv2.arcLength(cnt, True), True)
     hull = cv2.convexHull(cnt, returnPoints=False)

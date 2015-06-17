@@ -38,7 +38,6 @@ class PalmKeypointsDetector(KeypointsObjectDetector):
                 matches = matcher.knnMatch(test, source, k=2)
                 ms = []
                 for v in matches:
-                    # if len(v) >= 1:
                     if len(v) >= 2:
                         m = v[0]
                         n = v[1]
@@ -53,14 +52,6 @@ class PalmKeypointsDetector(KeypointsObjectDetector):
             suma += val
         logger.logger.debug("Total: " + str(suma / len(res)))
         return suma / len(res)
-
-    def compare(self, f_imgobj, s_imgobj):
-        if not self.data_detect(f_imgobj):
-            logger.logger.debug("First image data isn't valid.")
-            return False
-        if not self.data_detect(s_imgobj):
-            logger.logger.debug("Second image data isn't valid.")
-            return False
 
     def _detect(self, data, detector):
         return True
