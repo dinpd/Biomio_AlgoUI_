@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 import logger
-from algorithms.features.matchers import FlannMatcher
+from algorithms.features.matchers import Matcher, BruteForceMatcherType
 from algorithms.recognition.keypoints import (KeypointsObjectDetector,
                                               verifying)
 
@@ -24,7 +24,7 @@ class PalmKeypointsDetector(KeypointsObjectDetector):
     @verifying
     def verify(self, data):
         self._last_error = ""
-        matcher = FlannMatcher()
+        matcher = Matcher(BruteForceMatcherType)
         res = []
         self._log += "Test: " + data['path'] + "\n"
         for d in self._hash:
@@ -46,7 +46,7 @@ class PalmKeypointsDetector(KeypointsObjectDetector):
                 prob = len(ms) / (1.0 * len(matches))
                 res.append(prob * 100)
                 logger.logger.debug("Result: " + " (Size: " + str(len(source)) + "): "
-                                             + str(prob * 100) + "%")
+                                    + str(prob * 100) + "%")
         suma = 0
         for val in res:
             suma += val

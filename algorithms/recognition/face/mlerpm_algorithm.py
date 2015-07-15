@@ -2,8 +2,7 @@ import math
 
 import numpy
 
-from algorithms.recognition.face.features import (FeatureDetector,
-                                             BRISKDetectorType)
+from algorithms.features.features import (FeatureDetector, BRISKDetectorType)
 from algorithms.features.detectors import (BRISKDetector, ORBDetector,
                                            BRISKDetectorSettings, ORBDetectorSettings)
 from algorithms.features.matchers import (createMatcher,

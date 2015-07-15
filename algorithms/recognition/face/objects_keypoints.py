@@ -1,4 +1,4 @@
-from algorithms.features.matchers import FlannMatcher
+from algorithms.features.matchers import Matcher, BruteForceMatcherType
 from algorithms.recognition.keypoints import (KeypointsObjectDetector,
                                               identifying, verifying)
 from algorithms.cvtools.types import listToNumpy_ndarray
@@ -20,7 +20,7 @@ class ObjectsMatchingDetector(KeypointsObjectDetector):
         if len(self.etalon) == 0:
             self.etalon = data['descriptors']
         else:
-            matcher = FlannMatcher()
+            matcher = Matcher(BruteForceMatcherType)
             matches1 = matcher.knnMatch(self.etalon, data['descriptors'], k=1)
             matches2 = matcher.knnMatch(data['descriptors'], self.etalon, k=1)
 
@@ -58,7 +58,7 @@ class ObjectsMatchingDetector(KeypointsObjectDetector):
     @identifying
     def identify(self, data):
         imgs = dict()
-        matcher = FlannMatcher()
+        matcher = Matcher(BruteForceMatcherType)
         for d in self._hash:
             matches = matcher.knnMatch(d['descriptors'],
                                        data['descriptors'],
@@ -87,7 +87,7 @@ class ObjectsMatchingDetector(KeypointsObjectDetector):
 
     @verifying
     def verify(self, data):
-        matcher = FlannMatcher()
+        matcher = Matcher(BruteForceMatcherType)
         matches = matcher.knnMatch(self.etalon, data['descriptors'], k=1)
         # matches2 = matcher.knnMatch(data['descriptors'], self.etalon, k=1)
         ms = []

@@ -1,4 +1,4 @@
-from algorithms.features.matchers import FlannMatcher
+from algorithms.features.matchers import Matcher, BruteForceMatcherType
 from algorithms.recognition.keypoints import KeypointsObjectDetector, verifying
 from algorithms.recognition.face.tools import meanDistance
 from algorithms.cvtools.types import listToNumpy_ndarray
@@ -88,7 +88,7 @@ class IntersectMatchingDetector(KeypointsObjectDetector):
 
     def update_base(self):
         self._db = []
-        matcher = FlannMatcher()
+        matcher = Matcher(BruteForceMatcherType)
         for item1 in self._hash:
             for item2 in self._hash:
                 if item1['path'] != item2['path']:
@@ -138,7 +138,7 @@ class IntersectMatchingDetector(KeypointsObjectDetector):
     def add_to_db(self, item):
         if (item['path'] != self._base_pair[0]['path']
             and item['path'] != self._base_pair[1]['path']):
-            matcher = FlannMatcher()
+            matcher = Matcher(BruteForceMatcherType)
             self._item_index += 1
             for tube_set in self._db:
                 matches = matcher.knnMatch(listToNumpy_ndarray(tube_set.descriptors()),
@@ -201,7 +201,7 @@ class IntersectMatchingDetector(KeypointsObjectDetector):
 
     @verifying
     def verify(self, data):
-        matcher = FlannMatcher()
+        matcher = Matcher(BruteForceMatcherType)
         ni = []
         ci = []
         Nmax = 0

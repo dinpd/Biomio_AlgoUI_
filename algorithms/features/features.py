@@ -1,5 +1,5 @@
 from algorithms.features.detectors import (BRISKDetector, ORBDetector)
-from algorithms.features.matchers import FlannMatcher
+from algorithms.features.matchers import Matcher, BruteForceMatcherType
 from algorithms.cvtools.effects import grayscaleAndEqualize
 from logger import logger
 import numpy
@@ -23,7 +23,7 @@ class FeatureDetector:
             self._detector = ORBDetector()
             self._extractor = ORBDetector.extractor()
         # self._matcher = MatcherCreator('BruteForce-Hamming')
-        self._matcher = FlannMatcher() # MatcherCreator('FlannBased')
+        self._matcher = Matcher(BruteForceMatcherType)
 
     def set_detector(self, detector):
         if detector is not None:
@@ -130,7 +130,7 @@ class ComplexDetector:
         self._detector = BRISKDetector()
         self._extractor = BRISKDetector.extractor()
         # self._matcher = MatcherCreator('BruteForce-Hamming')
-        self._matcher = FlannMatcher() # MatcherCreator('FlannBased')
+        self._matcher = Matcher(BruteForceMatcherType)
 
     def detect(self, filepath, maskpath=None):
         fea_image = ImageFeatures()

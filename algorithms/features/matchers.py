@@ -6,6 +6,7 @@ FlannBasedMatcherType = 1
 
 BruteForceHammingMatcher = 2
 
+
 def MatcherCreator(descriptorMatcherType):
     """
     Function that create <DescriptorMatcher object> by the selected type.
@@ -43,14 +44,14 @@ def MatcherCreator(descriptorMatcherType):
 
 
 def FlannMatcher():
-    # index_params = dict(algorithm=defines.FLANN_INDEX_KDTREE,
-    #                     trees=5)
     index_params = defaultFlannBasedLSHIndexParams()
-
     search_params = dict(checks=100)
+    matcher = cv2.FlannBasedMatcher(index_params, search_params)
+    return matcher
 
-    # matcher = cv2.FlannBasedMatcher(index_params, search_params)
-    matcher = cv2.BFMatcher(normType=2, crossCheck=False)
+
+def BruteForceMatcher():
+    matcher = cv2.BFMatcher(normType=BruteForceHammingMatcher, crossCheck=False)
     return matcher
 
 
@@ -61,19 +62,15 @@ def defaultFlannBasedLSHIndexParams():
                 multi_probe_level=2)  # 2
 
 
-def createMatcher(type=BruteForceMatcherType):
+def Matcher(type=BruteForceMatcherType):
     if type == BruteForceMatcherType:
-        matcher = cv2.BFMatcher(normType=BruteForceHammingMatcher, crossCheck=False)
-        return matcher
+        return BruteForceMatcher()
     else:
-        index_params = defaultFlannBasedLSHIndexParams()
-        search_params = dict(checks=100)
-        matcher = cv2.FlannBasedMatcher(index_params, search_params)
-        return matcher
+        return FlannMatcher()
 
 
 def LowesMatchingScheme(match1, match2, threshold=0.5):
     if (match1 is not None) and (match2 is not None):
-        return m.distance < threshold * match2.distance
+        return match1.distance < threshold * match2.distance
     else:
         return False

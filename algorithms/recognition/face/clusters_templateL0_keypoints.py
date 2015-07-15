@@ -3,7 +3,7 @@ import sys
 
 import numpy
 
-from algorithms.features.matchers import FlannMatcher
+from algorithms.features.matchers import Matcher, BruteForceMatcherType
 from algorithms.recognition.face.clusters_keypoints import ClustersMatchingDetector
 from algorithms.recognition.keypoints import verifying
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
@@ -13,7 +13,7 @@ PROCESS_COUNT = 8 # mp.cpu_count()
 
 
 def parallel_update_hash_templateL0(etalon, data, index):
-    matcher = FlannMatcher()
+    matcher = Matcher(BruteForceMatcherType)
     et_cluster = etalon[index]
     dt_cluster = data[index]
     if et_cluster is None or len(et_cluster) == 0:
@@ -41,7 +41,7 @@ def parallel_update_hash_templateL0(etalon, data, index):
 
 
 def parallel_verify_template_L0(etalon, data, index):
-    matcher = FlannMatcher()
+    matcher = Matcher(BruteForceMatcherType)
     et_cluster = etalon[index]
     dt_cluster = data[index]
     ms = []
@@ -119,7 +119,7 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
         if len(self._etalon) == 0:
             self._etalon = data['clusters']
         else:
-            matcher = FlannMatcher()
+            matcher = Matcher(BruteForceMatcherType)
             for index in range(0, len(self._etalon)):
                 et_cluster = self._etalon[index]
                 dt_cluster = data['clusters'][index]
@@ -248,7 +248,7 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
         return prob / (1.0 * len(res))
 
     def verify_template_L0_noparallel(self, data):
-        matcher = FlannMatcher()
+        matcher = Matcher(BruteForceMatcherType)
         res = []
         prob = 0
         self._log += "Test: " + data['path'] + "\n"

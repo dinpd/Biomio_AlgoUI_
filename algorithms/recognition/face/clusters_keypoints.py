@@ -1,11 +1,11 @@
-from algorithms.features.matchers import FlannMatcher
+from algorithms.features.matchers import Matcher, BruteForceMatcherType
 from algorithms.clustering.forel import FOREL
 from algorithms.clustering.kmeans import KMeans
 from algorithms.cvtools.system import saveNumpyImage
 from algorithms.features.classifiers import CascadeROIDetector
 from algorithms.recognition.keypoints import (KeypointsObjectDetector,
                                               BRISKDetectorType, ORBDetectorType)
-from algorithms.cvtools.visualization import (drawClusters)
+from algorithms.cvtools.visualization import (drawClusters, drawLine, showClusters)
 import logger
 
 
@@ -135,7 +135,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         self._compare_descriptors(f_imgobj, s_imgobj)
 
     def _compare_descriptors(self, f_imgobj, s_imgobj):
-        matcher = FlannMatcher()
+        matcher = Matcher(BruteForceMatcherType)
         matches = matcher.knnMatch(f_imgobj['descriptors'], s_imgobj['descriptors'], k=1)
         logger.logger.debug("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         stat = dict()

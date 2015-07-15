@@ -2,8 +2,7 @@ from algorithms.features.detectors import (BRISKDetector, ORBDetector,
                                            BRISKDetectorSettings, ORBDetectorSettings)
 from algorithms.features.classifiers import (getROIImage,
                                              RectsFiltering)
-from algorithms.recognition.face.features import (FeatureDetector,
-                                             BRISKDetectorType, ORBDetectorType)
+from algorithms.features.features import (FeatureDetector, BRISKDetectorType, ORBDetectorType)
 import logger
 
 

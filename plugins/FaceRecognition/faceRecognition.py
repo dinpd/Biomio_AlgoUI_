@@ -20,8 +20,9 @@ from algorithms.features.classifiers import CascadeROIDetector, getROIImage, Cas
 from algorithms.faces.biom.utils import files_list
 from ui.detdialog import DetectorSettingsDialog
 from algorithms.recognition.face.detcreator import (DetectorCreator,
-                                               ClustersDatabaseObjectMatching, IntersectMatching,
-                                               FaceCascadeClassifier, EyesCascadeClassifier)
+                                                    ClustersDatabaseObjectMatching, IntersectMatching,
+                                                    ClustersTemplateL1ObjectMatching, ClustersTemplateL0ObjectMatching,
+                                                    FaceCascadeClassifier, EyesCascadeClassifier)
 from algorithms.imgobj import loadImageObject
 
 VerificationAlgorithm = "KeypointsVerificationAlgorithm"
@@ -301,7 +302,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             eye_cascade_settings.minNeighbors = self._kod_eye_neighborsBox.value()
             eye_cascade_settings.scaleFactor = self._kod_eye_scaleBox.value()
 
-            creator = DetectorCreator(type=IntersectMatching)
+            creator = DetectorCreator(type=ClustersTemplateL0ObjectMatching)
             creator.addClassifier(FaceCascadeClassifier, face_cascade_settings)
             creator.addCascade(FaceCascadeClassifier,
                                "algorithms/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
@@ -340,7 +341,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         self.init_detector()
 
     def init_detector(self):
-        creator = DetectorCreator(type=ClustersDatabaseObjectMatching)
+        creator = DetectorCreator(type=ClustersTemplateL1ObjectMatching)
         creator.addClassifier(FaceCascadeClassifier)
         creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt_tree.xml")
         creator.addCascade(FaceCascadeClassifier, "algorithms/data/haarcascades/haarcascade_frontalface_alt2.xml")

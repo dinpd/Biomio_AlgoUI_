@@ -1,6 +1,6 @@
 import numpy
 
-from algorithms.features.matchers import FlannMatcher
+from algorithms.features.matchers import Matcher, BruteForceMatcherType
 from algorithms.recognition.face.clusters_keypoints import ClustersMatchingDetector
 from algorithms.recognition.keypoints import verifying
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
@@ -68,7 +68,7 @@ class ClustersDBMatchingDetector(ClustersMatchingDetector):
 
     @verifying
     def verify(self, data):
-        matcher = FlannMatcher()
+        matcher = Matcher(BruteForceMatcherType)
         gres = []
         self._log += "Test: " + data['path'] + "\n"
         for d in self._hash:
@@ -94,15 +94,11 @@ class ClustersDBMatchingDetector(ClustersMatchingDetector):
                                             + str(prob * 100) + "%")
                     self._log += "Cluster #" + str(i + 1) + " (Size: " + str(len(source)) + "): " + str(prob * 100) \
                                  + "%" + "\n"
-            suma = 0
-            for val in res:
-                suma += val
+            suma = sum(res)
             logger.sys_logger.debug("Total for image: " + str(suma / len(res)))
             self._log += "Total for image: " + str(suma / len(res)) + "\n"
             gres.append(suma / len(res))
-        s = 0
-        for val in gres:
-            s += val
+        s = sum(gres)
         logger.logger.debug("Total: " + str(s / len(gres)))
         self._log += "\nTotal: " + str(s / len(gres)) + "\n\n"
         return s / len(gres)

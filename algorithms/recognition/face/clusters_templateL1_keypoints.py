@@ -1,10 +1,9 @@
-import numpy
-
-from algorithms.features.matchers import FlannMatcher
+from algorithms.features.matchers import Matcher, BruteForceMatcherType
 from algorithms.recognition.face.clusters_keypoints import ClustersMatchingDetector
 from algorithms.recognition.keypoints import verifying
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
 import logger
+import numpy
 
 
 class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
@@ -20,7 +19,7 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
     def update_hash_templateL1(self, data):
         """
 
-        max_weight = se*suma(i=1,k-1: 1+2*i) + k*(n-k)*se,
+        max_weight = se*sum(i=1,k-1: 1+2*i) + k*(n-k)*se,
         where
             n - count of images,
             k - count of identical matches, k <= n,
@@ -30,99 +29,51 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
         :return:
         """
         if len(self._hash) == 1:
-            self._etalon = []
-            for cluster in data['clusters']:
-                weight_cluster = []
-                if cluster is not None:
-                    for desc in cluster:
-                        weight_cluster.append((desc, 1))
-                self._etalon.append(weight_cluster)
+            self._etalon = map(lambda cluster:
+                               [] if cluster is None else [(desc, 1) for desc in cluster],
+                               data['clusters'])
         else:
-            matcher = FlannMatcher()
-            for index in range(0, len(self._etalon)):
+            matcher = Matcher(BruteForceMatcherType)
+            for index, et_cluster in enumerate(self._etalon):
                 dt_cluster = data['clusters'][index]
                 if dt_cluster is None or len(dt_cluster) == 0:
                     continue
-                et_cluster = self._etalon[index]
-                # for dt in dt_cluster:
-                # dt_is = False
-                #     weight_cluster = []
-                #     for d, c in et_cluster:
-                #         if numpy.array_equal(d, dt):
-                ##             c += 1
-                # dt_is = True
-                # weight_cluster.append((d, c))
-                # if not dt_is:
-                #     weight_cluster.append((dt, 0))
-                # et_cluster = weight_cluster
                 for obj in self._hash:
                     if data['path'] == obj['path']:
                         continue
                     ob_cluster = obj['clusters'][index]
                     if ob_cluster is None or len(ob_cluster) == 0:
                         continue
-                    matches1 = matcher.knnMatch(listToNumpy_ndarray(ob_cluster),
-                                                listToNumpy_ndarray(dt_cluster), k=5)
-                    # matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster),
-                    #                             listToNumpy_ndarray(ob_cluster), k=5)
-                    good = []
-
+                    matches1 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster),
+                                                listToNumpy_ndarray(ob_cluster), k=5)
                     for v in matches1:
                         if len(v) >= 1:
-                            best = None
-                            dist = -1
-                            for m in v:
-                                if m.distance == 0:
-                                    best = m
-                                    dist = 0
-                                else:
+                            best = v[0]
+                            if best.distance != 0:
+                                dist = - 1
+                                for m in v:
                                     for d, c in et_cluster:
-                                        # if numpy.array_equal(d, dt_cluster[m.trainIdx]):
-                                        if dist < c / (1.0 * m.distance):
-                                            dist = c / (1.0 * m.distance)
-                                            best = m
-                                        break
+                                        if numpy.array_equal(d, ob_cluster[m.trainIdx]):
+                                            if dist < c / (1.0 * m.distance):
+                                                dist = c / (1.0 * m.distance)
+                                                best = m
+                                            break
                             ob_is = False
                             dt_is = False
                             new_cluster = []
                             for d, c in et_cluster:
-                                if numpy.array_equal(d, ob_cluster[best.queryIdx]):
+                                if numpy.array_equal(d, ob_cluster[best.trainIdx]):
                                     c += 1
                                     ob_is = True
-                                if numpy.array_equal(d, dt_cluster[best.trainIdx]):
+                                if numpy.array_equal(d, dt_cluster[best.queryIdx]):
                                     c += 1
                                     dt_is = True
                                 new_cluster.append((d, c))
                             if not ob_is:
-                                new_cluster.append((ob_cluster[best.queryIdx], 1))
+                                new_cluster.append((ob_cluster[best.trainIdx], 1))
                             if not dt_is:
-                                new_cluster.append((dt_cluster[best.trainIdx], 1))
+                                new_cluster.append((dt_cluster[best.queryIdx], 1))
                             et_cluster = new_cluster
-                    # for v in matches1:
-                    #     if len(v) >= 1:
-                    #         for m in v:
-                    #             # m = v[0]
-                    #             for c in matches2:
-                    #                 if len(c) >= 1:
-                    #                     for n in c:
-                    #                         # n = c[0]
-                    #                         if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
-                    #                             ob_is = False
-                    #                             dt_is = False
-                    #                             new_cluster = []
-                    #                             for d, c in et_cluster:
-                    #                                 if numpy.array_equal(d, ob_cluster[m.queryIdx]):
-                    #                                     c += 1
-                    #                                     ob_is = True
-                    #                                 if numpy.array_equal(d, dt_cluster[m.trainIdx]):
-                    #                                     c += 1
-                    #                                     dt_is = True
-                    #                                 new_cluster.append((d, c))
-                    #                             if not ob_is:
-                    #                                 new_cluster.append((ob_cluster[m.queryIdx], 1))
-                    #                             if not dt_is:
-                    #                                 new_cluster.append((dt_cluster[m.trainIdx], 1))
-                    #                             et_cluster = new_cluster
                     self._etalon[index] = et_cluster
 
     def importSources(self, source):
@@ -176,7 +127,7 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
         return self.verify_template_L1(data)
 
     def verify_template_L1(self, data):
-        matcher = FlannMatcher()
+        matcher = Matcher(BruteForceMatcherType)
         res = []
         prob = 0
         self._log += "Test: " + data['path'] + "\n"
