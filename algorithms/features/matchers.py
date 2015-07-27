@@ -4,8 +4,6 @@ import cv2
 BruteForceMatcherType = 0
 FlannBasedMatcherType = 1
 
-BruteForceHammingMatcher = 2
-
 
 def MatcherCreator(descriptorMatcherType):
     """
@@ -45,13 +43,14 @@ def MatcherCreator(descriptorMatcherType):
 
 def FlannMatcher():
     index_params = defaultFlannBasedLSHIndexParams()
+    # index_params = defaultFlannBasedIndexKDTreeParams()
     search_params = dict(checks=100)
     matcher = cv2.FlannBasedMatcher(index_params, search_params)
     return matcher
 
 
 def BruteForceMatcher():
-    matcher = cv2.BFMatcher(normType=BruteForceHammingMatcher, crossCheck=False)
+    matcher = cv2.BFMatcher(normType=cv2.NORM_HAMMING, crossCheck=False)
     return matcher
 
 
@@ -61,6 +60,10 @@ def defaultFlannBasedLSHIndexParams():
                 key_size=20,          # 20
                 multi_probe_level=2)  # 2
 
+
+def defaultFlannBasedIndexKDTreeParams():
+    return dict(algorithm=defines.FLANN_INDEX_KDTREE,
+                trees=5)
 
 def Matcher(type=BruteForceMatcherType):
     if type == BruteForceMatcherType:
