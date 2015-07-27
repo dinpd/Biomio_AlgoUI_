@@ -48,16 +48,34 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
                                                 listToNumpy_ndarray(ob_cluster), k=5)
                     for v in matches1:
                         if len(v) >= 1:
-                            best = v[0]
-                            if best.distance != 0:
-                                dist = - 1
-                                for m in v:
-                                    for d, c in et_cluster:
-                                        if numpy.array_equal(d, ob_cluster[m.trainIdx]):
-                                            if dist < c / (1.0 * m.distance):
-                                                dist = c / (1.0 * m.distance)
-                                                best = m
-                                            break
+
+                            if v[0].distance == 0:
+                                best = v[0]
+                            else:
+                                best = max(v, key=(lambda m:
+                                                   next((c / (1.0 * m.distance) for (d, c) in et_cluster
+                                                         if numpy.array_equal(d, ob_cluster[m.trainIdx])), -1
+                                                        )
+                                                   )
+                                           )
+
+                            # et_cluster_ob = [(d, c + 1) for (d, c) in et_cluster
+                            #                  if numpy.array_equal(d, ob_cluster[best.trainIdx])]
+                            #
+                            # if len(et_cluster_ob) == 0:
+                            #     et_cluster_ob.append((ob_cluster[best.trainIdx], 1))
+                            #
+                            # et_cluster_dt = [(d, c + 1) for (d, c) in et_cluster
+                            #                  if numpy.array_equal(d, dt_cluster[best.queryIdx])]
+                            #
+                            # if len(et_cluster_dt) == 0:
+                            #     et_cluster_dt.append((dt_cluster[best.queryIdx], 1))
+                            #
+                            # et_cluster_res = et_cluster_ob + et_cluster_dt
+                            # logger.logger.debug("new")
+                            # logger.logger.debug(et_cluster_ob)
+                            # logger.logger.debug(et_cluster_dt)
+
                             ob_is = False
                             dt_is = False
                             new_cluster = []
@@ -69,6 +87,8 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
                                     c += 1
                                     dt_is = True
                                 new_cluster.append((d, c))
+                            # logger.logger.debug("old")
+                            # logger.logger.debug(new_cluster)
                             if not ob_is:
                                 new_cluster.append((ob_cluster[best.trainIdx], 1))
                             if not dt_is:
@@ -84,16 +104,18 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
         logger.logger.debug("Database loading finished.")
 
     def importSources_L1Template(self, source):
-        for j in range(0, len(source.keys())):
-            self._etalon.append([])
-        for c_num, cluster in source.iteritems():
-            etalon_cluster = []
-            for k in range(0, len(cluster.keys())):
-                etalon_cluster.append([])
-            for d_num, desc_dict in cluster.iteritems():
-                etalon_cluster[int(d_num)] = (listToNumpy_ndarray(desc_dict['descriptor']),
-                                              int(desc_dict['count']))
-            self._etalon[int(c_num)] = etalon_cluster
+
+        def _values(d, key=None):
+            l = sorted(d, key=key)
+            for e in l:
+                yield d[e]
+
+        self._etalon = [
+            [
+                (listToNumpy_ndarray(desc_dict['descriptor']), int(desc_dict['count']))
+                for desc_dict in _values(cluster, key=int)
+            ] for cluster in _values(source, key=int)
+        ]
 
     def exportSources(self):
         data = self.exportSources_L1Template()
@@ -105,22 +127,14 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
         return source
 
     def exportSources_L1Template(self):
-        sources = dict()
-        for index in range(0, len(self._etalon)):
-            et_weight_cluster = self._etalon[index]
-            cluster = dict()
-            i = 0
-            for d, c in et_weight_cluster:
-                obj = dict()
-                # desc_dict = dict()
-                # for indx in range(0, len(d)):
-                # desc_dict[str(indx)] = str(d[indx])
-                obj['descriptor'] = numpy_ndarrayToList(d)
-                obj['count'] = c
-                cluster[str(i)] = obj
-                i += 1
-            sources[str(index)] = cluster
-        return sources
+        return {
+            str(index): {
+                str(i): {
+                    'descriptor': numpy_ndarrayToList(d),
+                    'count': c
+                } for (i, (d, c)) in enumerate(et_weight_cluster)
+            } for (index, et_weight_cluster) in enumerate(self._etalon)
+        }
 
     @verifying
     def verify(self, data):

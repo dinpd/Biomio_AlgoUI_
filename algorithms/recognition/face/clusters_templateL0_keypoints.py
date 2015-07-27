@@ -1,7 +1,7 @@
 import multiprocessing as mp
-import sys
-
+import itertools
 import numpy
+import sys
 
 from algorithms.features.matchers import Matcher, BruteForceMatcherType
 from algorithms.recognition.face.clusters_keypoints import ClustersMatchingDetector
@@ -128,6 +128,8 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
                 elif dt_cluster is None or len(dt_cluster) == 0:
                     self._etalon[index] = et_cluster
                 else:
+                    print et_cluster
+                    print len(et_cluster[0])
                     matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=3)
                     matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=3)
 
@@ -188,36 +190,34 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
         logger.logger.debug("Database loading finished.")
 
     def importSources_L0Template(self, source):
-        for j in range(0, len(source.keys())):
-            self._etalon.append([])
-        for c_num, cluster in source.iteritems():
-            etalon_cluster = []
-            for d_num, descriptor in cluster.iteritems():
-                etalon_cluster.append(listToNumpy_ndarray(descriptor))
-            self._etalon[int(c_num)] = etalon_cluster
+
+        def _values(d, key=None):
+            l = sorted(d, key=key)
+            for e in l:
+                yield d[e]
+
+        self._etalon = [
+            [
+                listToNumpy_ndarray(descriptor) for descriptor in _values(cluster)
+            ] for cluster in _values(source, key=int)
+        ]
 
     def exportSources(self):
         data = self.exportSources_L0Template()
-        source = dict()
         if len(data.keys()) > 0:
-            source = dict()
-            source['data'] = data
-            source['threshold'] = self._prob
-        return source
+            return {
+                'data': data,
+                'threshold': self._prob
+            }
+        else:
+            return {}
 
     def exportSources_L0Template(self):
-        sources = dict()
-        for index in range(0, len(self._etalon)):
-            cluster = self._etalon[index]
-            cluster_dict = dict()
-            i_desc = 0
-            if cluster is None:
-                cluster = []
-            for descriptor in cluster:
-                cluster_dict[i_desc] = numpy_ndarrayToList(descriptor)
-                i_desc += 1
-            sources[str(index)] = cluster_dict
-        return sources
+        return {
+            str(index): {} if cluster is None else {
+                i: numpy_ndarrayToList(descriptor) for i, descriptor in enumerate(cluster)
+                } for index, cluster in enumerate(self._etalon)
+            }
 
     @verifying
     def verify(self, data):
@@ -255,11 +255,7 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
         logger.sys_logger.debug("Image: " + data['path'])
         logger.sys_logger.debug("Template size: ")
         self._log += "Template size: " + "\n"
-        summ = 0
-        for index in range(0, len(self._etalon)):
-            et_cluster = self._etalon[index]
-            if et_cluster is not None:
-                summ += len(et_cluster)
+        summ = sum(itertools.imap(lambda x: len(x) if x is not None else 0, self._etalon))
         for index in range(0, len(self._etalon)):
             et_cluster = self._etalon[index]
             dt_cluster = data['clusters'][index]
