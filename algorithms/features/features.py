@@ -70,7 +70,10 @@ class FeatureDetector:
         fea_image['data'] = image
 
         gray = grayscaleAndEqualize(image)
-        keypoints, descriptors = self._extractor.compute(gray, keypoints)
+        if self._extractor is not None:
+            keypoints, descriptors = self._extractor.compute(gray, keypoints)
+        else:
+            keypoints, descriptors = self._detector.compute(gray, keypoints)
         fea_image['keypoints'] = keypoints
         fea_image['descriptors'] = descriptors
         return fea_image
@@ -87,7 +90,10 @@ class FeatureDetector:
             mask = cv2.cvtColor(maskimage, cv2.COLOR_BGR2GRAY)
 
         keypoints = self._detector.detect(gray, mask)
-        keypoints, descriptors = self._extractor.compute(gray, keypoints)
+        if self._extractor is not None:
+            keypoints, descriptors = self._extractor.compute(gray, keypoints)
+        else:
+            keypoints, descriptors = self._detector.compute(gray, keypoints)
         fea_image['keypoints'] = keypoints
         fea_image['descriptors'] = descriptors
         return fea_image
@@ -105,7 +111,10 @@ class FeatureDetector:
             mask = cv2.imread(maskpath, cv2.CV_LOAD_IMAGE_GRAYSCALE)
 
         keypoints = self._detector.detect(gray, mask)
-        keypoints, descriptors = self._extractor.compute(gray, keypoints)
+        if self._extractor is not None:
+            keypoints, descriptors = self._extractor.compute(gray, keypoints)
+        else:
+            keypoints, descriptors = self._detector.compute(gray, keypoints)
         fea_image['keypoints'] = keypoints
         fea_image['descriptors'] = descriptors
         return fea_image

@@ -1,6 +1,6 @@
-from algorithms.features.detectors import (BRISKDetector, ORBDetector,
+from algorithms.features.detectors import (BRISKDetector, ORBDetector, SURFDetector, mahotasSURFDetector,
                                            BRISKDetectorSettings, ORBDetectorSettings)
-from algorithms.features.classifiers import (getROIImage,
+from algorithms.cascades.classifiers import (getROIImage,
                                              RectsFiltering)
 from algorithms.features.features import (FeatureDetector, BRISKDetectorType, ORBDetectorType)
 import logger
@@ -166,6 +166,8 @@ class KeypointsObjectDetector:
             data['roi'] = data['data']
         # Keypoints detection
         detector = FeatureDetector()
+        # surf_detector = mahotasSURFDetector()
+        # detector.set_detector(surf_detector)
         if self.kodsettings.detector_type is BRISKDetectorType:
             brisk_detector = BRISKDetector(self.kodsettings.brisk_settings.thresh,
                                            self.kodsettings.brisk_settings.octaves,

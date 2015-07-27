@@ -9,7 +9,7 @@ from guidata.qt.QtCore import QObject
 from guidata.configtools import get_icon
 from imageproperties import ImageProperties
 from algorithms.cvtools.visualization import drawKeypoints
-from algorithms.features.detectors import BRISKDetector, ORBDetector
+from algorithms.features.detectors import BRISKDetector, ORBDetector, SURFDetector
 from algorithms.features.gabor_threads import build_filters, process_kernel, process
 from logger import logger
 import algorithms.cvtools.dsp as dsp
@@ -29,6 +29,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         self._setwigets = []
         self._setwigets.append(self.create_brisk_widget())
         self._setwigets.append(self.create_orb_widget())
+        self._setwigets.append(self.create_surf_widget())
         self._setwigets.append(self.create_gabor_widget())
         self._setwigets.append(self.create_dsp_widget())
 
@@ -41,6 +42,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
 
         detector_menu.addAction(self.add_brisk_action(detector_menu))
         detector_menu.addAction(self.add_orb_action(detector_menu))
+        detector_menu.addAction(self.add_surf_action(detector_menu))
         return [detector_menu, self.add_gabor_filter_action(parent), self.add_dsp_action(parent)]
 
     def get_algorithms_list(self):
@@ -158,6 +160,52 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
             detector = ORBDetector(features=int(self._features_line_edit.text()),
                                    scale=float(self._scale_line_edit.text()),
                                    levels=int(self._levels_line_edit.text()))
+            fea = dict()
+            fea['data'] = curr.data()
+            keypoints, descriptors = detector.detectAndCompute(curr.data())
+            fea['keypoints'] = keypoints
+            logger.debug(len(keypoints))
+            fea['descriptors'] = descriptors
+            image.data(drawKeypoints(fea))
+            image.height(curr.height())
+            image.width(curr.width())
+            self._imanager.add_image(image)
+
+    def add_surf_action(self, parent):
+        surf_action = QAction(parent)
+        surf_action.setText(_("SURF Features Detection"))
+        surf_action.setIcon(get_icon('surf.png'))
+        surf_action.setCheckable(True)
+        self.connect(surf_action, SIGNAL("triggered(bool)"), self.surf_opened)
+        return surf_action
+
+    surf_opened = pyqtSignal(bool, name='surfOpened')
+
+    def create_surf_widget(self):
+        surf_dock = QDockWidget()
+        surf_dock.setWindowTitle("SURF Feature Detector Settings")
+        surf_dock.setVisible(False)
+        self.surf_opened.connect(surf_dock.setVisible)
+        surf_widget = QWidget(surf_dock)
+        self._threshold_line_edit = QLineEdit(surf_widget)
+        self._threshold_line_edit.setValidator(QIntValidator())
+        self._threshold_line_edit.setText('500')
+        detect = QPushButton(surf_widget)
+        detect.setText('Detect')
+        self.connect(detect, SIGNAL("clicked()"), self.surf)
+        widget_layout = QFormLayout()
+        widget_layout.addRow('Threshold', self._threshold_line_edit)
+        widget_layout.addWidget(detect)
+        surf_widget.setLayout(widget_layout)
+        surf_dock.setWidget(surf_widget)
+        return surf_dock
+
+    def surf(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            image = ImageProperties()
+            image.title(ACTION_TITLE % 'SURF' + curr.title())
+            detector = SURFDetector(threshold=int(self._threshold_line_edit.text()))
             fea = dict()
             fea['data'] = curr.data()
             keypoints, descriptors = detector.detectAndCompute(curr.data())

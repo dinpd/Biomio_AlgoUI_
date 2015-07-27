@@ -1,4 +1,5 @@
 import cv2
+from mahotas.features import surf
 
 # Detector types
 BRISKDetectorType = 'BRISK'
@@ -58,3 +59,41 @@ class ORBDetector(BaseDetector):
     @staticmethod
     def extractor():
         return cv2.DescriptorExtractor_create('ORB')
+
+
+class SURFDetector(BaseDetector):
+    def __init__(self, threshold=300):
+        BaseDetector.__init__(self, cv2.SURF(threshold))
+
+    @staticmethod
+    def extractor():
+        return cv2.SURF()
+
+def getKeyPoint(keypoint):
+    return cv2.KeyPoint(keypoint[1], keypoint[0], keypoint[2], keypoint[4], keypoint[3])
+
+def getMahotasKeypoint(keypoint):
+    return [keypoint.pt[1], keypoint.pt[0], keypoint.size, keypoint.response, keypoint.angle]
+
+class mahotasSURFDetector(BaseDetector):
+    def __init__(self):
+        BaseDetector.__init__(self, None)
+
+    def detect(self, image, mask=None):
+
+        keypoints = surf.interest_points(image)
+        return [getKeyPoint(keypoint) for keypoint in keypoints]
+
+    def detectAndCompute(self, image, mask=None):
+        keypoints = surf.interest_points(image)
+        descriptors = surf.descriptors(image, keypoints, False, True)
+        cvkeys = [getKeyPoint(keypoint) for keypoint in keypoints]
+        return cvkeys, descriptors
+
+    def compute(self, image, keypoints):
+        mkeys = [getMahotasKeypoint(keypoint) for keypoint in keypoints]
+        return keypoints, surf.descriptors(image, mkeys, False, True)
+
+    @staticmethod
+    def extractor():
+        return None
