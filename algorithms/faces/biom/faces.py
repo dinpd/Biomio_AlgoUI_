@@ -1,12 +1,14 @@
-from logger import logger
-from algorithms.features.classifiers import CascadeClassifierSettings
 import os
 import sys
+import threading
+
 import cv2.cv as cv
 import cv2
 import numpy as np
+
+from logger import logger
+from algorithms.cascades.classifiers import CascadeClassifierSettings
 import utils as utils
-import threading
 
 IMAGE_DIR = "faces/data/images"
 

@@ -1,4 +1,4 @@
-from algorithms.features.classifiers import CascadeClassifierSettings, CascadeROIDetector
+from algorithms.cascades.classifiers import CascadeClassifierSettings, CascadeROIDetector
 from algorithms.recognition.keypoints import KeypointsObjectDetector
 from algorithms.recognition.face.fmd_keypoints import FeaturesMatchingDetector
 from algorithms.recognition.face.spiral_keypoints import SpiralKeypointsVectorDetector

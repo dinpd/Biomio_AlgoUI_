@@ -1,12 +1,14 @@
+import random
+import math
+
+import numpy as np
+import cv2
+
 from algorithms.cvtools.types import listToNumpy_ndarray
 from algorithms.features.gabor_threads import build_filters, process_kernel
 from algorithms.cvtools.effects import grayscale, binarization
-from algorithms.features.classifiers import CascadeROIDetector, RectsFiltering
+from algorithms.cascades.classifiers import CascadeROIDetector, RectsFiltering
 from logger import logger
-import numpy as np
-import random
-import math
-import cv2
 
 
 def getPalmContourClassic(image):

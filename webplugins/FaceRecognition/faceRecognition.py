@@ -1,7 +1,7 @@
 import os
 
 from aiplugins import IAlgorithmPlugin
-from algorithms.features.classifiers import CascadeClassifierSettings
+from algorithms.cascades.classifiers import CascadeClassifierSettings
 from algorithms.recognition.face.detcreator import (DetectorCreator,
                                                ClustersObjectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)

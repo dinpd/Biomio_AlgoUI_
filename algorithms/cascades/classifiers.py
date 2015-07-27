@@ -1,12 +1,13 @@
-from algorithms.cvtools.effects import grayscaleAndEqualize
-from algorithms.cvtools.types import numpy_darrayToIplImage, iplImageToNumpy_darray
-from algorithms.features.rectmerge import mergeRectangles
-from algorithms.features.rectsect import intersectRectangles
-from algorithms.features.rectfilter import filterRectangles
-import logger
-import cv2
 import os
 
+import cv2
+
+from algorithms.cvtools.effects import grayscaleAndEqualize
+from algorithms.cvtools.types import numpy_darrayToIplImage, iplImageToNumpy_darray
+from algorithms.cascades.rectmerge import mergeRectangles
+from algorithms.cascades.rectsect import intersectRectangles
+from algorithms.cascades.rectfilter import filterRectangles
+import logger
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 ALGO_DB_PATH = os.path.join(APP_ROOT, 'algorithms', 'data')
