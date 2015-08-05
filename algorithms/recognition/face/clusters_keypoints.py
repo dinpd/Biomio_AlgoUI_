@@ -1,10 +1,11 @@
-from algorithms.features.matchers import Matcher, BruteForceMatcherType
+from algorithms.features.matchers import Matcher
 from algorithms.clustering.forel import FOREL
 from algorithms.clustering.kmeans import KMeans
 from algorithms.cascades.classifiers import CascadeROIDetector
 from algorithms.recognition.keypoints import (KeypointsObjectDetector,
-                                              BRISKDetectorType, ORBDetectorType)
+                                              BRISKDetectorType)
 from algorithms.cvtools.visualization import (drawClusters, drawLine, showClusters)
+from algorithms.features import matcherForDetector, dtypeForDetector
 import logger
 
 
@@ -134,7 +135,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         self._compare_descriptors(f_imgobj, s_imgobj)
 
     def _compare_descriptors(self, f_imgobj, s_imgobj):
-        matcher = Matcher(BruteForceMatcherType)
+        matcher = Matcher(matcherForDetector(self.kodsettings.detector_type))
         matches = matcher.knnMatch(f_imgobj['descriptors'], s_imgobj['descriptors'], k=1)
         logger.logger.debug("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         stat = dict()
@@ -196,7 +197,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         data['true_clusters'] = clusters
         descriptors = []
         for cluster in clusters:
-            desc = detector.computeImage(data['roi'], cluster['items'])
+            desc = detector.compute(data['roi'], cluster['items'])
             descriptors.append(desc['descriptors'])
         data['clusters'] = descriptors
         return True

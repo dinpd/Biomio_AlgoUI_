@@ -7,6 +7,7 @@ from algorithms.features.matchers import Matcher, BruteForceMatcherType
 from algorithms.recognition.face.clusters_keypoints import ClustersMatchingDetector
 from algorithms.recognition.keypoints import verifying
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
+from algorithms.features import matcherForDetector, dtypeForDetector
 import logger
 
 PROCESS_COUNT = 8 # mp.cpu_count()
@@ -119,7 +120,7 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
         if len(self._etalon) == 0:
             self._etalon = data['clusters']
         else:
-            matcher = Matcher(BruteForceMatcherType)
+            matcher = Matcher(matcherForDetector(self.kodsettings.detector_type))
             for index in range(0, len(self._etalon)):
                 et_cluster = self._etalon[index]
                 dt_cluster = data['clusters'][index]
@@ -128,10 +129,11 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
                 elif dt_cluster is None or len(dt_cluster) == 0:
                     self._etalon[index] = et_cluster
                 else:
-                    print et_cluster
-                    print len(et_cluster[0])
-                    matches1 = matcher.knnMatch(et_cluster, dt_cluster, k=3)
-                    matches2 = matcher.knnMatch(dt_cluster, et_cluster, k=3)
+                    dtype = dtypeForDetector(self.kodsettings.detector_type)
+                    matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, dtype),
+                                                listToNumpy_ndarray(dt_cluster, dtype), k=3)
+                    matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, dtype),
+                                                listToNumpy_ndarray(et_cluster, dtype), k=3)
 
                     good = []
                     # for v in matches:
@@ -196,10 +198,10 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
             for e in l:
                 yield d[e]
 
-        self._etalon = [
+        self._etalon = [listToNumpy_ndarray(
             [
                 listToNumpy_ndarray(descriptor) for descriptor in _values(cluster)
-            ] for cluster in _values(source, key=int)
+            ]) for cluster in _values(source, key=int)
         ]
 
     def exportSources(self):
@@ -248,7 +250,8 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
         return prob / (1.0 * len(res))
 
     def verify_template_L0_noparallel(self, data):
-        matcher = Matcher(BruteForceMatcherType)
+        knn = 2
+        matcher = Matcher(matcherForDetector(self.kodsettings.detector_type))
         res = []
         prob = 0
         self._log += "Test: " + data['path'] + "\n"
@@ -260,22 +263,23 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
             et_cluster = self._etalon[index]
             dt_cluster = data['clusters'][index]
             ms = []
-            if et_cluster is None:
+            if et_cluster is None or len(et_cluster) < knn:
                 res.append(ms)
                 logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(-1)
                                         + " Invalid. (Weight: 0)")
                 continue
-            if dt_cluster is None:
+            if dt_cluster is None or len(dt_cluster) < knn:
                 res.append(ms)
                 logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
                                         + " Positive: 0 Probability: 0 (Weight: " +
                                         str(len(et_cluster) / (1.0 * summ)) + ")")
                 continue
             if len(et_cluster) > 0 and len(dt_cluster) > 0:
-                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, numpy.uint8),
-                                            listToNumpy_ndarray(dt_cluster, numpy.uint8), k=2)
-                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, numpy.uint8),
-                                            listToNumpy_ndarray(et_cluster, numpy.uint8), k=2)
+                dtype = dtypeForDetector(self.kodsettings.detector_type)
+                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, dtype),
+                                            listToNumpy_ndarray(dt_cluster, dtype), k=knn)
+                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, dtype),
+                                            listToNumpy_ndarray(et_cluster, dtype), k=knn)
                 # for v in matches:
                 # if len(v) >= 1:
                 # if len(v) >= 2:

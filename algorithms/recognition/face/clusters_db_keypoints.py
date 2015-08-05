@@ -1,9 +1,9 @@
-import numpy
-import itertools
-from algorithms.features.matchers import Matcher, BruteForceMatcherType
+from algorithms.features.matchers import Matcher
 from algorithms.recognition.face.clusters_keypoints import ClustersMatchingDetector
 from algorithms.recognition.keypoints import verifying
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
+from algorithms.features import matcherForDetector, dtypeForDetector
+import itertools
 import logger
 
 
@@ -60,8 +60,9 @@ class ClustersDBMatchingDetector(ClustersMatchingDetector):
         }
 
     def _probability(self, matcher, source, test):
-        matches = matcher.knnMatch(listToNumpy_ndarray(test, numpy.uint8),
-                                   listToNumpy_ndarray(source, numpy.uint8), k=1)
+        dtype = dtypeForDetector(self.kodsettings.detector_type)
+        matches = matcher.knnMatch(listToNumpy_ndarray(test, dtype),
+                                   listToNumpy_ndarray(source, dtype), k=1)
         ms = sum(
             itertools.imap(
                 lambda v: len(v) >= 1 and v[0].distance < self.kodsettings.neighbours_distance, matches
@@ -71,7 +72,7 @@ class ClustersDBMatchingDetector(ClustersMatchingDetector):
 
     @verifying
     def verify(self, data):
-        # matcher = Matcher(BruteForceMatcherType)
+        # matcher = Matcher(matcherForDetector(self.kodsettings.detector_type))
         # gres = []
         # self._log += "Test: " + data['path'] + "\n"
         # for d in self._hash:
@@ -103,7 +104,7 @@ class ClustersDBMatchingDetector(ClustersMatchingDetector):
         # logger.logger.debug("Total: " + str(s / len(gres)))
         # self._log += "\nTotal: " + str(s / len(gres)) + "\n\n"
         # return s / len(gres)
-        matcher = Matcher(BruteForceMatcherType)
+        matcher = Matcher(matcherForDetector(self.kodsettings.detector_type))
         tprob = 0
         self._log += "Test: " + data['path'] + "\n"
         for d in self._hash:

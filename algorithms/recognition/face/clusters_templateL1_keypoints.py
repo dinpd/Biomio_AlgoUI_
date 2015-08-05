@@ -1,7 +1,8 @@
-from algorithms.features.matchers import Matcher, BruteForceMatcherType
+from algorithms.features.matchers import Matcher
 from algorithms.recognition.face.clusters_keypoints import ClustersMatchingDetector
 from algorithms.recognition.keypoints import verifying
 from algorithms.cvtools.types import listToNumpy_ndarray, numpy_ndarrayToList
+from algorithms.features import matcherForDetector, dtypeForDetector
 import logger
 import numpy
 
@@ -33,7 +34,7 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
                                [] if cluster is None else [(desc, 1) for desc in cluster],
                                data['clusters'])
         else:
-            matcher = Matcher(BruteForceMatcherType)
+            matcher = Matcher(matcherForDetector(self.kodsettings.detector_type))
             for index, et_cluster in enumerate(self._etalon):
                 dt_cluster = data['clusters'][index]
                 if dt_cluster is None or len(dt_cluster) == 0:
@@ -44,8 +45,9 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
                     ob_cluster = obj['clusters'][index]
                     if ob_cluster is None or len(ob_cluster) == 0:
                         continue
-                    matches1 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster),
-                                                listToNumpy_ndarray(ob_cluster), k=5)
+                    dtype = dtypeForDetector(self.kodsettings.detector_type)
+                    matches1 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, dtype),
+                                                listToNumpy_ndarray(ob_cluster, dtype), k=5)
                     for v in matches1:
                         if len(v) >= 1:
 
@@ -87,8 +89,6 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
                                     c += 1
                                     dt_is = True
                                 new_cluster.append((d, c))
-                            # logger.logger.debug("old")
-                            # logger.logger.debug(new_cluster)
                             if not ob_is:
                                 new_cluster.append((ob_cluster[best.trainIdx], 1))
                             if not dt_is:
@@ -141,7 +141,7 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
         return self.verify_template_L1(data)
 
     def verify_template_L1(self, data):
-        matcher = Matcher(BruteForceMatcherType)
+        matcher = Matcher(matcherForDetector(self.kodsettings.detector_type))
         res = []
         prob = 0
         self._log += "Test: " + data['path'] + "\n"
@@ -161,10 +161,11 @@ class ClustersTemplateL1MatchingDetector(ClustersMatchingDetector):
             if et_cluster is None or dt_cluster is None:
                 continue
             if len(et_cluster) > 0 and len(dt_cluster) > 0:
-                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, numpy.uint8),
-                                            listToNumpy_ndarray(dt_cluster, numpy.uint8), k=2)
-                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, numpy.uint8),
-                                            listToNumpy_ndarray(et_cluster, numpy.uint8), k=2)
+                dtype = dtypeForDetector(self.kodsettings.detector_type)
+                matches1 = matcher.knnMatch(listToNumpy_ndarray(et_cluster, dtype),
+                                            listToNumpy_ndarray(dt_cluster, dtype), k=2)
+                matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, dtype),
+                                            listToNumpy_ndarray(et_cluster, dtype), k=2)
                 # for v in matches:
                 # if len(v) >= 1:
                 # if len(v) >= 2:
