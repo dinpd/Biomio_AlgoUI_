@@ -1,13 +1,11 @@
-import os
-
-import cv2
-
-from algorithms.cvtools.effects import grayscaleAndEqualize
 from algorithms.cvtools.types import numpy_darrayToIplImage, iplImageToNumpy_darray
-from algorithms.cascades.rectmerge import mergeRectangles
 from algorithms.cascades.rectsect import intersectRectangles
 from algorithms.cascades.rectfilter import filterRectangles
+from algorithms.cvtools.effects import grayscaleAndEqualize
+from algorithms.cascades.rectmerge import mergeRectangles
 import logger
+import cv2
+import os
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 ALGO_DB_PATH = os.path.join(APP_ROOT, 'algorithms', 'data')
@@ -36,7 +34,7 @@ def getROIImage(image, rectangle):
 
 class CascadeClassifierSettings:
     scaleFactor = 1.1
-    minNeighbors = 2
+    minNeighbors = 3
     minSize = (30, 30)
     flags = cv2.cv.CV_HAAR_SCALE_IMAGE
 
@@ -65,8 +63,10 @@ class CascadeROIDetector:
     def __init__(self):
         self.__cascades = []
         self._cascades_list = []
+        self._relative_cl = []
 
     def add_cascade(self, path):
+        self._relative_cl.append(path)
         abs_path = os.path.join(APP_ROOT, "../../", path)
         logger.logger.debug("####### %s" % abs_path)
         if os.path.exists(abs_path):
@@ -84,7 +84,7 @@ class CascadeROIDetector:
 
     def exportSettings(self):
         face_cascade = dict()
-        face_cascade['ROI Cascades'] = self.cascades()
+        face_cascade['ROI Cascades'] = [cascade for cascade in self._relative_cl]
         face_cascade['Settings'] = self.classifierSettings.exportSettings()
         return face_cascade
 
@@ -137,11 +137,11 @@ class CascadeROIDetector:
 
         # 90
         img2 = self._rotate(image)
-        c_rect = self.detectAndJoin(img2, as_list, algorithm)
-        if len(c_rect) > 0:
-            if rect[2] < c_rect[2] and rect[3] < c_rect[3]:
-                rect = c_rect
-                img = img2
+        # c_rect = self.detectAndJoin(img2, as_list, algorithm)
+        # if len(c_rect) > 0:
+        #     if rect[2] < c_rect[2] and rect[3] < c_rect[3]:
+        #         rect = c_rect
+        #         img = img2
 
         # 180
         img3 = self._rotate(img2)
