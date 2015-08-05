@@ -317,8 +317,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             detector = creator.detector()
             # detector.kodsettings.neighbours_distance = self._neighBox.value()
             detector.kodsettings.detector_type = self.settings_dialog.result_type()
-            detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
-            detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            detector.kodsettings.settings = self.settings_dialog.settings()
             detector.detect(data)
             print data.keys()
             imag = ImageProperties()
@@ -501,13 +500,14 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         if not filelist.isEmpty():
             logger.debug("Loading started...")
             i = 0
+            sources = []
             for imfile in filelist:
                 i += 1
-                obj = loadImageObject(str(imfile))
-                self._keysrecg_detector.addSource(obj)
+                sources.append(loadImageObject(str(imfile)))
                 self._load_label.setText("Load file: " + imfile)
                 self._load_bar.setValue((i * 100) / len(filelist))
                 QCoreApplication.processEvents()
+            self._keysrecg_detector.addSources(sources)
             self._load_label.setText("Loading finished.")
             self._load_bar.setValue(100)
             logger.debug("Loading finished.")
@@ -531,8 +531,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             }
             self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
             self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
-            self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
-            self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            self._keysrecg_detector.kodsettings.settings = self.settings_dialog.settings()
             self._keysrecg_detector.kodsettings.probability = self._probBox.value()
             self._keysrecg_detector.setUseROIDetection(True)
             self._keysrecg_detector.identify(data)
@@ -550,8 +549,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 }
                 self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
                 self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
-                self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
-                self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+                self._keysrecg_detector.kodsettings.settings = self.settings_dialog.settings()
                 self._keysrecg_detector.kodsettings.probability = self._probBox.value()
                 res = self._keysrecg_detector.identify(data)
                 logger.debug("Result: " + os.path.split(res)[1] + "\t"
@@ -575,11 +573,10 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             }
             self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
             # self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
-            # self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
-            # self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            # self._keysrecg_detector.kodsettings.settings = self.settings_dialog.settings()
             self._keysrecg_detector.kodsettings.probability = self._probBox.value()
             self._keysrecg_detector.setUseROIDetection(True)
-            self._keysrecg_detector.verify(data)
+            logger.debug("Verification result: %f" % self._keysrecg_detector.verify(data))
 
     def verify_all(self):
         if self._imanager:
@@ -597,8 +594,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 }
                 self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
                 self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
-                self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
-                self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+                self._keysrecg_detector.kodsettings.settings = self.settings_dialog.settings()
                 self._keysrecg_detector.kodsettings.probability = self._probBox.value()
                 res = self._keysrecg_detector.verify(data)
                 if res is not False:
@@ -668,8 +664,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
     def det_change(self):
         if self.settings_dialog.exec_():
             self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
-            self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
-            self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            self._keysrecg_detector.kodsettings.settings = self.settings_dialog.settings()
 
     def add_compare_action(self, parent):
         compare_action = QAction(parent)
@@ -769,8 +764,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             second_data = loadImageObject(str(self._simage_edit.text()))
             self._keysrecg_detector.kodsettings.neighbours_distance = self._compare_neighBox.value()
             self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
-            self._keysrecg_detector.kodsettings.brisk_settings = self.settings_dialog.brisk()
-            self._keysrecg_detector.kodsettings.orb_settings = self.settings_dialog.orb()
+            self._keysrecg_detector.kodsettings.settings = self.settings_dialog.settings()
             self._keysrecg_detector.kodsettings.probability = self._probBox.value()
             self._keysrecg_detector.setUseROIDetection(True)
             res = self._keysrecg_detector.compare(first_data, second_data)

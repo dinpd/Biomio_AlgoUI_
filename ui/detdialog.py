@@ -6,16 +6,16 @@ from guidata.qt.QtGui import (QWidget, QStackedWidget,
                               QIntValidator, QDoubleValidator,
                               QVBoxLayout, QHBoxLayout, QFormLayout,
                               QPushButton, QLineEdit, QRadioButton)
-from algorithms.features.detectors import (BRISKDetectorSettings, ORBDetectorSettings,
-                                           BRISKDetectorType, ORBDetectorType)
+from algorithms.features.detectors import (BRISKDetectorSettings, ORBDetectorSettings, SURFDetectorSettings,
+                                           mahotasSURFDetectorSettings)
+from algorithms.features import BRISKDetectorType, ORBDetectorType
 from guiqwt.config import _
 
 
 class DetectorSettingsDialog(QDialog):
     def __init__(self, parent=None):
         self._detector_type = BRISKDetectorType
-        self._brisk_settings = BRISKDetectorSettings()
-        self._orb_settings = ORBDetectorSettings()
+        self._settings = BRISKDetectorSettings()
         super(DetectorSettingsDialog, self).__init__(parent)
 
         self._brisk_button = QRadioButton(self)
@@ -50,25 +50,25 @@ class DetectorSettingsDialog(QDialog):
         self.setLayout(dialog_layout)
 
     def result_type(self):
-        return self._detector_type
+        return 'mahotasSURF' #self._detector_type
 
-    def brisk(self):
-        return self._brisk_settings
-
-    def orb(self):
-        return self._orb_settings
+    def settings(self):
+        return mahotasSURFDetectorSettings()#self._settings
 
     def brisk_tab(self):
         brisk_widget = QWidget(self)
         self._thresh_line_edit = QLineEdit(brisk_widget)
         self._thresh_line_edit.setValidator(QIntValidator())
-        self._thresh_line_edit.setText(str(self._brisk_settings.thresh))
         self._octaves_line_edit = QLineEdit(brisk_widget)
         self._octaves_line_edit.setValidator(QIntValidator())
-        self._octaves_line_edit.setText(str(self._brisk_settings.octaves))
         self._pattern_scale_line_edit = QLineEdit(brisk_widget)
         self._pattern_scale_line_edit.setValidator(QDoubleValidator())
-        self._pattern_scale_line_edit.setText(str(self._brisk_settings.patternScale))
+        temp = BRISKDetectorSettings()
+        if self._detector_type == BRISKDetectorType:
+            temp = self._settings
+        self._thresh_line_edit.setText(str(temp.thresh))
+        self._octaves_line_edit.setText(str(temp.octaves))
+        self._pattern_scale_line_edit.setText(str(temp.patternScale))
         widget_layout = QFormLayout()
         widget_layout.addRow('Thresh', self._thresh_line_edit)
         widget_layout.addRow('Octaves', self._octaves_line_edit)
@@ -80,13 +80,16 @@ class DetectorSettingsDialog(QDialog):
         orb_widget = QWidget(self)
         self._features_line_edit = QLineEdit(orb_widget)
         self._features_line_edit.setValidator(QIntValidator())
-        self._features_line_edit.setText(str(self._orb_settings.features))
         self._scale_line_edit = QLineEdit(orb_widget)
         self._scale_line_edit.setValidator(QDoubleValidator())
-        self._scale_line_edit.setText(str(self._orb_settings.scaleFactor))
         self._levels_line_edit = QLineEdit(orb_widget)
         self._levels_line_edit.setValidator(QIntValidator())
-        self._levels_line_edit.setText(str(self._orb_settings.nlevels))
+        temp = ORBDetectorSettings()
+        if self._detector_type == ORBDetectorType:
+            temp = self._settings
+        self._features_line_edit.setText(str(temp.features))
+        self._scale_line_edit.setText(str(temp.scaleFactor))
+        self._levels_line_edit.setText(str(temp.nlevels))
         widget_layout = QFormLayout()
         widget_layout.addRow('Number of Features', self._features_line_edit)
         widget_layout.addRow('Scale Factor', self._scale_line_edit)
@@ -103,12 +106,14 @@ class DetectorSettingsDialog(QDialog):
             self._stacked_widget.setCurrentIndex(1)
 
     def acceptDialog(self):
-        self._brisk_settings.thresh = int(self._thresh_line_edit.text())
-        self._brisk_settings.octaves = int(self._octaves_line_edit.text())
-        self._brisk_settings.patternScale = float(self._pattern_scale_line_edit.text())
-
-        self._orb_settings.features = int(self._features_line_edit.text())
-        self._orb_settings.scaleFactor = float(self._scale_line_edit.text())
-        self._orb_settings.nlevels = int(self._levels_line_edit.text())
-
+        if self._detector_type == BRISKDetectorType:
+            self._settings = BRISKDetectorSettings()
+            self._settings.thresh = int(self._thresh_line_edit.text())
+            self._settings.octaves = int(self._octaves_line_edit.text())
+            self._settings.patternScale = float(self._pattern_scale_line_edit.text())
+        else:
+            self._settings = ORBDetectorSettings()
+            self._settings.features = int(self._features_line_edit.text())
+            self._settings.scaleFactor = float(self._scale_line_edit.text())
+            self._settings.nlevels = int(self._levels_line_edit.text())
         self.accept()
