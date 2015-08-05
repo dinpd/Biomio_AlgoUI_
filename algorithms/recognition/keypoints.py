@@ -1,8 +1,8 @@
-from algorithms.features.detectors import (BRISKDetector, ORBDetector, SURFDetector, mahotasSURFDetector,
-                                           BRISKDetectorSettings, ORBDetectorSettings)
-from algorithms.cascades.classifiers import (getROIImage,
-                                             RectsFiltering)
-from algorithms.features.features import (FeatureDetector, BRISKDetectorType, ORBDetectorType)
+from algorithms.cascades.classifiers import (getROIImage, RectsFiltering)
+from algorithms.features.features import (FeatureDetector)
+from algorithms.features import (constructDetector, constructSettings,
+                                 BRISKDetectorType)
+from algorithms.cascades.roi import optimalROIDetection
 import logger
 
 
@@ -17,56 +17,30 @@ class KODSettings:
     neighbours_distance = 1.0
     # max_hash_length = 600
     detector_type = BRISKDetectorType
-    brisk_settings = BRISKDetectorSettings()
-    orb_settings = ORBDetectorSettings()
+    settings = None
     probability = 25.0
 
     def exportSettings(self):
-        info = dict()
-        info['Neighbours Distance'] = self.neighbours_distance
-        info['Probability'] = self.probability
-        settings = dict()
-        if self.detector_type == BRISKDetectorType:
-            info['Detector Type'] = 'BRISK'
-            settings['Thresh'] = self.brisk_settings.thresh
-            settings['Octaves'] = self.brisk_settings.octaves
-            settings['Pattern Scale'] = self.brisk_settings.patternScale
-        elif self.detector_type == ORBDetectorType:
-            info['Detector Type'] = 'ORB'
-            settings['Number of features'] = self.orb_settings.features
-            settings['Scale Factor'] = self.orb_settings.scaleFactor
-            settings['Number of levels'] = self.orb_settings.nlevels
-        info['Detector Settings'] = settings
-        return info
+        return {
+            'Neighbours Distance': self.neighbours_distance,
+            'Probability': self.probability,
+            'Detector Type': self.detector_type,
+            'Detector Settings': self.settings.exportSettings()
+        }
 
     def importSettings(self, settings):
         self.neighbours_distance = settings['Neighbours Distance']
         self.probability = settings['Probability']
-        detector = settings.get('Detector Settings', dict())
-        if settings.get('Detector Type') == 'BRISK':
-            self.detector_type = BRISKDetectorType
-            self.brisk_settings.thresh = detector['Thresh']
-            self.brisk_settings.octaves = detector['Octaves']
-            self.brisk_settings.patternScale = detector['Pattern Scale']
-        elif settings.get('Detector Type') == 'ORB':
-            self.detector_type = ORBDetectorType
-            self.orb_settings.features = detector['Number of features']
-            self.orb_settings.scaleFactor = detector['Scale Factor']
-            self.orb_settings.nlevels = detector['Number of levels']
+        self.detector_type = settings.get('Detector Type')
+        self.settings = constructSettings(self.detector_type)
+        self.settings.importSettings(settings.get('Detector Settings', dict()))
 
     def dump(self):
         logger.logger.debug('Keypoints Objects Detectors Settings')
         logger.logger.debug('Neighbours Distance: %f' % self.neighbours_distance)
         logger.logger.debug('Probability: %f' % self.probability)
         logger.logger.debug('Detector Type: %s' % self.detector_type)
-        logger.logger.debug('BRISK Detector Settings')
-        logger.logger.debug('   Thresh: %d' % self.brisk_settings.thresh)
-        logger.logger.debug('   Octaves: %d' % self.brisk_settings.octaves)
-        logger.logger.debug('   Pattern Scale: %f' % self.brisk_settings.patternScale)
-        logger.logger.debug('ORB Detector Settings')
-        logger.logger.debug('   Number of features: %d' % self.orb_settings.features)
-        logger.logger.debug('   Scale Factor: %f' % self.orb_settings.scaleFactor)
-        logger.logger.debug('   Number of levels: %d' % self.orb_settings.nlevels)
+        self.settings.dump()
 
 
 def identifying(fn):
@@ -87,6 +61,8 @@ def verifying(fn):
         logger.logger.debug("Verifying...")
         self._log = ""
         res = False
+        if self._sources_preparing:
+            self._prepare_sources([data])
         if self.data_detect(data):
             if data is not None:
                 res = fn(self, data)
@@ -105,6 +81,7 @@ class KeypointsObjectDetector:
         self._detector = None
         self._eyeROI = None
         self._use_roi = True
+        self._sources_preparing = True
         self._log = ""
 
     def threshold(self):
@@ -122,6 +99,8 @@ class KeypointsObjectDetector:
             self.update_hash(data)
 
     def addSources(self, data_list):
+        if self._sources_preparing:
+            self._prepare_sources(data_list)
         for data in data_list:
             self.addSource(data)
 
@@ -165,21 +144,9 @@ class KeypointsObjectDetector:
         else:
             data['roi'] = data['data']
         # Keypoints detection
-        detector = FeatureDetector()
-        # surf_detector = mahotasSURFDetector()
-        # detector.set_detector(surf_detector)
-        if self.kodsettings.detector_type is BRISKDetectorType:
-            brisk_detector = BRISKDetector(self.kodsettings.brisk_settings.thresh,
-                                           self.kodsettings.brisk_settings.octaves,
-                                           self.kodsettings.brisk_settings.patternScale)
-            detector.set_detector(brisk_detector)
-        else:
-            orb_detector = ORBDetector(self.kodsettings.orb_settings.features,
-                                       self.kodsettings.orb_settings.scaleFactor,
-                                       self.kodsettings.orb_settings.nlevels)
-            detector.set_detector(orb_detector)
+        detector = FeatureDetector(constructDetector(self.kodsettings.detector_type, self.kodsettings.settings))
         try:
-            obj = detector.detectAndComputeImage(data['roi'])
+            obj = detector.detectAndCompute(data['roi'])
         except Exception as err:
             logger.logger.debug(err.message)
             return False
@@ -191,6 +158,10 @@ class KeypointsObjectDetector:
 
     def _detect(self, data, detector):
         return True
+
+    def _prepare_sources(self, data_list):
+        self._use_roi = False
+        optimalROIDetection(data_list)
 
     def update_hash(self, data):
         logger.logger.debug("The hash does not need to be updated!")
