@@ -16,7 +16,8 @@ from logger import logger
 from aiplugins import IAlgorithmPlugin
 from imageproperties import ImageProperties
 from algorithms.cvtools.visualization import drawRectangle
-from algorithms.cascades.classifiers import CascadeROIDetector, getROIImage, CascadeClassifierSettings
+from algorithms.cascades.classifiers import CascadeROIDetector, CascadeClassifierSettings
+from algorithms.cascades.tools import getROIImage
 from algorithms.faces.biom.utils import files_list
 from ui.detdialog import DetectorSettingsDialog
 from algorithms.recognition.face.detcreator import (DetectorCreator, ClustersTemplateL0ObjectMatching,

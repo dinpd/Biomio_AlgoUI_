@@ -1,7 +1,7 @@
 from aiplugins import IAlgorithmPlugin
 from guidata.qt.QtCore import SIGNAL, pyqtSignal
 from guidata.qt.QtGui import (QAction, QMenu,
-                              QWidget, QDockWidget,
+                              QWidget, QDockWidget, QFileDialog,
                               QFormLayout, QVBoxLayout, QHBoxLayout,
                               QLineEdit, QPushButton, QGroupBox, QDial, QCheckBox, QSpinBox,
                               QDoubleValidator, QIntValidator)
@@ -11,6 +11,8 @@ from imageproperties import ImageProperties
 from algorithms.cvtools.visualization import drawKeypoints
 from algorithms.features.detectors import BRISKDetector, ORBDetector, SURFDetector
 from algorithms.features.gabor_threads import build_filters, process_kernel, process
+from algorithms.cascades.tools import getROIImage, loadScript
+from algorithms.cascades.scripts_detectors import CascadesDetectionInterface, RotatedCascadesDetector
 from logger import logger
 import algorithms.cvtools.dsp as dsp
 
@@ -21,6 +23,7 @@ GF_ACTION_TITLE = 'Action: Gabor Filtering::'
 SPC_ACTION_TITLE = 'Action: Spectrum::'
 LPF_ACTION_TITLE = 'Action: Low Pass Filter::'
 HPF_ACTION_TITLE = 'Action: High Pass Filter::'
+RD_ACTION_TITLE = 'Action: ROI Detection::'
 
 
 class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
@@ -32,6 +35,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         self._setwigets.append(self.create_surf_widget())
         self._setwigets.append(self.create_gabor_widget())
         self._setwigets.append(self.create_dsp_widget())
+        self._setwigets.append(self.create_roi_widget())
 
     def set_image_manager(self, manager):
         self._imanager = manager
@@ -43,7 +47,8 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         detector_menu.addAction(self.add_brisk_action(detector_menu))
         detector_menu.addAction(self.add_orb_action(detector_menu))
         detector_menu.addAction(self.add_surf_action(detector_menu))
-        return [detector_menu, self.add_gabor_filter_action(parent), self.add_dsp_action(parent)]
+        return [detector_menu, self.add_gabor_filter_action(parent), self.add_dsp_action(parent),
+                self.add_roi_action(parent)]
 
     def get_algorithms_list(self):
         return []
@@ -380,3 +385,101 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
             image.height(curr.height())
             image.width(curr.width())
             self._imanager.add_image(image)
+
+    def add_roi_action(self, parent):
+        roi_action = QAction(parent)
+        roi_action.setText(_("ROI SAoS Detection"))
+        roi_action.setIcon(get_icon('roi.png'))
+        roi_action.setCheckable(True)
+        self.connect(roi_action, SIGNAL("triggered(bool)"), self.roi_opened)
+        return roi_action
+
+    roi_opened = pyqtSignal(bool, name='roiOpened')
+
+    def create_roi_widget(self):
+        roi_dock = QDockWidget()
+        roi_dock.setWindowTitle("Cascades ROIs SAoS Detector Settings")
+        roi_dock.setVisible(False)
+        self.roi_opened.connect(roi_dock.setVisible)
+        roi_widget = QWidget(roi_dock)
+        self._rotation_edit = QLineEdit(roi_widget)
+        self._rotation_edit.setReadOnly(True)
+        browse_rotation = QPushButton(roi_widget)
+        browse_rotation.setText('Browse...')
+        self.connect(browse_rotation, SIGNAL("clicked()"), self.load_rotation_script)
+        self._script_edit = QLineEdit(roi_widget)
+        self._script_edit.setReadOnly(True)
+        browse = QPushButton(roi_widget)
+        browse.setText('Browse...')
+        self.connect(browse, SIGNAL("clicked()"), self.load_script)
+        detect = QPushButton(roi_widget)
+        detect.setText('Detect')
+        self.connect(detect, SIGNAL("clicked()"), self.roi)
+        detectAll = QPushButton(roi_widget)
+        detectAll.setText('Detect All')
+        self.connect(detectAll, SIGNAL("clicked()"), self.roiAll)
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addWidget(detect)
+        buttons_layout.addWidget(detectAll)
+        rotation_layout = QHBoxLayout()
+        rotation_layout.addWidget(self._rotation_edit)
+        rotation_layout.addWidget(browse_rotation)
+        browse_layout = QHBoxLayout()
+        browse_layout.addWidget(self._script_edit)
+        browse_layout.addWidget(browse)
+        widget_layout = QVBoxLayout()
+        widget_layout.addLayout(rotation_layout)
+        widget_layout.addLayout(browse_layout)
+        widget_layout.addLayout(buttons_layout)
+        roi_widget.setLayout(widget_layout)
+        roi_dock.setWidget(roi_widget)
+        return roi_dock
+
+    def load_rotation_script(self):
+        filename = QFileDialog.getOpenFileName(None, "Select script", ".")
+        if not filename.isEmpty():
+            self._rotation_edit.setText(filename)
+
+    def load_script(self):
+        filename = QFileDialog.getOpenFileName(None, "Select script", ".")
+        if not filename.isEmpty():
+            self._script_edit.setText(filename)
+
+    def roi(self):
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            detector = RotatedCascadesDetector(loadScript(str(self._rotation_edit.text())),
+                                               loadScript(str(self._script_edit.text())))
+            img, rois = detector.detect(curr.data())
+            print rois
+            for roi in rois:
+                image = ImageProperties()
+                image.title(str(RD_ACTION_TITLE + str(roi) + "::" + curr.title()))
+                image.data(getROIImage(img, roi))
+                image.height(curr.height())
+                image.width(curr.width())
+                self._imanager.add_image(image)
+            if len(rois) == 0:
+                image = ImageProperties()
+                image.title(str(RD_ACTION_TITLE + "ROTATION" + "::" + curr.title()))
+                image.data(img)
+                image.height(curr.height())
+                image.width(curr.width())
+                self._imanager.add_image(image)
+
+    def roiAll(self):
+        if self._imanager:
+            detector = RotatedCascadesDetector(loadScript(str(self._rotation_edit.text())),
+                                               loadScript(str(self._script_edit.text())))
+            images = []
+            for curr in self._imanager.images():
+                images.append(curr)
+            for curr in images:
+                img, rois = detector.detect(curr.data())
+                for roi in rois:
+                    image = ImageProperties()
+                    image.title(str(RD_ACTION_TITLE + str(roi) + "::" + curr.title()))
+                    image.data(getROIImage(img, roi))
+                    image.height(curr.height())
+                    image.width(curr.width())
+                    self._imanager.add_image(image)

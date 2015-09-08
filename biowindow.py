@@ -76,6 +76,13 @@ class BioWindow(QMainWindow):
         file_toolbar = self.addToolBar("FileToolBar")
         add_actions(file_toolbar, (open_action, save_action, close_action, close_all_action))
 
+        log_menu = self.menuBar().addMenu(_("Log"))
+        clear_action = create_action(self, _("Clear"),
+                                     icon=get_icon('clear.png'),
+                                     tip=_("Clear log"),
+                                     triggered=self.clear)
+        log_menu.addAction(clear_action)
+
     def init_widgets(self):
         widgets = self._amanager.algorithms_settings()
         for widget in widgets:
@@ -105,3 +112,6 @@ class BioWindow(QMainWindow):
 
     def close_all(self):
         self._imanager.delete_all()
+
+    def clear(self):
+        self._logmanager.clear()

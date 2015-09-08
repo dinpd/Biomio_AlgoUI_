@@ -5,7 +5,7 @@ from guidata.configtools import get_icon
 from imageproperties import ImageProperties
 from algorithms.cvtools.effects import equalizeHist, grayscale
 from algorithms.cvtools.experimental import imageDifference
-from algorithms.cascades.roi import optimalROIDetection
+from algorithms.cascades.roi_optimal import OptimalROIDetector
 from algorithms.imgobj import loadImageObject
 from guiqwt.config import _
 import logging
@@ -117,7 +117,9 @@ class EqualizeHistPlugin(QObject, IAlgorithmPlugin):
                 QCoreApplication.processEvents()
             logger.debug("Loading finished.")
         src = loadImageObject(str(filelist[0]))
-        optimalROIDetection(source_list)
+        detector = OptimalROIDetector()
+        source_list = detector.detect(source_list)
+
         i = 0
         for obj in source_list:
             image = ImageProperties()

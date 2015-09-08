@@ -61,3 +61,6 @@ class LogManager(QDockWidget):
 
         XStream.stdout().messageWritten.connect(self._console.append)
         XStream.stderr().messageWritten.connect(self._console.append)
+
+    def clear(self):
+        self._console.clear()
