@@ -1,0 +1,19 @@
+{
+    "type": "task",
+	"strategy": 
+	{
+		"type": "",
+		"settings": {}
+	},
+	"action": 
+	{
+		"cascades": ["algorithms/data/haarcascades/haarcascade_mcs_mouth.xml"],
+		"settings": 
+		{
+			"Minimum Size": [50, 50], 
+			"Maximum Size": [1000, 1000],
+			"Minimum Neighbors": 20, 
+			"Scale Factor": 1.10
+		}
+	}
+}

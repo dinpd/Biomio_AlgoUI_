@@ -1,0 +1,13 @@
+{
+    "type": "main",
+	"strategy": 
+	{
+		"type": "include",
+		"settings": {}
+	},
+	"action": 
+	[
+		"haarcascade_face.json",
+		"rotation_haarcascade_eye.json"
+	]
+}

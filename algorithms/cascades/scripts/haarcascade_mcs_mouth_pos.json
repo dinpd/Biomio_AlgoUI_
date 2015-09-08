@@ -1,0 +1,17 @@
+{
+    "type": "main",
+	"strategy": 
+	{
+		"type": "position",
+		"settings": 
+		{
+			"kind": "max",
+			"pos": 0.5
+		}
+	},
+	"action": 
+	[
+		"rotation_haarcascade_face.json",
+		"haarcascade_mcs_mouth.json"
+	]
+}

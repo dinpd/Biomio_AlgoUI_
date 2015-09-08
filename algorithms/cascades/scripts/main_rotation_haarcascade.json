@@ -1,0 +1,12 @@
+{
+    "type": "main",
+	"strategy": 
+	{
+		"type": "filtering",
+		"settings": {}
+	},
+	"action": 
+	[
+		"rotation_haarcascade_face.json"
+	]
+}

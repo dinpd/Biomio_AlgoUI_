@@ -1,0 +1,53 @@
+{
+    "type": "main",
+	"strategy": 
+	{
+		"type": "union",
+		"settings": {}
+	},
+	"action": 
+	[
+		{
+			"type": "task",
+			"strategy": 
+			{
+				"type": "union",
+				"settings": {}
+			},
+			"action": 
+			{
+				"cascades": ["algorithms/data/haarcascades/haarcascade_eye_tree_eyeglasses.xml"],
+				"settings": 
+				{
+					"Minimum Size": [50, 50], 
+					"Maximum Size": [1000, 1000],
+					"Minimum Neighbors": 3, 
+					"Scale Factor": 1.1
+				}
+			}
+		},
+		{
+			"type": "task",
+			"strategy": 
+			{
+				"type": "union",
+				"settings": {}
+			},
+			"action": 
+			{	
+				"cascades": 
+				[
+					"algorithms/data/haarcascades/haarcascade_mcs_eyepair_big.xml",
+					"algorithms/data/haarcascades/haarcascade_mcs_eyepair_small.xml"
+				],
+				"settings": 
+				{
+					"Minimum Size": [30, 30], 
+					"Maximum Size": [1000, 1000],
+					"Minimum Neighbors": 5, 
+					"Scale Factor": 1.1
+				}
+			}
+		}
+	]
+}
