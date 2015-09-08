@@ -6,12 +6,17 @@ from algorithms.recognition.keypoints import (KeypointsObjectDetector,
                                               BRISKDetectorType)
 from algorithms.cvtools.visualization import (drawClusters, drawLine, showClusters)
 from algorithms.features import matcherForDetector, dtypeForDetector
+from algorithms.cascades.roi_optimal import OptimalROIDetectorSAoS
+from algorithms.cascades.scripts_detectors import CascadesDetectionInterface
+from algorithms.cascades.tools import loadScript
 import logger
 
 
 class ClustersMatchingDetector(KeypointsObjectDetector):
     def __init__(self):
         KeypointsObjectDetector.__init__(self)
+        self._cascadeROI = OptimalROIDetectorSAoS()
+        self._eyeROI = CascadesDetectionInterface(loadScript("main_haarcascade_eyes_union.json", True))
         self._hash = []
         self._etalon = []
         self._prob = 100
@@ -69,15 +74,17 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             self.kodsettings.importSettings(settings['KODSettings'])
             self.kodsettings.dump()
             if self._cascadeROI is None:
-                self._cascadeROI = CascadeROIDetector()
-            self._cascadeROI.importSettings(settings['Face Cascade Detector'])
-            logger.logger.debug('Face Cascade Detector')
-            self._cascadeROI.classifierSettings.dump()
+                self._cascadeROI = OptimalROIDetectorSAoS()
+                # self._cascadeROI = CascadeROIDetector()
+            # self._cascadeROI.importSettings(settings['Face Cascade Detector'])
+            # logger.logger.debug('Face Cascade Detector')
+            # self._cascadeROI.classifierSettings.dump()
             if self._eyeROI is None:
-                self._eyeROI = CascadeROIDetector()
-            self._eyeROI.importSettings(settings['Eye Cascade Detector'])
-            logger.logger.debug('Eye Cascade Detector')
-            self._eyeROI.classifierSettings.dump()
+                self._eyeROI = CascadesDetectionInterface(loadScript("main_haarcascade_eyes_union.json", True))
+                # self._eyeROI = CascadeROIDetector()
+            # self._eyeROI.importSettings(settings['Eye Cascade Detector'])
+            # logger.logger.debug('Eye Cascade Detector')
+            # self._eyeROI.classifierSettings.dump()
             logger.logger.debug("Settings loading finished.")
             return True
         return False
@@ -171,10 +178,13 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
     def _detect(self, data, detector):
         # ROI detection
-        rect = self._eyeROI.detectAndJoin(data['roi'], False)
-        if len(rect) <= 0:
+        rect = self._eyeROI.detect(data['roi'])[1]
+        print rect
+        if len(rect) <= 0 or len(rect[0]) <= 0:
+            logger.logger.debug("Eyes ROI doesn't found.")
             return False
         # ROI cutting
+        rect = rect[0]
         lefteye = (rect[0] + rect[3], rect[1] + rect[3] / 2)
         righteye = (rect[0] + rect[2] - rect[3], rect[1] + rect[3] / 2)
         centereye = (lefteye[0] + (righteye[0] - lefteye[0]) / 2, lefteye[1] + (righteye[1] - lefteye[1]) / 2)
@@ -196,10 +206,18 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         showClusters(clusters, out)
         data['true_clusters'] = clusters
         descriptors = []
+        weights = []
         for cluster in clusters:
             desc = detector.compute(data['roi'], cluster['items'])
             descriptors.append(desc['descriptors'])
+            pairs = []
+            sum = 0
+            for index, item in enumerate(cluster['items']):
+                # pairs.append((desc['descriptors'][index], item.response))
+                sum += item.response
+            weights.append((pairs, sum))
         data['clusters'] = descriptors
+        data['weights'] = weights
         return True
 
     def filter_keypoints(self, data):

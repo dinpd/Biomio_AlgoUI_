@@ -1,8 +1,7 @@
-from algorithms.cascades.classifiers import (getROIImage, RectsFiltering)
 from algorithms.features.features import (FeatureDetector)
 from algorithms.features import (constructDetector, constructSettings,
                                  BRISKDetectorType)
-from algorithms.cascades.roi import optimalROIDetection
+
 import logger
 
 
@@ -81,7 +80,7 @@ class KeypointsObjectDetector:
         self._detector = None
         self._eyeROI = None
         self._use_roi = True
-        self._sources_preparing = True
+        self._sources_preparing = False
         self._log = ""
 
     def threshold(self):
@@ -100,7 +99,7 @@ class KeypointsObjectDetector:
 
     def addSources(self, data_list):
         if self._sources_preparing:
-            self._prepare_sources(data_list)
+            data_list = self._prepare_sources(data_list)
         for data in data_list:
             self.addSource(data)
 
@@ -133,14 +132,14 @@ class KeypointsObjectDetector:
     def data_detect(self, data):
         # ROI detection
         if self._use_roi:
-            # rect = self._cascadeROI.detectAndJoin(data['data'], False, RectsFiltering)
-            img, rect = self._cascadeROI.detectAndJoinWithRotation(data['data'], False, RectsFiltering)
-            if len(rect) <= 0:
-                return False
-            print rect
+            # img, rect = self._cascadeROI.detectAndJoinWithRotation(data['data'], False, RectsFiltering)
+            self._cascadeROI.detect([data])
+            # data['data'] = img
+            # if len(rect) <= 0:
+            #     logger.logger.info("Face ROI wasn't found.")
+            #     return False
             # ROI cutting
-            data['data'] = img
-            data['roi'] = getROIImage(data['data'], rect)
+            data['roi'] = data['data'] #getROIImage(data['data'], rect)
         else:
             data['roi'] = data['data']
         # Keypoints detection
@@ -161,7 +160,8 @@ class KeypointsObjectDetector:
 
     def _prepare_sources(self, data_list):
         self._use_roi = False
-        optimalROIDetection(data_list)
+        data_list = self._cascadeROI.detect(data_list)
+        return data_list
 
     def update_hash(self, data):
         logger.logger.debug("The hash does not need to be updated!")

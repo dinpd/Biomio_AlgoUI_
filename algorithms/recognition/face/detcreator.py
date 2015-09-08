@@ -60,6 +60,6 @@ class DetectorCreator:
             detector = ClustersTemplateL1MatchingDetector()
         elif self._type == IntersectMatching:
             detector = IntersectMatchingDetector()
-        detector._cascadeROI = self._classifiers[FaceCascadeClassifier]
-        detector._eyeROI = self._classifiers[EyesCascadeClassifier]
+        # detector._cascadeROI = self._classifiers[FaceCascadeClassifier]
+        # detector._eyeROI = self._classifiers[EyesCascadeClassifier]
         return detector

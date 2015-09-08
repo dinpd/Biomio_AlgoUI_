@@ -50,7 +50,7 @@ def FlannMatcher():
 
 
 def BruteForceMatcher():
-    matcher = cv2.BFMatcher(normType=cv2.NORM_HAMMING2, crossCheck=False)
+    matcher = cv2.BFMatcher(normType=cv2.NORM_HAMMING, crossCheck=False)
     return matcher
 
 

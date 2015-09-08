@@ -91,6 +91,7 @@ def parallel_verify_template_L0(etalon, data, index):
 class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
     def __init__(self):
         ClustersMatchingDetector.__init__(self)
+        self._w_clusters = None
 
     def threshold(self):
         return self._coff * self._prob
@@ -119,11 +120,14 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
     def update_hash_templateL0_noparallel(self, data):
         if len(self._etalon) == 0:
             self._etalon = data['clusters']
+            self._w_clusters = data['weights']
         else:
             matcher = Matcher(matcherForDetector(self.kodsettings.detector_type))
             for index in range(0, len(self._etalon)):
                 et_cluster = self._etalon[index]
+                et_weights = self._w_clusters[index]
                 dt_cluster = data['clusters'][index]
+                dt_weights = data['weights'][index]
                 if et_cluster is None or len(et_cluster) == 0:
                     self._etalon[index] = et_cluster
                 elif dt_cluster is None or len(dt_cluster) == 0:
@@ -136,6 +140,8 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
                                                 listToNumpy_ndarray(et_cluster, dtype), k=3)
 
                     good = []
+                    new_weights = []
+                    resp_sum = 0
                     # for v in matches:
                     # if len(v) >= 1:
                     # if len(v) >= 2:
@@ -164,9 +170,35 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
                                         for n in c:
                                             # n = c[0]
                                             if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
+                                                curr_resp_et = 0
+                                                for desc, resp in et_weights[0]:
+                                                    if numpy.array_equal(et_cluster[m.queryIdx], desc):
+                                                        curr_resp_et = resp
+                                                        break
+
+                                                curr_resp_dt = 0
+                                                for desc, resp in dt_weights[0]:
+                                                    if numpy.array_equal(dt_cluster[m.trainIdx], desc):
+                                                        curr_resp_dt = resp
+                                                        break
+
+                                                # if curr_resp_et > curr_resp_dt:
+                                                #     good.append(et_cluster[m.queryIdx])
+                                                #     new_weights.append((et_cluster[m.queryIdx], curr_resp_et))
+                                                #     resp_sum += curr_resp_et
+                                                # else:
+                                                #     good.append(dt_cluster[m.trainIdx])
+                                                #     new_weights.append((dt_cluster[m.trainIdx], curr_resp_dt))
+                                                #     resp_sum += curr_resp_dt
                                                 good.append(et_cluster[m.queryIdx])
                                                 good.append(dt_cluster[m.trainIdx])
+                                                new_weights.append((et_cluster[m.queryIdx], curr_resp_et))
+                                                resp_sum += curr_resp_et
+                                                new_weights.append((dt_cluster[m.trainIdx], curr_resp_dt))
+                                                resp_sum += curr_resp_dt
+
                     self._etalon[index] = listToNumpy_ndarray(good)
+                    self._w_clusters[index] = (new_weights, resp_sum)
                     # print "=========================="
                     # for etalon in self._etalon:
                     #     if etalon is not None:
@@ -254,6 +286,7 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
         matcher = Matcher(matcherForDetector(self.kodsettings.detector_type))
         res = []
         prob = 0
+        prob1 = 0
         self._log += "Test: " + data['path'] + "\n"
         logger.sys_logger.debug("Image: " + data['path'])
         logger.sys_logger.debug("Template size: ")
@@ -262,7 +295,9 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
         for index in range(0, len(self._etalon)):
             et_cluster = self._etalon[index]
             dt_cluster = data['clusters'][index]
+            et_weights = self._w_clusters[index]
             ms = []
+            ms1 = 0
             if et_cluster is None or len(et_cluster) < knn:
                 res.append(ms)
                 logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(-1)
@@ -280,6 +315,17 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
                                             listToNumpy_ndarray(dt_cluster, dtype), k=knn)
                 matches2 = matcher.knnMatch(listToNumpy_ndarray(dt_cluster, dtype),
                                             listToNumpy_ndarray(et_cluster, dtype), k=knn)
+                # logger.logger.debug("########")
+                # for v in matches1:
+                #     if len(v) >= 1:
+                #         for m in v:
+                #             logger.logger.debug(m.distance)
+                # logger.logger.debug("########")
+                # for c in matches2:
+                #     if len(c) >= 1:
+                #         for n in c:
+                #             logger.logger.debug(n.distance)
+                # logger.logger.debug("########")
                 # for v in matches:
                 # if len(v) >= 1:
                 # if len(v) >= 2:
@@ -303,6 +349,13 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
                                         # n = c[0]
                                         if m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx:
                                             ms.append(m)
+                                            # logger.logger.debug("########")
+                                            # logger.logger.debug(m.distance)
+                                            # logger.logger.debug(n.distance)
+                                            for desc, resp in et_weights[0]:
+                                                if numpy.array_equal(et_cluster[m.queryIdx], desc):
+                                                    ms1 += resp
+                                                    break
                 res.append(ms)
                 val = (len(res[index]) / (1.0 * len(self._etalon[index]))) * 100
                 logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
@@ -311,6 +364,14 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
                 self._log += "Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index])) \
                              + " Positive: " + str(len(res[index])) + " Probability: " + str(val) + "\n"
                 prob += (len(et_cluster) / (1.0 * summ)) * val
+
+                # vv = (ms1 / et_weights[1]) * val
+                # logger.sys_logger.debug("test Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
+                #                         + " Positive: " + str(len(res[index])) + " Probability: " + str(vv) +
+                #                         " (Weight: " + str(len(et_cluster) / (1.0 * summ)) + ", " +
+                #                         str(ms1 / et_weights[1]) + ")")
+                # prob1 += (len(et_cluster) / (1.0 * summ)) * vv
+                # prob1 += vv / (1.0 * len(self._etalon))
             else:
                 res.append(ms)
                 logger.sys_logger.debug("Cluster #" + str(index + 1) + ": " + str(len(self._etalon[index]))
@@ -320,5 +381,6 @@ class ClustersTemplateL0MatchingDetector(ClustersMatchingDetector):
         # self._log += "Probability: " + str((prob / (1.0 * len(res)))) + "\n"
         # return prob / (1.0 * len(res))
         logger.sys_logger.debug("Probability: " + str(prob))
+        # logger.sys_logger.debug("test Probability: " + str(prob1))
         self._log += "Probability: " + str(prob) + "\n"
         return prob
