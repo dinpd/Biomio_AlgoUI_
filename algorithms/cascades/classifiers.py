@@ -151,7 +151,6 @@ class CascadeROIDetector:
 
     def detectAndJoin(self, image, as_list=False, algorithm=RectsUnion):
         rects = self.detect(image, as_list)
-        print rects
         if len(rects) == 0:
             logger.logger.debug("ROI is not found for image")
         return self.joinRectangles(rects, algorithm)

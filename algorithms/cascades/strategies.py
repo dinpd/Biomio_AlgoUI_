@@ -160,7 +160,6 @@ class ROIIncludeStrategy(ROIManagementStrategy):
         return "include"
 
     def apply(self, rects, template=[]):
-        print rects
         res = self._include(rects)
         if len(res) == 0:
             return [[]]
@@ -195,12 +194,9 @@ class ROISizingStrategy(ROIManagementStrategy):
         return "sizing"
 
     def apply(self, rects, template=[]):
-        print self.type()
-        print rects
         return self._sizing(rects)
 
     def _sizing(self, rects):
-        print rects
         if len(rects) == 0:
             return [[]]
         if len(rects) == 1:
@@ -210,9 +206,6 @@ class ROISizingStrategy(ROIManagementStrategy):
             temp = [-1, -1, 0, 0]
         scale = self._settings.get("scale", 1)
         for item in rects:
-            print "next"
-            print temp
-            print item
             if self._settings.get("kind", "min") == "min":
                 if scale * temp[2] > item[2]:
                     temp[0] = item[0]

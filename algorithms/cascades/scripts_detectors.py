@@ -139,8 +139,6 @@ class RotatedCascadesDetector(CascadesDetectionInterface):
                     d[str(lr)] = 4
                 rects = skipEmptyRectangles(rects)
             d[str([])] = 1
-            print rects
-            print self._rotation.strategy.type()
             rect = self._rotation.strategy.apply(rects)
             count = {
                 1: 0,

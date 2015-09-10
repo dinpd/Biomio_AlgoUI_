@@ -147,7 +147,6 @@ class OptimalROIDetectorSAoS(ROIDetectorInterface):
         rects = []
         for image in images:
             di = image['displacement']
-            print di
             for rec in image['roi_rect']:
                 if len(rec) == 4:
                     rects.append([rec[0] - di[0], rec[1] - di[1], rec[2], rec[3]])
