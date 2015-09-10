@@ -1,6 +1,6 @@
 from algorithms.cascades.rectsect import intersectRectangles
 from algorithms.cascades.rectfilter import filterRectangles
-from algorithms.cvtools.effects import grayscaleAndEqualize
+from algorithms.cvtools.effects import grayscaleAndEqualize, grayscale
 from algorithms.cascades.rectmerge import mergeRectangles
 import itertools
 import logger
@@ -81,7 +81,7 @@ class CascadeROIDetector:
 
     def detect(self, img, as_list=False):
         rects = list()
-        gray = grayscaleAndEqualize(img)
+        gray = grayscale(img)
         if len(self.__cascades) == 0:
             logger.logger.debug("Detection impossible. Any cascade not found.")
             return rects

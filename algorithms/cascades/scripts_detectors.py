@@ -148,13 +148,24 @@ class RotatedCascadesDetector(CascadesDetectionInterface):
                 3: 0,
                 4: 0
             }
+            gl = {
+                1: [0, 0, 0, 0],
+                2: [0, 0, 0, 0],
+                3: [0, 0, 0, 0],
+                4: [0, 0, 0, 0]
+            }
             for rs in rect:
-                count[d[str(rs)]] += 1
-            max = 0
+                count[d[str(rs[1])]] += 1
+                if (gl[d[str(rs[1])]][2] < rs[0][2]) and (gl[d[str(rs[1])]][3] < rs[0][3]):
+                    gl[d[str(rs[1])]] = rs[0]
+            max = -1
             midx = 0
             for index in range(1, 5, 1):
                 if count[index] > max:
                     max = count[index]
                     midx = index
+                elif count[index] == max:
+                    if gl[index][2] > gl[midx][2] and gl[index][3] > gl[midx][3]:
+                        midx = index
             return images[midx]
         return image

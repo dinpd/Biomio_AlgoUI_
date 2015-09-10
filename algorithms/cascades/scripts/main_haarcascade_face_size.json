@@ -1,0 +1,17 @@
+{
+    "type": "main",
+	"strategy": 
+	{
+		"type": "sizing",
+		"settings": 
+		{
+			"kind": "max",
+			"scale": 0.5
+		}
+	},
+	"action": 
+	[
+		"rotation_haarcascade_face.json",
+		"main_haarcascade_face.json"
+	]
+}

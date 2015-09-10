@@ -124,7 +124,8 @@ class OptimalROIDetectorSAoS(ROIDetectorInterface):
 
         self._detector = RotatedCascadesDetector(loadScript(os.path.join(SCRIPTS_PATH,
                                                                          "main_rotation_haarcascade_face_eyes.json")),
-                                                 loadScript(os.path.join(SCRIPTS_PATH, "main_haarcascade_face.json")))
+                                                 loadScript(os.path.join(SCRIPTS_PATH,
+                                                                         "main_haarcascade_face_size.json")))
 
     def detect(self, data):
         new_images = []
