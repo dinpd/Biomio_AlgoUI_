@@ -46,3 +46,7 @@ def grayscaleAndEqualize(image):
 def binarization(image):
     res, binary = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY)
     return binary
+
+
+def gaussianBlurring(image, kernel=(5, 5)):
+    return cv2.GaussianBlur(image, kernel, 0)
