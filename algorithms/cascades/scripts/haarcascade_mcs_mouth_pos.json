@@ -6,7 +6,8 @@
 		"settings": 
 		{
 			"kind": "max",
-			"pos": 0.5
+			"pos": 0.5,
+			"template": 0
 		}
 	},
 	"action": 

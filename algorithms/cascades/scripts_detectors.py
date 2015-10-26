@@ -38,12 +38,16 @@ class CascadesDetectionInterface:
         return stage
 
     def detect(self, image):
+        import time
+        t = time.time()
         temp = []
         if self._template:
             temp = self._apply_stage(image, self._template)
+        res = []
         if self._stage:
-            return image, self._apply_stage(image, self._stage, temp)
-        return image, []
+            res = self._apply_stage(image, self._stage, temp)
+        print ("detect", time.time() - t)
+        return image, res
 
     def _apply_stage(self, image, stage, template=[]):
         rects = []
@@ -153,9 +157,10 @@ class RotatedCascadesDetector(CascadesDetectionInterface):
                 4: [0, 0, 0, 0]
             }
             for rs in rect:
-                count[d[str(rs[1])]] += 1
-                if (gl[d[str(rs[1])]][2] < rs[0][2]) and (gl[d[str(rs[1])]][3] < rs[0][3]):
-                    gl[d[str(rs[1])]] = rs[0]
+                if len(rs) > 1:
+                    count[d[str(rs[1])]] += 1
+                    if (gl[d[str(rs[1])]][2] < rs[0][2]) and (gl[d[str(rs[1])]][3] < rs[0][3]):
+                        gl[d[str(rs[1])]] = rs[0]
             max = -1
             midx = 0
             for index in range(1, 5, 1):

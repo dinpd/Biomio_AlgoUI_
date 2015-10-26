@@ -144,10 +144,16 @@ class ROIPositionStrategy(ROIManagementStrategy):
                     if inside(r, temp, 0.1):
                         if self._settings.get("kind", "min") == "min":
                             if r[1] <= temp[1] + self._settings.get("pos", 1.0) * temp[3]:
-                                res.append([temp, r])
+                                if self._settings.get("template", 1) == 1:
+                                    res.append([temp, r])
+                                else:
+                                    res.append(r)
                         else:
                             if r[1] >= temp[1] + self._settings.get("pos", 0.0) * temp[3]:
-                                res.append([temp, r])
+                                if self._settings.get("template", 1) == 1:
+                                    res.append([temp, r])
+                                else:
+                                    res.append(r)
         return res
 
 

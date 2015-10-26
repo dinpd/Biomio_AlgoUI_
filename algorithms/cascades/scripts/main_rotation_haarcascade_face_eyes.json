@@ -6,7 +6,8 @@
 		"settings": 
 		{
 			"kind": "min",
-			"pos": 0.4
+			"pos": 0.4,
+			"template": 1
 		}
 	},
 	"action": 
