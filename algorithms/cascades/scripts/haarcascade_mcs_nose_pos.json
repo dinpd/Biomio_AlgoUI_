@@ -1,0 +1,13 @@
+{
+    "type": "main",
+	"strategy": 
+	{
+		"type": "center",
+		"settings": {}
+	},
+	"action": 
+	[
+		"rotation_haarcascade_face.json",
+		"haarcascade_mcs_nose.json"
+	]
+}

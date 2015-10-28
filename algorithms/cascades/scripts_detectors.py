@@ -1,13 +1,14 @@
 from classifiers import CascadeROIDetector
 from strategies import StrategyFactory
 from tools import skipEmptyRectangles, isRectangle
+import logger
 import cv2
 
 class DetectorStage:
     def __init__(self):
         self.type = "main"
         self.stages = []
-        self.classifier = None
+        self.classifiers = []
         self.strategy = None
 
 
@@ -29,12 +30,18 @@ class CascadesDetectionInterface:
             for sub in stages:
                 stage.stages.append(self._init_stage(sub))
         else:
-            classifier = CascadeROIDetector()
-            classifier.classifierSettings.importSettings(detect_script["action"]["settings"])
+            settings_list = []
+            if isinstance(detect_script["action"]["settings"], dict):
+                settings_list = [detect_script["action"]["settings"]]
+            elif isinstance(detect_script["action"]["settings"], list):
+                settings_list = detect_script["action"]["settings"]
             cascades = detect_script["action"]["cascades"]
-            for cascade in cascades:
-                classifier.add_cascade(cascade)
-            stage.classifier = classifier
+            for settings in settings_list:
+                classifier = CascadeROIDetector()
+                classifier.classifierSettings.importSettings(settings)
+                for cascade in cascades:
+                    classifier.add_cascade(cascade)
+                stage.classifiers.append(classifier)
         return stage
 
     def detect(self, image):
@@ -55,8 +62,9 @@ class CascadesDetectionInterface:
             for s in stage.stages:
                 rects += self._apply_stage(image, s)
         else:
-            stage.classifier.classifierSettings.dump()
-            rects = stage.classifier.detect(image, True)
+            for classifier in stage.classifiers:
+                classifier.classifierSettings.dump()
+                rects += classifier.detect(image, True)
         new_rects = skipEmptyRectangles(rects)
         return stage.strategy.apply(new_rects, template)
 

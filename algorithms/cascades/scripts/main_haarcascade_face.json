@@ -8,7 +8,7 @@
 	"action": 
 	[
 		"main_haarcascade_eyes.json",
-		"haarcascade_mcs_nose.json",
+		"haarcascade_mcs_nose_pos.json",
 		"haarcascade_mcs_mouth_pos.json"
 	]
 }

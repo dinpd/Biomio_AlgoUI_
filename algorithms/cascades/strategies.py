@@ -1,3 +1,4 @@
+from algorithms.clustering.tools import distance
 from tools import inside
 import numpy
 
@@ -157,6 +158,38 @@ class ROIPositionStrategy(ROIManagementStrategy):
         return res
 
 
+class ROICenterStrategy(ROIManagementStrategy):
+    def __init__(self, settings=dict()):
+        ROIManagementStrategy.__init__(self, settings)
+
+    @staticmethod
+    def type():
+        return "center"
+
+    def apply(self, rects, template=[]):
+        return self._center(rects)
+
+    def _center(self, rects):
+        res = []
+        if len(rects) == 0:
+            return res
+        if len(rects) == 1:
+            return rects[0]
+        temp = None
+        center = (0, 0)
+        rect_list = []
+        for r in rects:
+            if temp is None:
+                temp = r
+                center = (temp[0] + temp[2] / 2.0, temp[1] + temp[3] / 2.0)
+            else:
+                if inside(r, temp, 0.1):
+                    local_center = (r[0] + r[2] / 2.0, r[1] + r[3] / 2.0)
+                    d = distance(center, local_center)
+                    if d < r[2] / 2.0:
+                        rect_list.append(r)
+        return rect_list
+
 class ROIIncludeStrategy(ROIManagementStrategy):
     def __init__(self, settings=dict()):
         ROIManagementStrategy.__init__(self, settings)
@@ -239,6 +272,7 @@ class StrategyFactory:
         ROIPositionStrategy.type(): ROIPositionStrategy,
         ROIIncludeStrategy.type(): ROIIncludeStrategy,
         ROISizingStrategy.type(): ROISizingStrategy,
+        ROICenterStrategy.type(): ROICenterStrategy,
         ROIUnionStrategy.type(): ROIUnionStrategy,
         "": ROIManagementStrategy
     }
