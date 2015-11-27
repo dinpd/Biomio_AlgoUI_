@@ -1,14 +1,16 @@
-from aiplugins import IAlgorithmPlugin
+import logging
+
 from guidata.qt.QtCore import SIGNAL, QObject, QCoreApplication
 from guidata.qt.QtGui import QAction, QFileDialog
 from guidata.configtools import get_icon
-from imageproperties import ImageProperties
-from algorithms.cvtools.effects import equalizeHist, grayscale
-from algorithms.cvtools.experimental import imageDifference
-from algorithms.cascades.roi_optimal import OptimalROIDetector
-from algorithms.imgobj import loadImageObject
 from guiqwt.config import _
-import logging
+
+from aiplugins import IAlgorithmPlugin
+from imageproperties import ImageProperties
+from biomio.algorithms import equalizeHist, grayscale
+from biomio.algorithms import imageDifference
+from biomio.algorithms import OptimalROIDetector
+from biomio.algorithms import loadImageObject
 
 logger = logging.getLogger(__name__)
 

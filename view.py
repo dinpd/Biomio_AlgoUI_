@@ -12,8 +12,7 @@ from guiqwt.config import _
 from imageproperties import ImageProperties
 from imageviewer import ImageViewer
 from viewers import AbstractImageViewer
-from algorithms.cvtools.system import saveNumpyImage
-import logger
+from biomio.algorithms.cvtools.system import saveNumpyImage
 
 
 class ImageManager(QObject):

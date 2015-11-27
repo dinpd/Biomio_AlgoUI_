@@ -2,7 +2,7 @@ import os
 
 from aiplugins import IAlgorithmPlugin
 from algorithms.cascades.classifiers import CascadeClassifierSettings
-from algorithms.recognition.face.detcreator import (DetectorCreator,
+from biomio.algorithms.recognition.face.detcreator import (DetectorCreator,
                                                ClustersObjectMatching,
                                                FaceCascadeClassifier, EyesCascadeClassifier)
 from algorithms.imgobj import loadImageObject

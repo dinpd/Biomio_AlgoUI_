@@ -11,17 +11,17 @@ from guidata.qt.QtGui import (QAction, QMenu,
 from guidata.qt.QtCore import QObject, QCoreApplication
 from guidata.configtools import get_icon
 from guiqwt.config import _
+
 from logger import logger
 from aiplugins import IAlgorithmPlugin
-from algorithms.faces.biom.utils import files_list
+from biomio.algorithms.faces.biom.utils import files_list
 from ui.detdialog import DetectorSettingsDialog
 from imageproperties import ImageProperties
-from algorithms.recognition.palm.palm_keypoints import PalmKeypointsDetector
-from algorithms.recognition.palm.detection import getPalmContourClassic
-from algorithms.recognition.palm.detection import getPalmContourHaar
-from algorithms.clustering.pirel import PIREL
-from algorithms.imgobj import loadImageObject
-
+from biomio.algorithms.recognition.palm.palm_keypoints import PalmKeypointsDetector
+from biomio.algorithms.recognition.palm.detection import getPalmContourClassic
+from biomio.algorithms.recognition.palm.detection import getPalmContourHaar
+from biomio.algorithms.clustering.pirel import PIREL
+from biomio.algorithms.imgobj import loadImageObject
 
 PALM_DETECTION = "Action:: Palm Detection:: "
 PD_ACTION_TITLE = 'Action: Palm Detection::'

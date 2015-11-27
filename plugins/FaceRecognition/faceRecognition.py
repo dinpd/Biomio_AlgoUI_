@@ -18,11 +18,11 @@ from imageproperties import ImageProperties
 from algorithms.cvtools.visualization import drawRectangle
 from algorithms.cascades.classifiers import CascadeROIDetector, CascadeClassifierSettings
 from algorithms.cascades.tools import getROIImage
-from algorithms.faces.biom.utils import files_list
+from biomio.algorithms.faces.biom.utils import files_list
 from ui.detdialog import DetectorSettingsDialog
 from algorithms.recognition.face.detcreator import (DetectorCreator, ClustersTemplateL0ObjectMatching,
-                                                    ClustersTemplateL1ObjectMatching,
                                                     FaceCascadeClassifier, EyesCascadeClassifier)
+from algorithms.plugins.face_identification_plugin import IdentificationSAInterface, TRAINING_FULL, TRAINING_HASH
 from algorithms.imgobj import loadImageObject
 
 VerificationAlgorithm = "KeypointsVerificationAlgorithm"
@@ -37,6 +37,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         self._setwigets.append(self.create_keysrecg_widget())
         self._setwigets.append(self.create_compare_widget())
         self._setwigets.append(self.create_kod_widget())
+        self.db = {}
 
     def set_image_manager(self, manager):
         self._imanager = manager
@@ -448,6 +449,19 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         export_button.setText(_('Export'))
         self.connect(export_button, SIGNAL("clicked()"), self.export_database)
 
+        add_db_button = QPushButton(keysrecg_widget)
+        add_db_button.setText('Add Database')
+        self.connect(add_db_button, SIGNAL("clicked()"), self.add_db)
+
+        identify_db_button = QPushButton(keysrecg_widget)
+        identify_db_button.setText('Identify Database')
+        self.connect(identify_db_button, SIGNAL("clicked()"), self.identify_db)
+
+        identification_layout = QHBoxLayout()
+        identification_layout.addStretch(2)
+        identification_layout.addWidget(add_db_button)
+        identification_layout.addWidget(identify_db_button)
+
         identify_layout = QHBoxLayout()
         identify_layout.addStretch(2)
         identify_layout.addWidget(identify_button)
@@ -465,6 +479,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
         widget_layout.addWidget(self._sources_box)
         widget_layout.addLayout(identify_layout)
         widget_layout.addLayout(load_layout)
+        widget_layout.addLayout(identification_layout)
         widget_layout.addStretch(2)
         keysrecg_widget.setLayout(widget_layout)
         keysrecg_dock.setWidget(keysrecg_widget)
@@ -629,21 +644,21 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
 
     def export_database(self):
         source = self._keysrecg_detector.exportSources()
-        info = self._keysrecg_detector.exportSettings()
+        # info = self._keysrecg_detector.exportSettings()
         print source
-        print info
+        # print info
         json_encoded = json.dumps(source)
-        info_encoded = json.dumps(info)
+        # info_encoded = json.dumps(info)
         filedir = QFileDialog.getExistingDirectory(None, "Select database directory", ".")
         if not filedir.isEmpty():
             source_file = os.path.join(str(filedir), 'data.json')
             with open(source_file, "w") as data_file:
                 data_file.write(json_encoded)
             data_file.close()
-            jinfo_file = os.path.join(str(filedir), 'info.json')
-            with open(jinfo_file, "w") as info_file:
-                info_file.write(info_encoded)
-            data_file.close()
+            # jinfo_file = os.path.join(str(filedir), 'info.json')
+            # with open(jinfo_file, "w") as info_file:
+            #     info_file.write(info_encoded)
+            # data_file.close()
 
     def import_database(self):
         filedir = QFileDialog.getExistingDirectory(None, "Select database directory", ".")
@@ -661,6 +676,61 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             self._keysrecg_detector.kodsettings.dump()
             self._keysrecg_detector._cascadeROI.classifierSettings.dump()
             self._keysrecg_detector._eyeROI.classifierSettings.dump()
+
+    def add_db(self):
+        filelist = QFileDialog.getOpenFileNames(None, "Select database directory", ".")
+        if not filelist.isEmpty():
+            creator = DetectorCreator(ClustersTemplateL0ObjectMatching)
+            detector = creator.detector()
+            # logger.debug(detector.descriptorType())
+            logger.debug(detector.descriptorSize())
+            for imfile in filelist:
+                with open(imfile, "r") as data_file:
+                    source = json.load(data_file)
+                    self.db[str(imfile)] = detector.load_database(source)
+
+    def identify_db(self):
+        if len(self.db) <= 0:
+            self.db = []
+            filelist = QFileDialog.getOpenFileNames(None, "Select source images", ".")
+            if not filelist.isEmpty():
+                logger.debug("Loading started...")
+                i = 0
+                sources = []
+                for imfile in filelist:
+                    i += 1
+                    self.db.append(str(imfile))
+                    self._load_label.setText("Load file: " + imfile)
+                    self._load_bar.setValue((i * 100) / len(filelist))
+                logger.debug("Loading finished.")
+            # identifier = NearPyFaceIdentifier()
+            # creator = DetectorCreator(ClustersTemplateL0ObjectMatching)
+            # detector = creator.detector()
+            # identifier.settings.descriptorSize = detector.descriptorSize()
+            # logger.debug(identifier.settings.descriptorSize)
+            # identifier.settings.detector = detector
+            # identifier.set_database(self.db)
+            #
+        curr = self._imanager.current_image()
+        if self._imanager and curr:
+            data = {
+                'path': curr.path(),
+                'name': curr.title(),
+                'data': curr.data()
+            }
+            self._keysrecg_detector.kodsettings.neighbours_distance = self._neighBox.value()
+            # self._keysrecg_detector.kodsettings.detector_type = self.settings_dialog.result_type()
+            # self._keysrecg_detector.kodsettings.settings = self.settings_dialog.settings()
+            self._keysrecg_detector.kodsettings.probability = self._probBox.value()
+            self._keysrecg_detector.setUseROIDetection(True)
+            self._keysrecg_detector.detect(data)
+            # identifier.identify(data)
+            interface = IdentificationSAInterface()
+            # interface.training(**{"databases": self.db, "mode": TRAINING_FULL})
+            interface.training(**{"data": self.db, "mode": TRAINING_FULL, "algoID": "001024",
+                                  "userID": "0000000000000"})
+            clusters = data['clusters']
+            interface.apply(**{"data": clusters, "mode": TRAINING_HASH})
 
     def det_change(self):
         if self.settings_dialog.exec_():

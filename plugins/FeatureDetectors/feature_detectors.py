@@ -1,4 +1,3 @@
-from aiplugins import IAlgorithmPlugin
 from guidata.qt.QtCore import SIGNAL, pyqtSignal
 from guidata.qt.QtGui import (QAction, QMenu,
                               QWidget, QDockWidget, QFileDialog,
@@ -7,16 +6,18 @@ from guidata.qt.QtGui import (QAction, QMenu,
                               QDoubleValidator, QIntValidator)
 from guidata.qt.QtCore import QObject
 from guidata.configtools import get_icon
+from guiqwt.config import _
+
+from aiplugins import IAlgorithmPlugin
+from biomio.algorithms.cvtools import dsp
 from imageproperties import ImageProperties
 from algorithms.cvtools.visualization import drawKeypoints
 from algorithms.features.detectors import BRISKDetector, ORBDetector, SURFDetector
 from algorithms.features.gabor_threads import build_filters, process_kernel, process
 from algorithms.cascades.tools import getROIImage, loadScript
-from algorithms.cascades.scripts_detectors import CascadesDetectionInterface, RotatedCascadesDetector
+from biomio.algorithms.cascades.scripts_detectors import RotatedCascadesDetector
 from logger import logger
 import algorithms.cvtools.dsp as dsp
-
-from guiqwt.config import _
 
 ACTION_TITLE = 'Action: %s Features Detector::'
 GF_ACTION_TITLE = 'Action: Gabor Filtering::'
