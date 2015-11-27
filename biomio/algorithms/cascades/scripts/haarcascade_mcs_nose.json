@@ -1,0 +1,57 @@
+{
+    "type": "task",
+	"strategy": 
+	{
+		"type": "",
+		"settings": {}
+	},
+	"action": 
+	{
+		"cascades": ["algorithms/data/haarcascades/haarcascade_mcs_nose.xml"],
+		"settings": 
+		[
+			{
+				"Minimum Size": [50, 50], 
+				"Maximum Size": [1000, 1000],
+				"Minimum Neighbors": 30, 
+				"Scale Factor": 1.21
+			},
+			{
+				"Minimum Size": [50, 50], 
+				"Maximum Size": [1000, 1000],
+				"Minimum Neighbors": 25, 
+				"Scale Factor": 1.21
+			},
+			{
+				"Minimum Size": [50, 50], 
+				"Maximum Size": [1000, 1000],
+				"Minimum Neighbors": 25, 
+				"Scale Factor": 1.11
+			},
+			{
+				"Minimum Size": [50, 50], 
+				"Maximum Size": [1000, 1000],
+				"Minimum Neighbors": 20, 
+				"Scale Factor": 1.11
+			},
+			{
+				"Minimum Size": [50, 50], 
+				"Maximum Size": [1000, 1000],
+				"Minimum Neighbors": 15, 
+				"Scale Factor": 1.11
+			},
+			{
+				"Minimum Size": [50, 50], 
+				"Maximum Size": [1000, 1000],
+				"Minimum Neighbors": 10, 
+				"Scale Factor": 1.20
+			},
+			{
+				"Minimum Size": [50, 50], 
+				"Maximum Size": [1000, 1000],
+				"Minimum Neighbors": 10, 
+				"Scale Factor": 1.10
+			}
+		]
+	}
+}

@@ -1,0 +1,18 @@
+{
+    "type": "main",
+	"strategy": 
+	{
+		"type": "position",
+		"settings": 
+		{
+			"kind": "min",
+			"pos": 0.4,
+			"template": 1
+		}
+	},
+	"action": 
+	[
+		"rotation_haarcascade_face.json",
+		"main_rotation_haarcascade_eye.json"
+	]
+}

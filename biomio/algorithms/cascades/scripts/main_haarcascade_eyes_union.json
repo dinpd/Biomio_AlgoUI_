@@ -1,0 +1,13 @@
+{
+    "type": "main",
+	"strategy": 
+	{
+		"type": "union",
+		"settings": {}
+	},
+	"action": 
+	[
+		"haarcascade_eye_tree_eyeglasses.json",
+		"haarcascade_mcs_eyepair.json"
+	]
+}
