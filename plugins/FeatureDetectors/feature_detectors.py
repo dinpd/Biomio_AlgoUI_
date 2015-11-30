@@ -9,15 +9,14 @@ from guidata.configtools import get_icon
 from guiqwt.config import _
 
 from aiplugins import IAlgorithmPlugin
-from biomio.algorithms.cvtools import dsp
 from imageproperties import ImageProperties
-from algorithms.cvtools.visualization import drawKeypoints
-from algorithms.features.detectors import BRISKDetector, ORBDetector, SURFDetector
-from algorithms.features.gabor_threads import build_filters, process_kernel, process
-from algorithms.cascades.tools import getROIImage, loadScript
+from biomio.algorithms.cvtools.visualization import drawKeypoints
+from biomio.algorithms.features.detectors import BRISKDetector, ORBDetector, SURFDetector
+from biomio.algorithms.features.gabor_threads import build_filters, process_kernel, process
+from biomio.algorithms.cascades.tools import getROIImage, loadScript
 from biomio.algorithms.cascades.scripts_detectors import RotatedCascadesDetector
 from logger import logger
-import algorithms.cvtools.dsp as dsp
+import biomio.algorithms.cvtools.dsp as dsp
 
 ACTION_TITLE = 'Action: %s Features Detector::'
 GF_ACTION_TITLE = 'Action: Gabor Filtering::'

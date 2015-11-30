@@ -15,15 +15,15 @@ from guiqwt.config import _
 from logger import logger
 from aiplugins import IAlgorithmPlugin
 from imageproperties import ImageProperties
-from algorithms.cvtools.visualization import drawRectangle
-from algorithms.cascades.classifiers import CascadeROIDetector, CascadeClassifierSettings
-from algorithms.cascades.tools import getROIImage
+from biomio.algorithms.cvtools.visualization import drawRectangle
+from biomio.algorithms.cascades.classifiers import CascadeROIDetector, CascadeClassifierSettings
+from biomio.algorithms.cascades.tools import getROIImage
 from biomio.algorithms.faces.biom.utils import files_list
 from ui.detdialog import DetectorSettingsDialog
-from algorithms.recognition.face.detcreator import (DetectorCreator, ClustersTemplateL0ObjectMatching,
-                                                    FaceCascadeClassifier, EyesCascadeClassifier)
-from algorithms.plugins.face_identification_plugin import IdentificationSAInterface, TRAINING_FULL, TRAINING_HASH
-from algorithms.imgobj import loadImageObject
+from biomio.algorithms.recognition.face.detcreator import (DetectorCreator, ClustersTemplateL0ObjectMatching,
+                                                           FaceCascadeClassifier, EyesCascadeClassifier)
+from biomio.algorithms.plugins.face_identification_plugin import IdentificationSAInterface, TRAINING_FULL, TRAINING_HASH
+from biomio.algorithms.imgobj import loadImageObject
 
 VerificationAlgorithm = "KeypointsVerificationAlgorithm"
 

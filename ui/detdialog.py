@@ -1,15 +1,14 @@
-from logger import logger
-
 from guidata.qt.QtCore import SIGNAL
 from guidata.qt.QtGui import (QWidget, QStackedWidget,
                               QDialog,
                               QIntValidator, QDoubleValidator,
                               QVBoxLayout, QHBoxLayout, QFormLayout,
                               QPushButton, QLineEdit, QRadioButton)
-from algorithms.features.detectors import (BRISKDetectorSettings, ORBDetectorSettings, SURFDetectorSettings,
-                                           mahotasSURFDetectorSettings)
-from algorithms.features import BRISKDetectorType, ORBDetectorType
 from guiqwt.config import _
+
+from biomio.algorithms.features.detectors import (BRISKDetectorSettings, ORBDetectorSettings,
+                                                  mahotasSURFDetectorSettings)
+from biomio.algorithms.features import BRISKDetectorType, ORBDetectorType
 
 
 class DetectorSettingsDialog(QDialog):
@@ -50,12 +49,12 @@ class DetectorSettingsDialog(QDialog):
         self.setLayout(dialog_layout)
 
     def result_type(self):
-        # return 'mahotasSURF'
-        return self._detector_type
+        return 'mahotasSURF'
+        # return self._detector_type
 
     def settings(self):
-        # return mahotasSURFDetectorSettings()
-        return self._settings
+        return mahotasSURFDetectorSettings()
+        # return self._settings
 
     def brisk_tab(self):
         brisk_widget = QWidget(self)

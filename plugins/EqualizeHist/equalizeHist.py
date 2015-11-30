@@ -7,10 +7,10 @@ from guiqwt.config import _
 
 from aiplugins import IAlgorithmPlugin
 from imageproperties import ImageProperties
-from biomio.algorithms import equalizeHist, grayscale
-from biomio.algorithms import imageDifference
-from biomio.algorithms import OptimalROIDetector
-from biomio.algorithms import loadImageObject
+from biomio.algorithms.cvtools import equalizeHist, grayscale
+from biomio.algorithms.cvtools.experimental import imageDifference
+from biomio.algorithms.cascades.detectors import OptimalROIDetector
+from biomio.algorithms.imgobj import loadImageObject
 
 logger = logging.getLogger(__name__)
 
