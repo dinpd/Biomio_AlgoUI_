@@ -1,4 +1,4 @@
-from effects import grayscale, grayscaleAndEqualize
+from biomio.algorithms.cvtools.effects import grayscale, grayscaleAndEqualize
 
 
 def imageDifference(template, images):
