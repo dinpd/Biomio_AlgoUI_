@@ -9,9 +9,8 @@ Description of structure for saving image and different image data
     imgobj['keypoints']   - list of keypoints object = list<KeyPoint>;
     imgobj['descriptors'] - list of descriptors vectors;
 """
+from cvtools.system import loadNumpyImage
 import os
-
-from biomio.algorithms.cvtools.system import loadNumpyImage
 
 
 def loadImageObject(path):
@@ -22,4 +21,3 @@ def loadImageObject(path):
             'data': loadNumpyImage(path)}
         return data
     return None
-

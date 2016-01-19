@@ -8,3 +8,4 @@ def loadJSONFile(file_name):
                 source = json.load(data_file)
                 return source
         return dict()
+

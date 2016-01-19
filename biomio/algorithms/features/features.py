@@ -1,8 +1,11 @@
-from biomio.algorithms.features.detectors import (BRISKDetector, BaseDetector)
-from biomio.algorithms.features.matchers import Matcher, BruteForceMatcherType
-from biomio.algorithms.cvtools.effects import grayscaleAndEqualize
 import numpy
 import cv2
+
+from biomio.algorithms.features.detectors import (BRISKDetector, BaseDetector)
+from biomio.algorithms.features.matchers import Matcher, BruteForceMatcherType
+from biomio.algorithms.cvtools.effects import grayscaleAndEqualize, grayscale
+from biomio.algorithms.experimental.self_quotient_image import self_quotient_image
+from biomio.algorithms.experimental.colour_tools import hsv_values_extraction
 
 
 class BaseDecorator(BaseDetector):
@@ -33,6 +36,7 @@ class FeatureDetector(BaseDecorator):
         if image is None:
             return fea_image
         fea_image['data'] = image
+        # gray = grayscale(self_quotient_image(hsv_values_extraction(image)))
         gray = grayscaleAndEqualize(image)
         maskimg = None
         if mask is not None:
