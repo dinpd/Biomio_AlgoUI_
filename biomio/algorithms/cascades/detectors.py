@@ -18,7 +18,6 @@ class ROIDetectorInterface:
 
 class OptimalROIDetector(ROIDetectorInterface):
     def __init__(self):
-        ROIDetectorInterface.__init__(self)
         self._d = 100
 
         self._face_classifier = CascadeROIDetector()
