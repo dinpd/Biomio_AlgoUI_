@@ -1,5 +1,5 @@
 """
-Open CV Tools
+OpenCV Tools
 System Module
 Implementation of functions for image loading and saving based on OpenCV.
 

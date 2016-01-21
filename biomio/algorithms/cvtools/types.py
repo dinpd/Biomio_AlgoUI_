@@ -1,5 +1,5 @@
 """
-Open CV Tools
+OpenCV Tools
 Types Module
 Implementation of functions for basic type conversion based on OpenCV.
 """
@@ -9,8 +9,8 @@ import numpy
 
 def numpy_darrayToIplImage(source):
     """
-    Open CV Tools/Types Module
-    Convert numpy.ndarray object to IplImage object.
+    OpenCV Tools/Types Module
+        Convert numpy.ndarray object to IplImage object.
 
     :param source: numpy.ndarray object
     :return: IplImage object
@@ -22,8 +22,8 @@ def numpy_darrayToIplImage(source):
 
 def iplImageToNumpy_darray(source):
     """
-    Open CV Tools/Types Module
-    Convert IplImage object to numpy.ndarray object.
+    OpenCV Tools/Types Module
+        Convert IplImage object to numpy.ndarray object.
 
     :param source: IplImage object
     :return: numpy.ndarray object
@@ -33,8 +33,8 @@ def iplImageToNumpy_darray(source):
 
 def numpy_ndarrayToList(source):
     """
-    Open CV Tools/Types Module
-    Convert numpy.ndarray object to list object.
+    OpenCV Tools/Types Module
+        Convert numpy.ndarray object to list object.
 
     :param source: numpy.ndarray object
     :return: list object
@@ -44,8 +44,8 @@ def numpy_ndarrayToList(source):
 
 def listToNumpy_ndarray(source, dtype=None):
     """
-    Open CV Tools/Types Module
-    Convert list object to numpy.ndarray object.
+    OpenCV Tools/Types Module
+        Convert list object to numpy.ndarray object.
 
     :param source: list object
     :return: numpy.ndarray object
@@ -55,11 +55,14 @@ def listToNumpy_ndarray(source, dtype=None):
 
 def classKeyPointToArray(keypoint, with_points=False):
     """
-    Open CV Tools/Types Module
-    Convert KeyPoint Class to numpy.ndarray object.
+    OpenCV Tools/Types Module
+        Convert KeyPoint Class to numpy.ndarray object.
+    If with_points is True, method include coordinates of keypoint
+    into output array, otherwise returns array without them.
 
-    :param keypoint: KeyPoint object.
-    :return: numpy.ndarray object.
+    :param keypoint: KeyPoint OpenCV object
+    :param with_points: bool flag
+    :return: numpy.ndarray object
     """
     darray = []
     if with_points:

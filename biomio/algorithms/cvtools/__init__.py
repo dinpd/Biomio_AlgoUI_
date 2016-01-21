@@ -1,5 +1,5 @@
 """
-Open CV Tools Module
+OpenCV Tools Module
 Implementation of functions for basic processing of images based on OpenCV.
 """
 from types import (listToNumpy_ndarray, numpy_ndarrayToList,
