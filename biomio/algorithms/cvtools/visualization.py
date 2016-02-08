@@ -7,8 +7,10 @@ Implementation of functions for image drawing and visualization based on OpenCV.
     show - show image or some elements on image;
     draw - draw some object or objects on image and return image object;
 """
+from biomio.algorithms.logger import logger
 import scipy as sp
 import random
+import numpy
 import cv2
 
 
@@ -35,6 +37,17 @@ def showNumpyImage(image):
     cv2.waitKey()
 
 
+def printKeyPoint(keypoint):
+    if keypoint is not None:
+        logger.debug(keypoint)
+        logger.debug("angle=%s" % str(keypoint.angle))
+        logger.debug("class_id=%s" % str(keypoint.class_id))
+        logger.debug("octave=%s" % str(keypoint.octave))
+        logger.debug("point=%s" % str(keypoint.pt))
+        logger.debug("response=%s" % str(keypoint.response))
+        logger.debug("size=%s" % str(keypoint.size))
+
+
 def showKeypoints(imgobj):
     """
     OpenCV Tools/Visualization Module
@@ -47,7 +60,7 @@ def showKeypoints(imgobj):
     cv2.waitKey()
 
 
-def drawKeypoints(imgobj):
+def drawKeypoints(imgobj, key='data'):
     """
     OpenCV Tools/Visualization Module
         Draws list of keypoints on the image using OpenCV cv2.drawKeypoints(...) function.
@@ -55,7 +68,7 @@ def drawKeypoints(imgobj):
     :param imgobj: image object. For details see algorithms.imgobj
     :return: numpy.ndarray image with painted image keypoints
     """
-    return cv2.drawKeypoints(imgobj['data'], imgobj['keypoints'])
+    return cv2.drawKeypoints(imgobj[key], imgobj['keypoints'])
 
 
 def showClusters(clusters, image):
@@ -165,6 +178,50 @@ def printMatches(imgobj1, imgobj2, matches):
             print dy
             print pow(pow(dx, 2) + pow(dy, 2), 0.5)
             print "=================="
+
+def drawSelfMatches(imgobj, matches, key='data'):
+    """
+    OpenCV Tools/Visualization Module
+        Draws descriptor self-matches on the image.
+
+    :param imgobj: image object. For details see algorithms.imgobj
+    :param matches: list of match pair (descriptor, descriptor, distance)
+    :param key: image object key for image data
+    :return: numpy.ndarray image object
+    """
+    res = imgobj[key].copy()
+    for match in matches:
+        color = tuple([sp.random.randint(0, 255) for _ in xrange(3)])
+        f_index = -1
+        s_index = -1
+        for index, desc in enumerate(imgobj['descriptors']):
+            if numpy.array_equal(desc, match[0]):
+                f_index = index
+            if numpy.array_equal(desc, match[1]):
+                s_index = index
+            if f_index >= 0 and s_index >= 0:
+                break
+        if f_index >= 0 and s_index >= 0:
+            cv2.line(res, (int(imgobj['keypoints'][f_index].pt[0]), int(imgobj['keypoints'][f_index].pt[1])),
+                     (int(imgobj['keypoints'][s_index].pt[0]), int(imgobj['keypoints'][s_index].pt[1])), color)
+    return res
+
+
+def drawSelfGraph(imgobj, edges, key='data'):
+    """
+    OpenCV Tools/Visualization Module
+        Draws keypoints-based self-graph on the image.
+
+    :param imgobj: image object. For details see algorithms.imgobj
+    :param matches: list of match pair (descriptor, descriptor, distance)
+    :param key: image object key for image data
+    :return: numpy.ndarray image object
+    """
+    res = imgobj[key].copy()
+    for edge in edges:
+        color = tuple([sp.random.randint(0, 255) for _ in xrange(3)])
+        cv2.line(res, (int(edge[0].pt[0]), int(edge[0].pt[1])), (int(edge[2].pt[0]), int(edge[2].pt[1])), color)
+    return res
 
 
 def drawRectangle(image, rect, color):

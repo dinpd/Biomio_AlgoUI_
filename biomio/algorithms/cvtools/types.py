@@ -5,6 +5,7 @@ Implementation of functions for basic type conversion based on OpenCV.
 """
 import cv2.cv as cv
 import numpy
+import cv2
 
 
 def numpy_darrayToIplImage(source):
@@ -73,3 +74,17 @@ def classKeyPointToArray(keypoint, with_points=False):
     darray.append(keypoint.response)
     darray.append(keypoint.octave)
     return numpy.array(darray)
+
+
+def copyKeyPoint(keypoint):
+    """
+    OpenCV Tools/Types Module
+        Copy KeyPoint object and return copy.
+
+    :param keypoint: KeyPoint object instance
+    :return: KeyPoint object instance
+    """
+    return cv2.KeyPoint(keypoint.pt[0], keypoint.pt[1],
+                        keypoint.size, keypoint.angle,
+                        keypoint.response, keypoint.octave,
+                        keypoint.class_id)
