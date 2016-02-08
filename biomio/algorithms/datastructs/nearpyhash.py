@@ -1,5 +1,6 @@
 from nearpy.distances import EuclideanDistance, ManhattanDistance
 from nearpy.hashes import RandomBinaryProjections
+from xnearpy.xmemorystorage import xMemoryStorage
 
 from interface import DataStructure
 from xnearpy.xengine import xEngine
@@ -14,6 +15,7 @@ class NearPyHashSettings:
         self.distance = ManhattanDistance
         self.detector = None
         self.threshold = 0.25
+        self.storage = xMemoryStorage
 
 
 class NearPyHash(DataStructure):
@@ -25,12 +27,16 @@ class NearPyHash(DataStructure):
     def type():
         return "NearPyHash"
 
-    def init_structure(self, settings):
+    def init_structure(self, settings, storage=None):
         projection = settings.projection(settings.projection_name, settings.projection_count)
-        self.engine = xEngine(settings.dimension, lshashes=[projection], distance=settings.distance())
+        self.engine = xEngine(settings.dimension, lshashes=[projection], distance=settings.distance(),
+                              storage=storage)
 
     def store_vector(self, v, data=None):
         return self.engine.store_vector(v, data)
+
+    def store_vectors(self, vs, data=None):
+        return self.engine.store_vectors(vs, data)
 
     def candidate_count(self, v):
         return self.engine.candidate_count(v)

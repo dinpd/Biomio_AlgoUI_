@@ -1,4 +1,5 @@
 from nearpy.engine import Engine, np
+from nearpy.distances import ManhattanDistance
 from xmemorystorage import xMemoryStorage
 from emptyfilter import EmptyFilter
 
@@ -8,6 +9,8 @@ class xEngine(Engine):
                  fetch_vector_filters=None,
                  vector_filters=None,
                  storage=None):
+        if distance is None:
+            distance = ManhattanDistance()
         Engine.__init__(self, dim, lshashes, distance, [EmptyFilter()],
                         vector_filters, xMemoryStorage())
 

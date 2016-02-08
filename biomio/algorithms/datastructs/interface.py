@@ -7,7 +7,10 @@ class DataStructure:
     def init_structure(self, settings):
         raise NotImplementedError
 
-    def store_vector(self, v):
+    def store_vector(self, v, data=[]):
+        raise NotImplementedError
+
+    def store_vectors(self, vs):
         raise NotImplementedError
 
     def clean_all_buckets(self):
