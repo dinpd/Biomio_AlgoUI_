@@ -1,14 +1,13 @@
-import random
-import sys
 from tools import distance, mass_center, sort_clusters
+import random
 
 
 def get_cluster(id, center, items):
-    cluster = dict()
-    cluster['center'] = center
-    cluster['items'] = items
-    cluster['id'] = id
-    return cluster
+    return {
+        'center': center,
+        'items': items,
+        'id': id,
+    }
 
 def KMeans(items, cluster_count, init_centers=[], max_distance=0):
     cents = []
