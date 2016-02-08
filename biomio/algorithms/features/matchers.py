@@ -1,5 +1,11 @@
+from biomio.algorithms.cvtools.types import listToNumpy_ndarray
+from biomio.algorithms.clustering.tools import distance
+from biomio.algorithms.logger import logger
+import itertools
 import defines
+import numpy
 import cv2
+import sys
 
 BruteForceMatcherType = 0
 FlannBasedMatcherType = 1
@@ -78,3 +84,80 @@ def LowesMatchingScheme(match1, match2, threshold=0.5):
         return match1.distance < threshold * match2.distance
     else:
         return False
+
+CROSS_MATCHING_MATCHES = 'cm_matches'
+CROSS_MATCHING_DESCRIPTORS = 'cm_descriptors'
+
+def CrossMatching(descriptors1, descriptors2, matcher, knn, result_type=CROSS_MATCHING_MATCHES):
+    matches1 = matcher.knnMatch(descriptors1, descriptors2, k=knn)
+    matches2 = matcher.knnMatch(descriptors2, descriptors1, k=knn)
+    ml = []
+    if result_type == CROSS_MATCHING_MATCHES:
+        ml = [
+            x for (x, _) in itertools.ifilter(
+                lambda (m, n): m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx, itertools.product(
+                    itertools.chain(*matches1), itertools.chain(*matches2)
+                )
+            )
+        ]
+    elif result_type == CROSS_MATCHING_DESCRIPTORS:
+        ml = list(itertools.chain.from_iterable(itertools.imap(
+            lambda(x, _): (descriptors1[x.queryIdx], descriptors2[x.trainIdx]), itertools.ifilter(
+                lambda(m, n): m.queryIdx == n.trainIdx and m.trainIdx == n.queryIdx, itertools.product(
+                    itertools.chain(*matches1), itertools.chain(*matches2)
+                )
+            )
+        )))
+    return ml
+
+
+def SelfMatching(descriptors, matcher, dtype, knn):
+    self_match = []
+    for desc in descriptors:
+        query_set = [desc]
+        train_set = [d for d in descriptors if not numpy.array_equal(desc, d)]
+        s_match = matcher.knnMatch(listToNumpy_ndarray(query_set, dtype),
+                                   listToNumpy_ndarray(train_set, dtype), k=knn)
+        for m in itertools.chain(*s_match):
+            self_match.append([query_set[m.queryIdx], train_set[m.trainIdx], m.distance])
+    return self_match
+
+
+def SelfGraph(keypoints, knn, descriptors=None):
+    edges = []
+    for ik, keypoint1 in enumerate(keypoints):
+        pairs = []
+        for idx in range(0, knn, 1):
+            pairs.append((None, None, sys.maxint))
+        for jk, keypoint2 in enumerate(keypoints):
+            if keypoint1.pt != keypoint2.pt:
+                dist = distance(keypoint1.pt, keypoint2.pt)
+                for idx in range(0, knn, 1):
+                    if pairs[idx][2] > dist:
+                        for i in range(knn - 1, idx, -1):
+                            pairs[i] = (pairs[i - 1][0], pairs[i - 1][1], pairs[i - 1][2])
+                        if descriptors is None:
+                            pairs[idx] = (keypoint2, None, dist)
+                        else:
+                            pairs[idx] = (keypoint2, descriptors[jk], dist)
+                        break
+        for idx in range(0, knn, 1):
+            if pairs[idx][0] is not None:
+                desc = None
+                if descriptors is not None:
+                    desc = descriptors[ik]
+                edges.append([keypoint1, desc, pairs[idx][0], pairs[idx][1], pairs[idx][2]])
+    return edges
+
+
+def SubsetsCalculation(matches):
+    sorted_matches = sorted(matches, key=lambda match: match.distance)
+    exclude_f = []
+    exclude_s = []
+    subset = []
+    for match in sorted_matches:
+        if (not exclude_f.__contains__(match.queryIdx)) and (not exclude_s.__contains__(match.trainIdx)):
+            subset.append(match)
+            exclude_f.append(match.queryIdx)
+            exclude_s.append(match.trainIdx)
+    return subset

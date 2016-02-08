@@ -82,9 +82,9 @@ class BRISKDetector(BaseDetector):
     @staticmethod
     def defaultSettings():
         return {
-            thresh: 10,
-            octaves: 0,
-            scale: 1.0
+            'thresh': 10,
+            'octaves': 0,
+            'scale': 1.0
         }
 
 
@@ -124,14 +124,14 @@ class ORBDetector(BaseDetector):
     @staticmethod
     def defaultSettings():
         return {
-            features: 500,
-            scaleFactor: 1.1,
-            nlevels: 8
+            'features': 500,
+            'scaleFactor': 1.1,
+            'nlevels': 8
         }
 
 
 class SURFDetectorSettings:
-    threshold = 300
+    threshold = 100
 
     def exportSettings(self):
         return {
@@ -160,7 +160,7 @@ class mahotasSURFDetectorSettings:
     nr_scales = 6
     initial_step_size = 1
     threshold = 0.1
-    max_points = 1000
+    max_points = 2000
     is_integral = False
 
     def exportSettings(self):
@@ -196,6 +196,7 @@ class mahotasSURFDetector(BaseDetector):
     def __init__(self, settings=mahotasSURFDetectorSettings()):
         BaseDetector.__init__(self)
         self._settings = settings
+        self._filtered = True
 
     def type(self):
         return "mSurf"
@@ -207,12 +208,16 @@ class mahotasSURFDetector(BaseDetector):
         keypoints = surf.interest_points(image, self._settings.nr_octaves, self._settings.nr_scales,
                                          self._settings.initial_step_size, self._settings.threshold,
                                          self._settings.max_points, self._settings.is_integral)
+        if self._filtered:
+            keypoints = mahotasSURFDetector._internal_keypoints_filter(image.shape, keypoints)
         return [mahotasSURFDetector.getKeyPoint(keypoint) for keypoint in keypoints]
 
     def detectAndCompute(self, image, mask=None):
         keypoints = surf.interest_points(image, self._settings.nr_octaves, self._settings.nr_scales,
                                          self._settings.initial_step_size, self._settings.threshold,
                                          self._settings.max_points, self._settings.is_integral)
+        if self._filtered:
+            keypoints = mahotasSURFDetector._internal_keypoints_filter(image.shape, keypoints)
         descriptors = surf.descriptors(image, keypoints, self._settings.is_integral, True)
         cvkeys = [mahotasSURFDetector.getKeyPoint(keypoint) for keypoint in keypoints]
         return cvkeys, listToNumpy_ndarray([mahotasSURFDetector.getDescriptor(d) for d in descriptors])
@@ -223,6 +228,17 @@ class mahotasSURFDetector(BaseDetector):
         mkeys = [mahotasSURFDetector.getMahotasKeypoint(keypoint) for keypoint in keypoints]
         return keypoints, listToNumpy_ndarray([mahotasSURFDetector.getDescriptor(d) for d in
                                                surf.descriptors(image, mkeys, self._settings.is_integral, True)])
+
+    @staticmethod
+    def _internal_keypoints_filter(image_shape, keypoints):
+        border = 31.0
+        res = []
+        for keypoint in keypoints:
+            border_size = (border * keypoint[2]) / 2.0
+            if (border_size <= keypoint[0] and (keypoint[0] + border_size) < image_shape[0] and
+                        border_size <= keypoint[1] and (keypoint[1] + border_size) < image_shape[1]):
+                res.append(keypoint)
+        return res
 
     @staticmethod
     def getKeyPoint(keypoint):

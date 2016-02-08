@@ -1,8 +1,8 @@
+from biomio.algorithms.features.detectors import (BRISKDetector, BRISKDetectorSettings, ORBDetector,
+                                                  ORBDetectorSettings, SURFDetector, SURFDetectorSettings,
+                                                  mahotasSURFDetector, mahotasSURFDetectorSettings)
+from matchers import (BruteForceMatcherType, FlannBasedMatcherType, Matcher)
 import numpy
-
-from biomio.algorithms.features.detectors import (BRISKDetector, BRISKDetectorSettings, ORBDetector, ORBDetectorSettings,
-                       SURFDetector, SURFDetectorSettings, mahotasSURFDetector, mahotasSURFDetectorSettings)
-from matchers import (BruteForceMatcherType, FlannBasedMatcherType)
 
 BRISKDetectorType = 'BRISK'
 ORBDetectorType = 'ORB'
@@ -28,6 +28,7 @@ def constructDetector(type=ORBDetectorType, settings=dict()):
     if detectors.keys().__contains__(type):
         return detectors[type](settings)
     return None
+
 
 def matcherForDetector(detector_type=ORBDetectorType):
     matchers = {BRISKDetectorType: BruteForceMatcherType,
