@@ -49,7 +49,7 @@ def MatcherCreator(descriptorMatcherType):
 
 def FlannMatcher():
     # index_params = defaultFlannBasedLSHIndexParams()
-    index_params = defaultFlannBasedIndexKDTreeParams()
+    index_params = defaultFlannBasedKDTreeIndexParams()
     search_params = dict(checks=100)
     matcher = cv2.FlannBasedMatcher(index_params, search_params)
     return matcher
@@ -61,15 +61,22 @@ def BruteForceMatcher():
 
 
 def defaultFlannBasedLSHIndexParams():
+    """
+        Returns default Flann-based LSH Index parameters dict object.
+    :return: dict object instance.
+    """
     return dict(algorithm=defines.FLANN_INDEX_LSH,
-                table_number=6,       # 12
-                key_size=12,          # 20
-                multi_probe_level=1)  # 2
+                table_number=12,
+                key_size=20,
+                multi_probe_level=2)
 
 
-def defaultFlannBasedIndexKDTreeParams():
-    return dict(algorithm=defines.FLANN_INDEX_KDTREE,
-                trees=5)
+def defaultFlannBasedKDTreeIndexParams():
+    """
+        Returns default Flann-based KD-Tree Index parameters dict object.
+    :return: dict object instance.
+    """
+    return dict(algorithm=defines.FLANN_INDEX_KDTREE, trees=5)
 
 
 def Matcher(type=BruteForceMatcherType):

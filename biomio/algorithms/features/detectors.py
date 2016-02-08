@@ -1,6 +1,6 @@
 from biomio.algorithms.cvtools import listToNumpy_ndarray
+from biomio.algorithms.logger import logger
 from mahotas.features import surf
-import logger
 import numpy
 import cv2
 
@@ -12,11 +12,11 @@ class BaseDetector:
         self._extractor = None
 
     def descriptorSize(self):
-        print self._detector.__dict__
+        logger.debug(self._detector.__dict__)
         return self._detector.size()
 
     def descriptorType(self):
-        print self._detector.__dict__
+        logger.debug(self._detector.__dict__)
         return self._detector.type()
 
     @staticmethod
@@ -33,7 +33,7 @@ class BaseDetector:
         try:
             return self._detector.detectAndCompute(image, mask)
         except Exception as err:
-            print err.message
+            logger.debug(err.message)
             return None
 
     def compute(self, image, keypoints):
@@ -42,7 +42,7 @@ class BaseDetector:
         try:
             return self._detector.compute(image, keypoints)
         except Exception as err:
-            print err.message
+            logger.debug(err.message)
             return None
 
 
@@ -65,10 +65,10 @@ class BRISKDetectorSettings:
             self.patternScale = settings['patternScale']
 
     def dump(self):
-        logger.logger.debug('BRISK Detector Settings:')
-        logger.logger.debug('    Threshold: %f' % self.thresh)
-        logger.logger.debug('    Octaves: %f' % self.octaves)
-        logger.logger.debug('    Pattern Scale: %f' % self.patternScale)
+        logger.debug('BRISK Detector Settings:')
+        logger.debug('    Threshold: %f' % self.thresh)
+        logger.debug('    Octaves: %f' % self.octaves)
+        logger.debug('    Pattern Scale: %f' % self.patternScale)
 
 
 class BRISKDetector(BaseDetector):
@@ -107,10 +107,10 @@ class ORBDetectorSettings:
             self.nlevels = settings['nlevels']
 
     def dump(self):
-        logger.logger.debug('ORB Detector Settings:')
-        logger.logger.debug('    Features: %d' % self.features)
-        logger.logger.debug('    Scale Factor: %f' % self.scaleFactor)
-        logger.logger.debug('    Levels: %d' % self.nlevels)
+        logger.debug('ORB Detector Settings:')
+        logger.debug('    Features: %d' % self.features)
+        logger.debug('    Scale Factor: %f' % self.scaleFactor)
+        logger.debug('    Levels: %d' % self.nlevels)
 
 
 class ORBDetector(BaseDetector):
@@ -143,8 +143,8 @@ class SURFDetectorSettings:
             self.threshold = settings['threshold']
 
     def dump(self):
-        logger.logger.debug('SURF Detector Settings:')
-        logger.logger.debug('    Threshold: %f' % self.threshold)
+        logger.debug('SURF Detector Settings:')
+        logger.debug('    Threshold: %f' % self.threshold)
 
 
 class SURFDetector(BaseDetector):
@@ -183,13 +183,13 @@ class mahotasSURFDetectorSettings:
             self.is_integral = settings['is_integral']
 
     def dump(self):
-        logger.logger.debug('Mahotas SURF Detector Settings:')
-        logger.logger.debug('    Octaves: %f' % self.nr_octaves)
-        logger.logger.debug('    Scales: %f' % self.nr_scales)
-        logger.logger.debug('    Initial Step Size: %f' % self.initial_step_size)
-        logger.logger.debug('    Threshold: %f' % self.threshold)
-        logger.logger.debug('    Max Points: %f' % self.max_points)
-        logger.logger.debug('    Integral: %d' % self.is_integral)
+        logger.debug('Mahotas SURF Detector Settings:')
+        logger.debug('    Octaves: %f' % self.nr_octaves)
+        logger.debug('    Scales: %f' % self.nr_scales)
+        logger.debug('    Initial Step Size: %f' % self.initial_step_size)
+        logger.debug('    Threshold: %f' % self.threshold)
+        logger.debug('    Max Points: %f' % self.max_points)
+        logger.debug('    Integral: %d' % self.is_integral)
 
 
 class mahotasSURFDetector(BaseDetector):

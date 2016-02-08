@@ -1,6 +1,6 @@
 """
 Based on opencv2/flann/defines.h
-Description of parameters of Flann-based descriptor matcher.
+Description of parameters for Flann-based descriptor matcher.
 """
 
 # Nearest neighbour index algorithms
