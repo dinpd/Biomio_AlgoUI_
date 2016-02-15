@@ -7,8 +7,8 @@ from guidata.qt.QtGui import (QWidget, QStackedWidget,
 from guiqwt.config import _
 
 from biomio.algorithms.features.detectors import (BRISKDetectorSettings, ORBDetectorSettings,
-                                                  mahotasSURFDetectorSettings)
-from biomio.algorithms.features import BRISKDetectorType, ORBDetectorType
+                                                  mahotasSURFDetectorSettings, SURFDetectorSettings)
+from biomio.algorithms.features import BRISKDetectorType, ORBDetectorType, SURFDetectorType
 
 
 class DetectorSettingsDialog(QDialog):
@@ -49,12 +49,14 @@ class DetectorSettingsDialog(QDialog):
         self.setLayout(dialog_layout)
 
     def result_type(self):
-        return 'mahotasSURF'
-        # return self._detector_type
+        # return 'mahotasSURF'
+        # return SURFDetectorType
+        return self._detector_type
 
     def settings(self):
-        return mahotasSURFDetectorSettings()
-        # return self._settings
+        # return mahotasSURFDetectorSettings()
+        # return SURFDetectorSettings()
+        return self._settings
 
     def brisk_tab(self):
         brisk_widget = QWidget(self)
