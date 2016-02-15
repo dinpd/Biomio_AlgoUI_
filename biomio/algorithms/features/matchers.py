@@ -96,6 +96,8 @@ CROSS_MATCHING_MATCHES = 'cm_matches'
 CROSS_MATCHING_DESCRIPTORS = 'cm_descriptors'
 
 def CrossMatching(descriptors1, descriptors2, matcher, knn, result_type=CROSS_MATCHING_MATCHES):
+    if len(descriptors1) < knn or len(descriptors2) < knn:
+        return []
     matches1 = matcher.knnMatch(descriptors1, descriptors2, k=knn)
     matches2 = matcher.knnMatch(descriptors2, descriptors1, k=knn)
     ml = []

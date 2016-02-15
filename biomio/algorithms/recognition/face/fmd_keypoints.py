@@ -1,5 +1,5 @@
-from biomio.algorithms.recognition.keypoints import (KeypointsObjectDetector, BRISKDetectorType,
-                                                     identifying)
+from biomio.algorithms.recognition.keypoints import (KeypointsObjectDetector, identifying)
+from biomio.algorithms.features import BRISKDetectorType
 
 
 class FeaturesMatchingDetector(KeypointsObjectDetector):

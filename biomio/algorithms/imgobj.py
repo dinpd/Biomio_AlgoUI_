@@ -14,6 +14,12 @@ import os
 
 
 def loadImageObject(path):
+    """
+        Loads image by path and return basic image dict object.
+
+    :param path: Absolute path to the image file
+    :return: Image dict object instance.
+    """
     if os.path.exists(path):
         data = {
             'name': os.path.split(path)[1],

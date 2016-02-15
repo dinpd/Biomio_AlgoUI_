@@ -3,7 +3,6 @@ OpenCV Tools
 Types Module
 Implementation of functions for basic type conversion based on OpenCV.
 """
-import cv2.cv as cv
 import numpy
 import cv2
 
@@ -16,8 +15,8 @@ def numpy_darrayToIplImage(source):
     :param source: numpy.ndarray object
     :return: IplImage object
     """
-    bitmap = cv.CreateImageHeader((source.shape[1], source.shape[0]), cv.IPL_DEPTH_8U, 3)
-    cv.SetData(bitmap, source.tostring(), source.dtype.itemsize * 3 * source.shape[1])
+    bitmap = cv2.cv.CreateImageHeader((source.shape[1], source.shape[0]), cv2.cv.IPL_DEPTH_8U, 3)
+    cv2.cv.SetData(bitmap, source.tostring(), source.dtype.itemsize * 3 * source.shape[1])
     return bitmap
 
 
@@ -74,6 +73,25 @@ def classKeyPointToArray(keypoint, with_points=False):
     darray.append(keypoint.response)
     darray.append(keypoint.octave)
     return numpy.array(darray)
+
+
+def arrayToKeyPointClass(array, with_points=False):
+    """
+    OpenCV Tools/Types Module
+        Convert numpy.ndarray object to KeyPoint Class.
+    If with_points is True, method include coordinates of keypoint
+    into output array, otherwise returns array without them.
+
+    :param array: numpy.ndarray object
+    :param with_points: bool flag
+    :return: KeyPoint OpenCV object
+    """
+    x = array[0]
+    y = array[1]
+    if not with_points:
+        x = 0
+        y = 0
+    return cv2.KeyPoint(x, y, array[2], array[3], array[4], array[5])
 
 
 def copyKeyPoint(keypoint):

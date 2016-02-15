@@ -1,6 +1,6 @@
 from biomio.algorithms.features.detectors import BaseDetector
-import biomio.algorithms.experimental.self_quotient_image as sqi
-import biomio.algorithms.experimental.colour_tools as hsv
+import biomio.algorithms.algorithms.images.self_quotient_image as sqi
+import biomio.algorithms.algorithms.images.colour_tools as hsv
 import biomio.algorithms.cvtools.effects as effects
 from gabor_threads import process, build_filters
 import cv2

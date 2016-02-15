@@ -9,7 +9,6 @@ from biomio.algorithms.cascades.detectors import OptimalROIDetectorSAoS
 from biomio.algorithms.cascades.scripts_detectors import CascadesDetectionInterface
 from biomio.algorithms.cascades.tools import loadScript
 from biomio.algorithms.logger import logger
-import os
 
 
 class ClustersMatchingDetector(KeypointsObjectDetector):
@@ -47,7 +46,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
     def exportDBSettings(self):
         info = dict()
-        info['Database Size'] = str(len(self._hash)) + " images"
+        info['Database Size'] = str(len(self._database)) + " images"
         settings = dict()
         if self.kodsettings.detector_type == BRISKDetectorType:
             info['Detector Type'] = 'BRISK'
@@ -73,7 +72,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
 
     def importSettings(self, settings):
         if len(settings.keys()) > 0:
-            logger.logger.debug("Settings loading started...")
+            logger.info("Settings loading started...")
             self.kodsettings.importSettings(settings['KODSettings'])
             self.kodsettings.dump()
             if self._cascadeROI is None:
@@ -88,7 +87,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
             # self._eyeROI.importSettings(settings['Eye Cascade Detector'])
             # logger.logger.debug('Eye Cascade Detector')
             # self._eyeROI.classifierSettings.dump()
-            logger.logger.debug("Settings loading finished.")
+            logger.debug("Settings loading finished.")
             return True
         return False
 
@@ -99,92 +98,12 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         info['Eye Cascade Detector'] = self._eyeROI.exportSettings()
         return info
 
-    def compare(self, f_imgobj, s_imgobj):
-        if not self.data_detect(f_imgobj):
-            logger.logger.debug("First image data isn't valid.")
-            return False
-        if not self.data_detect(s_imgobj):
-            logger.logger.debug("Second image data isn't valid.")
-            return False
-        # matcher = FlannMatcher()
-        # gres = []
-        # for i in range(0, len(f_imgobj['clusters'])):
-        # first = f_imgobj['clusters'][i]
-        # second = s_imgobj['clusters'][i]
-        #     res = []
-        #     if (first is None) or (second is None):
-        #         logger.logger.debug("Cluster #" + str(i + 1) + ": Invalid")
-        #         self._log += "Cluster #" + str(i + 1) + ": Invalid\n"
-        #     else:
-        #         matches = matcher.knnMatch(first, second, k=1)
-        #         ms = []
-        #         for v in matches:
-        #             if len(v) >= 1:
-        #                 # if len(v) >= 2:
-        #                 m = v[0]
-        #                 # n = v[1]
-        #                 if m.distance < self.kodsettings.neighbours_distance:
-        #                     ms.append(m)
-        #         prob = len(ms) / (1.0 * len(matches))
-        #         res.append(prob * 100)
-        #         logger.logger.debug("Cluster #" + str(i + 1) + " (Size: " + str(len(second)) + "): "
-        #                             + str(prob * 100) + "%")
-        #         self._log += "Cluster #" + str(i + 1) + " (Size: " + str(len(second)) + "): " + str(prob * 100) \
-        #                      + "%" + "\n"
-        #     suma = 0
-        #     for val in res:
-        #         suma += val
-        #     logger.logger.debug("Total for image: " + str(suma / len(res)))
-        #     self._log += "Total for image: " + str(suma / len(res)) + "\n"
-        #     gres.append(suma / len(res))
-        # s = 0
-        # for val in gres:
-        #     s += val
-        # logger.logger.debug("Total: " + str(s / len(gres)))
-        # self._log += "\nTotal: " + str(s / len(gres)) + "\n\n"
-        self._compare_descriptors(f_imgobj, s_imgobj)
-
-    def _compare_descriptors(self, f_imgobj, s_imgobj):
-        matcher = Matcher(matcherForDetector(self.kodsettings.detector_type))
-        matches = matcher.knnMatch(f_imgobj['descriptors'], s_imgobj['descriptors'], k=1)
-        logger.logger.debug("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        stat = dict()
-        for v in matches:
-            if len(v) >= 1:
-                # if len(v) >= 2:
-                m = v[0]
-                logger.logger.debug("Query Index: " + str(m.queryIdx) + " Train Index: " + str(m.trainIdx)
-                                    + " Distance: " + str(m.distance))
-                for i in range(0, 100, 1):
-                    if m.distance <= i * 10:
-                        val = stat.get(str(i * 10), 0)
-                        val += 1
-                        stat[str(i * 10)] = val
-                        break
-        logger.logger.debug("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        for k, z in stat.iteritems():
-            logger.logger.debug(k + ": " + str(z))
-        logger.logger.debug("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        logger.logger.debug("First image descriptors number: " + str(len(f_imgobj['descriptors'])))
-        logger.logger.debug("Second image descriptors number: " + str(len(s_imgobj['descriptors'])))
-        ms = []
-        for v in matches:
-            if len(v) >= 1:
-                # if len(v) >= 2:
-                m = v[0]
-                # n = v[1]
-                if m.distance < self.kodsettings.neighbours_distance:
-                    ms.append(m)
-        prob = len(ms) / (1.0 * len(matches))
-        logger.logger.debug("Positive matches: " + str(len(ms)) + " Probability: " + str(prob * 100))
-        logger.logger.debug("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-
     def _detect(self, data, detector):
         # ROI detection
         rect = self._eyeROI.detect(data['roi'])[1]
-        print rect
         if len(rect) <= 0 or len(rect[0]) <= 0:
-            logger.logger.debug("Eyes ROI doesn't found.")
+            logger.info("Eye ROI wasn't found.")
+            self._last_error = "Eye ROI wasn't found."
             return False
         # ROI cutting
         rect = rect[0]
@@ -204,7 +123,7 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         centers = [lefteye, righteye, centereye, centernose, leftmouth, rightmouth]
         # self.filter_keypoints(data)
 
-        clusters = KMeans(data['keypoints'], 0, centers, 3)
+        clusters = KMeans(data['keypoints'], 0, centers)
         # clusters = FOREL(obj['keypoints'], 40)
         # showClusters(clusters, out)
         data['true_clusters'] = clusters
@@ -230,8 +149,8 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         data['centers'] = centers
         data['weights'] = weights
         data['key_desc'] = keydescriptors
-        logger.logger.debug("!!!Keypoints!!!")
-        logger.logger.debug(len(data['keypoints']))
+        logger.debug("!!!Keypoints!!!")
+        logger.debug(len(data['keypoints']))
 
         # logger.logger.debug(os.path.join("D:\Projects\Biomio\Test1", "roi", data['name'] + ".jpg"))
         # saveNumpyImage(os.path.join("D:/Projects/Biomio/Test1/roi", data['name'] + ".jpg"), data['roi'])
@@ -245,18 +164,10 @@ class ClustersMatchingDetector(KeypointsObjectDetector):
         return True
 
     def filter_keypoints(self, data):
-        def point(item):
-            return item.pt
-        clusters = FOREL(data['keypoints'], 20, point)
+        clusters = FOREL(data['keypoints'], 20)
         keypoints = []
-        # cls = []
         for cluster in clusters:
             p = len(cluster['items']) / (1.0 * len(data['keypoints']))
-            img = dict()
-            img['data'] = data['roi']
-            img['keypoints'] = cluster['items']
             if p > 0.02:
-                # cls.append(cluster)
-                for item in cluster['items']:
-                    keypoints.append(item)
+                keypoints += [item for item in cluster['items']]
         data['keypoints'] = keypoints
