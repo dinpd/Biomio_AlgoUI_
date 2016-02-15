@@ -24,6 +24,8 @@ from biomio.algorithms.recognition.face.detcreator import (DetectorCreator, Clus
                                                            FaceCascadeClassifier, EyesCascadeClassifier)
 from biomio.algorithms.plugins.face_identification_plugin import IdentificationSAInterface, TRAINING_FULL, TRAINING_HASH
 from biomio.algorithms.imgobj import loadImageObject
+from plugins.FaceRecognition.estimations import range_positive_verification_estimation, \
+    range_probability_verification_estimation
 
 VerificationAlgorithm = "KeypointsVerificationAlgorithm"
 
@@ -596,11 +598,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
 
     def verify_all(self):
         if self._imanager:
-            rtrue = dict() #0
-            rfalse = dict() #0
-            for inx in range(0, 20):
-                rtrue[str(5 * inx)] = 0
-                rfalse[str(5 * inx)] = 0
+            results = []
             for curr in self._imanager.images():
                 logger.debug(curr.path())
                 data = {
@@ -613,34 +611,9 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
                 self._keysrecg_detector.kodsettings.settings = self.settings_dialog.settings()
                 self._keysrecg_detector.kodsettings.probability = self._probBox.value()
                 res = self._keysrecg_detector.verify(data)
-                if res is not False:
-                    print "yaleB11" == os.path.split(os.path.split(curr.path())[0])[1]
-                    print res > self._keysrecg_detector.kodsettings.probability
-                    print self._keysrecg_detector.kodsettings.probability
-                    print res
-                    # if ("yaleB11" == os.path.split(os.path.split(curr.path())[0])[1]) == \
-                    #         (res > self._keysrecg_detector.kodsettings.probability):
-                    #     rtrue += 1
-                    # else:
-                    #     rfalse += 1
-                    for inx in range(0, 20):
-                        if ("yaleB11" == os.path.split(os.path.split(curr.path())[0])[1]) == \
-                                (res > 5.0 * inx):
-                            value = rtrue.get(str(5 * inx), 0)
-                            value += 1
-                            rtrue[str(5 * inx)] = value
-                        else:
-                            value = rfalse.get(str(5 * inx), 0)
-                            value += 1
-                            rfalse[str(5 * inx)] = value
-            for inx in range(0, 20):
-                logger.debug("Threshold: " + str(5 * inx))
-                logger.debug("Positive verification: " + str(rtrue.get(str(5 * inx), 0)) + "\t"
-                             + str((rtrue.get(str(5 * inx), 0) / (1.0 * (rtrue.get(str(5 * inx), 0) +
-                                                                      rfalse.get(str(5 * inx), 0)))) * 100))
-                logger.debug("Negative verification: " + str(rfalse.get(str(5 * inx), 0)) + "\t"
-                             + str((rfalse.get(str(5 * inx), 0) / (1.0 * (rtrue.get(str(5 * inx), 0) +
-                                                                       rfalse.get(str(5 * inx), 0)))) * 100))
+                results.append([curr.path(), res])
+            # range_positive_verification_estimation(results)
+            range_probability_verification_estimation(results)
 
     def export_database(self):
         source = self._keysrecg_detector.exportSources()

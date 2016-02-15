@@ -1,22 +1,27 @@
 from guidata.qt.QtCore import SIGNAL, pyqtSignal
-from guidata.qt.QtGui import (QAction, QMenu,
-                              QWidget, QDockWidget, QFileDialog,
+from guidata.qt.QtGui import (QAction, QMenu, QWidget, QDockWidget, QFileDialog,
                               QFormLayout, QVBoxLayout, QHBoxLayout,
-                              QLineEdit, QPushButton, QGroupBox, QDial, QCheckBox, QSpinBox,
-                              QDoubleValidator, QIntValidator)
+                              QLineEdit, QPushButton, QGroupBox, QDial, QCheckBox, QSpinBox)
 from guidata.qt.QtCore import QObject
 from guidata.configtools import get_icon
 from guiqwt.config import _
 
 from aiplugins import IAlgorithmPlugin
 from imageproperties import ImageProperties
-from biomio.algorithms.cvtools.visualization import drawKeypoints
-from biomio.algorithms.features.detectors import BRISKDetector, ORBDetector, SURFDetector
+from biomio.algorithms.cvtools.visualization import drawKeypoints, printKeyPoint, drawSelfMatches, drawSelfGraph
+from biomio.algorithms.features import constructDetector, constructSettings, \
+    BRISKDetectorType, ORBDetectorType, SURFDetectorType, MahotasSURFDetectorType, \
+    matcherForDetector, dtypeForDetector
+from biomio.algorithms.features.features import FeatureDetector
+from biomio.algorithms.features.matchers import SelfMatching, SelfGraph
 from biomio.algorithms.features.gabor_threads import build_filters, process_kernel, process
 from biomio.algorithms.cascades.tools import getROIImage, loadScript
 from biomio.algorithms.cascades.scripts_detectors import RotatedCascadesDetector
-from logger import logger
+from plugins.FeatureDetectors.settings_widgets import BRISKWidget, ORBWidget, SURFWidget, MahotasSURFWidget
+from plugins.FeatureDetectors.algorithm_panel import AlgorithmPanel
+from biomio.algorithms.cvtools.types import copyKeyPoint
 import biomio.algorithms.cvtools.dsp as dsp
+from logger import logger
 
 ACTION_TITLE = 'Action: %s Features Detector::'
 GF_ACTION_TITLE = 'Action: Gabor Filtering::'
@@ -30,9 +35,7 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
     def __init__(self):
         super(FeatureDetectorsPlugin, self).__init__()
         self._setwigets = []
-        self._setwigets.append(self.create_brisk_widget())
-        self._setwigets.append(self.create_orb_widget())
-        self._setwigets.append(self.create_surf_widget())
+        self._setwigets.append(self.create_feature_detect_widget())
         self._setwigets.append(self.create_gabor_widget())
         self._setwigets.append(self.create_dsp_widget())
         self._setwigets.append(self.create_roi_widget())
@@ -41,14 +44,8 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         self._imanager = manager
 
     def get_algorithms_actions(self, parent):
-        detector_menu = QMenu(parent)
-        detector_menu.setTitle(_("Feature Detectors"))
-
-        detector_menu.addAction(self.add_brisk_action(detector_menu))
-        detector_menu.addAction(self.add_orb_action(detector_menu))
-        detector_menu.addAction(self.add_surf_action(detector_menu))
-        return [detector_menu, self.add_gabor_filter_action(parent), self.add_dsp_action(parent),
-                self.add_roi_action(parent)]
+        return [self.add_feature_action(parent), self.add_gabor_filter_action(parent),
+                self.add_dsp_action(parent), self.add_roi_action(parent)]
 
     def get_algorithms_list(self):
         return []
@@ -65,162 +62,67 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
     def apply(self, name, settings=dict()):
         pass
 
-    def add_brisk_action(self, parent):
-        brisk_action = QAction(parent)
-        brisk_action.setText(_("BRISK Features Detection"))
-        brisk_action.setIcon(get_icon('brisk.png'))
-        brisk_action.setCheckable(True)
-        self.connect(brisk_action, SIGNAL("triggered(bool)"), self.brisk_opened)
-        return brisk_action
+    def add_feature_action(self, parent):
+        feature_action = QAction(parent)
+        feature_action.setText(_("Feature Detection"))
+        feature_action.setIcon(get_icon('fea.png'))
+        feature_action.setCheckable(True)
+        self.connect(feature_action, SIGNAL("triggered(bool)"), self.settings_opened)
+        return feature_action
 
-    brisk_opened = pyqtSignal(bool, name='briskOpened')
+    settings_opened = pyqtSignal(bool, name='briskOpened')
 
-    def create_brisk_widget(self):
-        brisk_dock = QDockWidget()
-        brisk_dock.setWindowTitle("BRISK Feature Detector Settings")
-        brisk_dock.setVisible(False)
-        self.brisk_opened.connect(brisk_dock.setVisible)
-        brisk_widget = QWidget(brisk_dock)
-        self._thresh_line_edit = QLineEdit(brisk_widget)
-        self._thresh_line_edit.setValidator(QIntValidator())
-        self._thresh_line_edit.setText('10')
-        self._octaves_line_edit = QLineEdit(brisk_widget)
-        self._octaves_line_edit.setValidator(QIntValidator())
-        self._octaves_line_edit.setText('0')
-        self._pattern_scale_line_edit = QLineEdit(brisk_widget)
-        self._pattern_scale_line_edit.setValidator(QDoubleValidator())
-        self._pattern_scale_line_edit.setText('1.0')
-        detect = QPushButton(brisk_widget)
-        detect.setText('Detect')
-        self.connect(detect, SIGNAL("clicked()"), self.brisk)
-        widget_layout = QFormLayout()
-        widget_layout.addRow('Thresh', self._thresh_line_edit)
-        widget_layout.addRow('Octaves', self._octaves_line_edit)
-        widget_layout.addRow('Pattern Scale', self._pattern_scale_line_edit)
-        widget_layout.addWidget(detect)
-        brisk_widget.setLayout(widget_layout)
-        brisk_dock.setWidget(brisk_widget)
-        return brisk_dock
+    def create_feature_detect_widget(self):
+        self._settings_dock = AlgorithmPanel()
+        self._settings_dock.setWindowTitle("Feature Detector Settings")
+        self._settings_dock.setVisible(False)
+        self.settings_opened.connect(self._settings_dock.setVisible)
+        self.connect(self._settings_dock, SIGNAL("applied()"), self.feature_detection)
+        self._settings_dock.addAlgorithm(BRISKDetectorType, BRISKWidget())
+        self._settings_dock.addAlgorithm(ORBDetectorType, ORBWidget())
+        self._settings_dock.addAlgorithm(SURFDetectorType, SURFWidget())
+        self._settings_dock.addAlgorithm(MahotasSURFDetectorType, MahotasSURFWidget())
+        return self._settings_dock
 
-    def brisk(self):
+    def feature_detection(self):
         curr = self._imanager.current_image()
+        algo_settings = self._settings_dock.settings()
         if self._imanager and curr:
             image = ImageProperties()
-            image.title(str(ACTION_TITLE % 'BRISK' + curr.title()))
-            detector = BRISKDetector(thresh=int(self._thresh_line_edit.text()),
-                                     octaves=int(self._octaves_line_edit.text()),
-                                     scale=float(self._pattern_scale_line_edit.text()))
+            image.title(str(ACTION_TITLE % algo_settings['name'] + curr.title()))
+            settings = constructSettings(algo_settings['name'])
+            settings.importSettings(algo_settings['settings'])
+            detector = FeatureDetector(constructDetector(algo_settings['name'], settings))
             fea = dict()
             fea['data'] = curr.data()
-            keypoints = detector.detect(curr.data())
-            fea['keypoints'] = keypoints
-            logger.debug(len(keypoints))
-            image.data(drawKeypoints(fea))
+            features = detector.detectAndCompute(curr.data())
+            logger.debug(len(features['keypoints']))
+            logger.debug(len(features['descriptors']))
+            # keypair = [copyKeyPoint(keypoints[0])]
+            # item = copyKeyPoint(keypoints[0])
+            # item.pt = (100.0, 100.0)
+            # keypair.append(item)
+            # keypair.append(copyKeyPoint(keypoints[4]))
+            # keypair.append(copyKeyPoint(keypoints[100]))
+            # for index, keypoint in enumerate(keypoints):
+            #     logger.debug("===========================")
+            #     printKeyPoint(keypoint)
+            #     logger.debug(descriptors[index])
+            #     logger.debug("===========================")
+            # matcher = Matcher(matcherForDetector(algo_settings['name']))
+            # dtype = dtypeForDetector(algo_settings['name'])
+            fea['keypoints'] = features['keypoints']
+            fea['descriptors'] = features['descriptors']
+            fea['keypoints_image'] = drawKeypoints(fea)
+            # image.data(drawSelfMatches(fea, SelfMatching(fea['descriptors'], matcher, dtype, 2), key='keypoints_image'))
+            # self_graph = SelfGraph(fea['keypoints'], 3, descriptors)
+            # logger.debug(self_graph)
+            # image.data(drawSelfGraph(fea, self_graph, key='keypoints_image'))
+            image.data(fea['keypoints_image'])
             image.height(curr.height())
             image.width(curr.width())
             self._imanager.add_image(image)
 
-    def add_orb_action(self, parent):
-        orb_action = QAction(parent)
-        orb_action.setText(_("ORB Features Detection"))
-        orb_action.setIcon(get_icon('orb.png'))
-        orb_action.setCheckable(True)
-        self.connect(orb_action, SIGNAL("triggered(bool)"), self.orb_opened)
-        return orb_action
-
-    orb_opened = pyqtSignal(bool, name='orbOpened')
-
-    def create_orb_widget(self):
-        orb_dock = QDockWidget()
-        orb_dock.setWindowTitle("ORB Feature Detector Settings")
-        orb_dock.setVisible(False)
-        self.orb_opened.connect(orb_dock.setVisible)
-        orb_widget = QWidget(orb_dock)
-        self._features_line_edit = QLineEdit(orb_widget)
-        self._features_line_edit.setValidator(QIntValidator())
-        self._features_line_edit.setText('500')
-        self._scale_line_edit = QLineEdit(orb_widget)
-        self._scale_line_edit.setValidator(QDoubleValidator())
-        self._scale_line_edit.setText('1.2')
-        self._levels_line_edit = QLineEdit(orb_widget)
-        self._levels_line_edit.setValidator(QIntValidator())
-        self._levels_line_edit.setText('8')
-        detect = QPushButton(orb_widget)
-        detect.setText('Detect')
-        self.connect(detect, SIGNAL("clicked()"), self.orb)
-        widget_layout = QFormLayout()
-        widget_layout.addRow('Number of Features', self._features_line_edit)
-        widget_layout.addRow('Scale Factor', self._scale_line_edit)
-        widget_layout.addRow('Number of Levels', self._levels_line_edit)
-        widget_layout.addWidget(detect)
-        orb_widget.setLayout(widget_layout)
-        orb_dock.setWidget(orb_widget)
-        return orb_dock
-
-    def orb(self):
-        curr = self._imanager.current_image()
-        if self._imanager and curr:
-            image = ImageProperties()
-            image.title(ACTION_TITLE % 'ORB' + curr.title())
-            detector = ORBDetector(features=int(self._features_line_edit.text()),
-                                   scale=float(self._scale_line_edit.text()),
-                                   levels=int(self._levels_line_edit.text()))
-            fea = dict()
-            fea['data'] = curr.data()
-            keypoints, descriptors = detector.detectAndCompute(curr.data())
-            fea['keypoints'] = keypoints
-            logger.debug(len(keypoints))
-            fea['descriptors'] = descriptors
-            image.data(drawKeypoints(fea))
-            image.height(curr.height())
-            image.width(curr.width())
-            self._imanager.add_image(image)
-
-    def add_surf_action(self, parent):
-        surf_action = QAction(parent)
-        surf_action.setText(_("SURF Features Detection"))
-        surf_action.setIcon(get_icon('surf.png'))
-        surf_action.setCheckable(True)
-        self.connect(surf_action, SIGNAL("triggered(bool)"), self.surf_opened)
-        return surf_action
-
-    surf_opened = pyqtSignal(bool, name='surfOpened')
-
-    def create_surf_widget(self):
-        surf_dock = QDockWidget()
-        surf_dock.setWindowTitle("SURF Feature Detector Settings")
-        surf_dock.setVisible(False)
-        self.surf_opened.connect(surf_dock.setVisible)
-        surf_widget = QWidget(surf_dock)
-        self._threshold_line_edit = QLineEdit(surf_widget)
-        self._threshold_line_edit.setValidator(QIntValidator())
-        self._threshold_line_edit.setText('500')
-        detect = QPushButton(surf_widget)
-        detect.setText('Detect')
-        self.connect(detect, SIGNAL("clicked()"), self.surf)
-        widget_layout = QFormLayout()
-        widget_layout.addRow('Threshold', self._threshold_line_edit)
-        widget_layout.addWidget(detect)
-        surf_widget.setLayout(widget_layout)
-        surf_dock.setWidget(surf_widget)
-        return surf_dock
-
-    def surf(self):
-        curr = self._imanager.current_image()
-        if self._imanager and curr:
-            image = ImageProperties()
-            image.title(ACTION_TITLE % 'SURF' + curr.title())
-            detector = SURFDetector(threshold=int(self._threshold_line_edit.text()))
-            fea = dict()
-            fea['data'] = curr.data()
-            keypoints, descriptors = detector.detectAndCompute(curr.data())
-            fea['keypoints'] = keypoints
-            logger.debug(len(keypoints))
-            fea['descriptors'] = descriptors
-            image.data(drawKeypoints(fea))
-            image.height(curr.height())
-            image.width(curr.width())
-            self._imanager.add_image(image)
 
     def add_gabor_filter_action(self, parent):
         gabor_action = QAction(parent)
