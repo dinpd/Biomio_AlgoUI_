@@ -2,17 +2,15 @@
     "type": "main",
 	"strategy": 
 	{
-		"type": "position",
+		"type": "center",
 		"settings": 
 		{
-			"kind": "max_center",
-			"pos": 0.5,
-			"template": 0
+			"kind": "vertical"
 		}
 	},
 	"action": 
 	[
 		"rotation_haarcascade_face.json",
-		"haarcascade_mcs_nose_center.json"
+		"haarcascade_mcs_mouth.json"
 	]
 }

@@ -13,6 +13,6 @@
 	"action": 
 	[
 		"rotation_haarcascade_face.json",
-		"haarcascade_mcs_mouth.json"
+		"haarcascade_mcs_mouth_vertical_center.json"
 	]
 }

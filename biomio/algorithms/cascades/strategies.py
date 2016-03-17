@@ -135,7 +135,7 @@ class ROIPositionStrategy(ROIManagementStrategy):
         if len(rects) == 0:
             return [res]
         if len(rects) == 1:
-            return [rects[0]]
+            return [[]]
         if numpy.isscalar(rects[0][0]):
             rects = [rects]
         for item in rects:
@@ -145,18 +145,24 @@ class ROIPositionStrategy(ROIManagementStrategy):
                     temp = r
                 else:
                     if inside(r, temp, 0.1):
-                        if self._settings.get("kind", "min") == "min":
+                        ans = False
+                        if self._settings.get("kind", "min") == "min_center":
+                            if r[1] + 0.5 * r[3] <= temp[1] + self._settings.get("pos", 1.0) * temp[3]:
+                                ans = True
+                        elif self._settings.get("kind", "min") == "max_center":
+                            if r[1] + 0.5 * r[3] >= temp[1] + self._settings.get("pos", 1.0) * temp[3]:
+                                ans = True
+                        elif self._settings.get("kind", "min") == "min":
                             if r[1] <= temp[1] + self._settings.get("pos", 1.0) * temp[3]:
-                                if self._settings.get("template", 1) == 1:
-                                    res.append([temp, r])
-                                else:
-                                    res.append(r)
+                                ans = True
                         else:
                             if r[1] >= temp[1] + self._settings.get("pos", 0.0) * temp[3]:
-                                if self._settings.get("template", 1) == 1:
-                                    res.append([temp, r])
-                                else:
-                                    res.append(r)
+                                ans = True
+                        if ans:
+                            if self._settings.get("template", 1) == 1:
+                                res.append([temp, r])
+                            else:
+                                res.append(r)
         return res
 
 
@@ -169,7 +175,10 @@ class ROICenterStrategy(ROIManagementStrategy):
         return "center"
 
     def apply(self, rects, template=[]):
-        res = self._center(rects)
+        if self._settings.get("kind", None) is None:
+            res = self._center(rects)
+        else:
+            res = self._align_center(rects)
         if len(res) == 0:
             return [[]]
         else:
@@ -177,10 +186,8 @@ class ROICenterStrategy(ROIManagementStrategy):
 
     def _center(self, rects):
         res = []
-        if len(rects) == 0:
+        if len(rects) == 0 or len(rects) == 1:
             return res
-        if len(rects) == 1:
-            return rects[0]
         temp = None
         center = (0, 0)
         rect_list = []
@@ -192,7 +199,50 @@ class ROICenterStrategy(ROIManagementStrategy):
                 if inside(r, temp, 0.1):
                     local_center = (r[0] + r[2] / 2.0, r[1] + r[3] / 2.0)
                     d = distance(center, local_center)
-                    if d < r[2] / 2.0:
+                    dist = 0.5
+                    if self._settings.get("distance", 0) > 0:
+                        dist = self._settings.get("distance")
+                    if d < dist * r[2]:
+                        rect_list.append(r)
+        return rect_list
+
+    def _align_center(self, rects):
+        res = []
+        if len(rects) == 0:
+            return res
+        if len(rects) == 1:
+            return rects[0]
+        temp = None
+        center = (0, 0)
+        rect_list = []
+        for r in rects:
+            if temp is None:
+                temp = r
+                if self._settings.get("kind").lower() == "horizontal":
+                    center = (0, temp[1] + temp[3] / 2.0)
+                elif self._settings.get("kind").lower() == "vertical":
+                    center = (temp[0] + temp[2] / 2.0, 0)
+            else:
+                if inside(r, temp, 0.1):
+                    local_center = (0, 0)
+                    dist = r[2]
+                    coeff = 0.5
+                    if self._settings.get("distance", 0) > 0:
+                        coeff = self._settings.get("distance")
+                    if self._settings.get("kind").lower() == "horizontal":
+                        local_center = (0, r[1] + 0.5 * r[3])
+                        dist = coeff * r[3]
+                    elif self._settings.get("kind").lower() == "vertical":
+                        local_center = (r[0] + 0.5 * r[2], 0)
+                        dist = coeff * r[2]
+
+                    d = distance(center, local_center)
+                    from biomio.algorithms.logger import logger
+                    logger.debug(center)
+                    logger.debug(local_center)
+                    logger.debug(d)
+                    logger.debug(dist)
+                    if d < dist:
                         rect_list.append(r)
         return rect_list
 
