@@ -91,7 +91,7 @@ def arrayToKeyPointClass(array, with_points=False):
     if not with_points:
         x = 0
         y = 0
-    return cv2.KeyPoint(x, y, array[2], array[3], array[4], array[5])
+    return cv2.KeyPoint(x, y, array[2], array[3], array[4], int(array[5]))
 
 
 def copyKeyPoint(keypoint):

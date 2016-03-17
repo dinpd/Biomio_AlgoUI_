@@ -80,3 +80,19 @@ def rotate90(image):
     M = cv2.getRotationMatrix2D((cols/2.0, cols/2.0), 90, 1)
     img = cv2.warpAffine(image, M, (rows, cols))
     return img
+
+
+INTER_NEAREST = cv2.INTER_NEAREST   # a nearest-neighbor interpolation.
+INTER_LINEAR = cv2.INTER_LINEAR     # a bilinear interpolation (used by default).
+INTER_AREA = cv2.INTER_AREA         # resampling using pixel area relation. It may be a preferred method
+                                    # for image decimation, as it gives moire-free results. But when the
+                                    # image is zoomed, it is similar to the INTER_NEAREST method.
+INTER_CUBIC = cv2.INTER_CUBIC       # a bicubic interpolation over 4x4 pixel neighborhood.
+INTER_LANCZOS4 = cv2.INTER_LANCZOS4 # a Lanczos interpolation over 8x8 pixel neighborhood.
+
+
+def resize(image, dsize=None, fx=None, fy=None, interpolation=INTER_CUBIC):
+    if dsize is None:
+        return cv2.resize(image, (0, 0), fx=fx, fy=fy, interpolation=interpolation)
+    else:
+        return cv2.resize(image, dsize=dsize, interpolation=interpolation)

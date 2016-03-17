@@ -254,3 +254,9 @@ def drawLine(image, line, color):
     img = image.copy()
     cv2.line(img, (line[0], line[1]), (line[2], line[3]), color, 1)
     return img
+
+
+def drawCircle(image, center, radius, color):
+    img = image.copy()
+    cv2.circle(img, center, radius, color)
+    return img
