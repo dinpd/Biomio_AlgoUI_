@@ -49,14 +49,14 @@ class DetectorSettingsDialog(QDialog):
         self.setLayout(dialog_layout)
 
     def result_type(self):
-        # return 'mahotasSURF'
+        return 'mahotasSURF'
         # return SURFDetectorType
-        return self._detector_type
+        # return self._detector_type
 
     def settings(self):
-        # return mahotasSURFDetectorSettings()
+        return mahotasSURFDetectorSettings()
         # return SURFDetectorSettings()
-        return self._settings
+        # return self._settings
 
     def brisk_tab(self):
         brisk_widget = QWidget(self)

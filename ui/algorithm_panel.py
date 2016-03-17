@@ -1,7 +1,7 @@
 from guidata.qt.QtCore import SIGNAL, pyqtSignal
 from guidata.qt.QtGui import (QStackedWidget, QWidget, QDockWidget,
                               QVBoxLayout, QHBoxLayout,
-                              QPushButton, QGroupBox, QComboBox, QLabel)
+                              QPushButton, QGroupBox, QComboBox, QLabel, QCheckBox)
 
 class AlgorithmPanel(QDockWidget):
     def __init__(self, parent=None):
@@ -24,8 +24,12 @@ class AlgorithmPanel(QDockWidget):
     def settings(self):
         return dict(
             name=str(self._combo_box.currentText()),
-            settings=self._stacked_widget.currentWidget().settings()
+            settings=self._stacked_widget.currentWidget().settings(),
+            serial_processing=self._serial_processing.isChecked()
         )
+
+    def setEnableSerialProcessing(self, enable):
+        self._serial_processing.setEnabled(enable)
 
     def _create_widget(self):
         widget = QWidget(self)
@@ -42,6 +46,9 @@ class AlgorithmPanel(QDockWidget):
         algorithms_layout = QHBoxLayout()
         algorithms_layout.addWidget(label)
         algorithms_layout.addWidget(self._combo_box)
+        self._serial_processing = QCheckBox(widget)
+        self._serial_processing.setText("Serial Processing")
+        self._serial_processing.setChecked(False)
         apply_button = QPushButton(widget)
         apply_button.setText('Apply')
         self.connect(apply_button, SIGNAL("clicked()"), self.applied)
@@ -51,6 +58,7 @@ class AlgorithmPanel(QDockWidget):
         main_layout = QVBoxLayout()
         main_layout.addLayout(algorithms_layout)
         main_layout.addWidget(group_box)
+        main_layout.addWidget(self._serial_processing)
         main_layout.addLayout(button_layout)
         widget.setLayout(main_layout)
         self.setWidget(widget)

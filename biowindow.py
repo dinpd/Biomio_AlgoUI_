@@ -2,12 +2,13 @@ from guidata.qt.QtGui import QMainWindow
 from guidata.qt.QtCore import (Qt)
 from guidata.configtools import get_icon
 from guidata.qthelpers import create_action, add_actions, get_std_icon
-from guidata.qt.compat import getsavefilename, getopenfilenames
+from guidata.qt.compat import getsavefilename, getopenfilenames, getexistingdirectory
 
 from guiqwt.config import _
 from guiqwt import io
 
 import sys
+import os
 
 from view import ImageManager
 from algorithmsmanager import AlgorithmsManager
@@ -52,6 +53,9 @@ class BioWindow(QMainWindow):
                                     icon=get_icon('open.png'),
                                     tip=_("Open an image"),
                                     triggered=self.open_image)
+        open_dir_action = create_action(self, _("Open folder..."),
+                                        tip=_("Open folder content"),
+                                        triggered=self.open_folder)
         save_action = create_action(self, _("Save"),
                                     shortcut="Ctrl+S",
                                     icon=get_icon('save.png'),
@@ -71,7 +75,8 @@ class BioWindow(QMainWindow):
                                     icon=get_std_icon("DialogCloseButton"),
                                     tip=_("Quit application"),
                                     triggered=self.close)
-        add_actions(file_menu, (open_action, save_action, close_action, close_all_action, None, quit_action))
+        add_actions(file_menu, (open_action, open_dir_action, save_action, close_action, close_all_action,
+                                None, quit_action))
 
         file_toolbar = self.addToolBar("FileToolBar")
         add_actions(file_toolbar, (open_action, save_action, close_action, close_all_action))
@@ -94,9 +99,25 @@ class BioWindow(QMainWindow):
         sys.stdout = None
         filenames, _filter = getopenfilenames(self, _("Open"), "")
         sys.stdin, sys.stdout, sys.stderr = saved_in, saved_out, saved_err
-        if len(filenames) > 0:
-            for filename in filenames:
-                self._imanager.add_image_from_file(filename)
+        for filename in filenames:
+            self._imanager.add_image_from_file(filename)
+
+    def open_folder(self):
+        dir_name = getexistingdirectory(self, _("Open folder"), "")
+        self.open_folder_content(dir_name)
+
+    def open_folder_content(self, dir_name):
+        only_files = []
+        only_dir = []
+        for f in os.listdir(dir_name):
+            if os.path.isfile(os.path.join(dir_name, f)):
+                only_files.append(f)
+            else:
+                only_dir.append(f)
+        for local_dir in only_dir:
+            self.open_folder_content(os.path.join(dir_name, local_dir))
+        for filename in only_files:
+            self._imanager.add_image_from_file(os.path.join(dir_name, filename))
 
     def save_image(self):
         saved_in, saved_out, saved_err = sys.stdin, sys.stdout, sys.stderr
