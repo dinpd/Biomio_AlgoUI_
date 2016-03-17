@@ -1,18 +1,12 @@
 import json
 import os
-
-from guidata.qt.QtCore import SIGNAL, pyqtSignal
-from guidata.qt.QtGui import (QAction, QMenu,
-                              QWidget, QDockWidget, QListWidget,
-                              QFileDialog,
+from guidata.qt.QtCore import SIGNAL, pyqtSignal, QObject, QCoreApplication
+from guidata.qt.QtGui import (QAction, QMenu, QWidget, QDockWidget, QListWidget, QFileDialog,
                               QVBoxLayout, QHBoxLayout, QFormLayout,
-                              QPushButton, QGroupBox, QDoubleSpinBox,
-                              QSpinBox, QLabel, QProgressBar, QLineEdit)
-from guidata.qt.QtCore import QObject, QCoreApplication
+                              QPushButton, QGroupBox, QDoubleSpinBox, QSpinBox, QLabel, QProgressBar, QLineEdit)
 from guidata.configtools import get_icon
 from guiqwt.config import _
-
-from logger import logger
+from biomio.algorithms.logger import logger
 from aiplugins import IAlgorithmPlugin
 from imageproperties import ImageProperties
 from biomio.algorithms.cvtools.visualization import drawRectangle
@@ -640,15 +634,15 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             with open(source_file, "r") as data_file:
                 source = json.load(data_file)
                 self._keysrecg_detector.importSources(source)
-            info_file = os.path.join(str(filedir), 'info.json')
-            with open(info_file, "r") as info_data_file:
-                info = json.load(info_data_file)
-                self._keysrecg_detector.importSettings(info)
+            # info_file = os.path.join(str(filedir), 'info.json')
+            # with open(info_file, "r") as info_data_file:
+            #     info = json.load(info_data_file)
+            #     self._keysrecg_detector.importSettings(info)
             self._neighBox.setValue(self._keysrecg_detector.kodsettings.neighbours_distance)
             self._probBox.setValue(self._keysrecg_detector.kodsettings.probability)
             self._keysrecg_detector.kodsettings.dump()
-            self._keysrecg_detector._cascadeROI.classifierSettings.dump()
-            self._keysrecg_detector._eyeROI.classifierSettings.dump()
+            # self._keysrecg_detector._cascadeROI.classifierSettings.dump()
+            # self._keysrecg_detector._eyeROI.classifierSettings.dump()
 
     def add_db(self):
         filelist = QFileDialog.getOpenFileNames(None, "Select database directory", ".")

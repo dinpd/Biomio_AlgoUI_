@@ -35,6 +35,7 @@ def range_positive_verification_estimation(results):
 
 def range_probability_verification_estimation(results):
     prob = dict()
+    false_count = 0
     count = 0
     for curr in results:
         if curr[1] is not False:
@@ -45,6 +46,10 @@ def range_probability_verification_estimation(results):
                     prob[str(5 * inx)] = value
                     count += 1
                     break
+        else:
+            false_count += 1
+    logger.debug("False\t= " + str(false_count) + "\t=\t"
+                 + str((false_count / (1.0 * count)) * 100) + "%\t")
     for inx in range(1, 20):
         graph = ""
         val = prob.get(str(5 * inx), 0)

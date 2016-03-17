@@ -1,15 +1,6 @@
-from guidata.qt.QtGui import (QWidget, QLineEdit, QCheckBox, QIntValidator, QDoubleValidator,
-                              QFormLayout)
+from guidata.qt.QtGui import (QLineEdit, QCheckBox, QIntValidator, QDoubleValidator, QFormLayout)
+from ui.settings_widget import SettingsWidget
 
-class SettingsWidget(QWidget):
-    def __init__(self, parent=None):
-        super(SettingsWidget, self).__init__(parent)
-
-    def settings(self):
-        return dict()
-
-    def load_settings(self, settings):
-        raise NotImplementedError
 
 class BRISKWidget(SettingsWidget):
     def __init__(self, parent=None):

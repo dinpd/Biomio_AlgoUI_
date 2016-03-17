@@ -1,27 +1,21 @@
-from guidata.qt.QtCore import SIGNAL, pyqtSignal
-from guidata.qt.QtGui import (QAction, QMenu, QWidget, QDockWidget, QFileDialog,
-                              QFormLayout, QVBoxLayout, QHBoxLayout,
+from guidata.qt.QtGui import (QAction, QWidget, QDockWidget, QFileDialog, QFormLayout, QVBoxLayout, QHBoxLayout,
                               QLineEdit, QPushButton, QGroupBox, QDial, QCheckBox, QSpinBox)
-from guidata.qt.QtCore import QObject
+from guidata.qt.QtCore import SIGNAL, pyqtSignal, QObject
 from guidata.configtools import get_icon
 from guiqwt.config import _
-
-from aiplugins import IAlgorithmPlugin
-from imageproperties import ImageProperties
-from biomio.algorithms.cvtools.visualization import drawKeypoints, printKeyPoint, drawSelfMatches, drawSelfGraph
-from biomio.algorithms.features import constructDetector, constructSettings, \
-    BRISKDetectorType, ORBDetectorType, SURFDetectorType, MahotasSURFDetectorType, \
-    matcherForDetector, dtypeForDetector
-from biomio.algorithms.features.features import FeatureDetector
-from biomio.algorithms.features.matchers import SelfMatching, SelfGraph
+from plugins.FeatureDetectors.features_settings_widgets import BRISKWidget, ORBWidget, SURFWidget, MahotasSURFWidget
+from biomio.algorithms.features import constructDetector, constructSettings, BRISKDetectorType, ORBDetectorType, \
+    SURFDetectorType, MahotasSURFDetectorType
 from biomio.algorithms.features.gabor_threads import build_filters, process_kernel, process
-from biomio.algorithms.cascades.tools import getROIImage, loadScript
 from biomio.algorithms.cascades.scripts_detectors import RotatedCascadesDetector
-from plugins.FeatureDetectors.settings_widgets import BRISKWidget, ORBWidget, SURFWidget, MahotasSURFWidget
-from plugins.FeatureDetectors.algorithm_panel import AlgorithmPanel
-from biomio.algorithms.cvtools.types import copyKeyPoint
+from biomio.algorithms.cascades.tools import getROIImage, loadScript
+from biomio.algorithms.cvtools.visualization import drawKeypoints
+from biomio.algorithms.features.features import FeatureDetector
+from ui.algorithm_panel import AlgorithmPanel
+from imageproperties import ImageProperties
 import biomio.algorithms.cvtools.dsp as dsp
-from logger import logger
+from biomio.algorithms.logger import logger
+from aiplugins import IAlgorithmPlugin
 
 ACTION_TITLE = 'Action: %s Features Detector::'
 GF_ACTION_TITLE = 'Action: Gabor Filtering::'
@@ -70,10 +64,11 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         self.connect(feature_action, SIGNAL("triggered(bool)"), self.settings_opened)
         return feature_action
 
-    settings_opened = pyqtSignal(bool, name='briskOpened')
+    settings_opened = pyqtSignal(bool, name='settingsOpened')
 
     def create_feature_detect_widget(self):
         self._settings_dock = AlgorithmPanel()
+        self._settings_dock.setEnableSerialProcessing(False)
         self._settings_dock.setWindowTitle("Feature Detector Settings")
         self._settings_dock.setVisible(False)
         self.settings_opened.connect(self._settings_dock.setVisible)
@@ -338,12 +333,12 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         return roi_dock
 
     def load_rotation_script(self):
-        filename = QFileDialog.getOpenFileName(None, "Select script", ".")
+        filename = QFileDialog.getOpenFileName(None, "Select rotation script", ".")
         if not filename.isEmpty():
             self._rotation_edit.setText(filename)
 
     def load_script(self):
-        filename = QFileDialog.getOpenFileName(None, "Select script", ".")
+        filename = QFileDialog.getOpenFileName(None, "Select detection script", ".")
         if not filename.isEmpty():
             self._script_edit.setText(filename)
 
