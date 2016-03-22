@@ -9,7 +9,7 @@ def get_cluster(id, center, items):
         'id': id,
     }
 
-def KMeans(items, cluster_count, init_centers=[], max_distance=0):
+def KMeans(items, cluster_count, init_centers=[], radius=0, max_distance=0):
     cents = []
     if not len(init_centers) > 0:
         currs = random.sample(items, cluster_count)
@@ -24,12 +24,16 @@ def KMeans(items, cluster_count, init_centers=[], max_distance=0):
             cluster['items'] = []
         for item in items:
             cl = min(clusters, key=lambda x: distance(item.pt, x['center']))
-            cl['items'].append(item)
+            if radius > 0:
+                if distance(item.pt, cl['center']) < radius:
+                    cl['items'].append(item)
+            else:
+                cl['items'].append(item)
         currs = []
         for cluster in clusters:
-            if len(cluster['items']) > 0:
+            if (max_distance > 0) and (len(cluster['items']) > 0):
                 c = mass_center(cluster['items'])
-                if (max_distance > 0) and (distance(c, cluster['center']) < max_distance):
+                if distance(c, cluster['center']) < max_distance:
                     currs.append(c)
                     cluster['center'] = c
                     continue
