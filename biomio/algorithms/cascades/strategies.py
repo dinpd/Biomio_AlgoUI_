@@ -237,11 +237,6 @@ class ROICenterStrategy(ROIManagementStrategy):
                         dist = coeff * r[2]
 
                     d = distance(center, local_center)
-                    from biomio.algorithms.logger import logger
-                    logger.debug(center)
-                    logger.debug(local_center)
-                    logger.debug(d)
-                    logger.debug(dist)
                     if d < dist:
                         rect_list.append(r)
         return rect_list
