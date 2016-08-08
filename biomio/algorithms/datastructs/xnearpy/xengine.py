@@ -3,6 +3,7 @@ from nearpy.distances import ManhattanDistance
 from xmemorystorage import xMemoryStorage
 from emptyfilter import EmptyFilter
 
+
 class xEngine(Engine):
     def __init__(self, dim, lshashes=None,
                  distance=None,

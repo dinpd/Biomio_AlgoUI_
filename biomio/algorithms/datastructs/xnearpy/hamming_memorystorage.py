@@ -1,6 +1,7 @@
 from xmemorystorage import xMemoryStorage
 from tools import hamming_distance
 
+
 class HammingMemoryStorage(xMemoryStorage):
     def __init__(self, max_distance=None):
         xMemoryStorage.__init__(self)

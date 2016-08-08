@@ -1,6 +1,7 @@
 from itertools import imap
 import operator
 
+
 def _hamdist1(str1, str2):
     """Count the # of differences between equal length strings str1 and str2"""
     diffs = 0

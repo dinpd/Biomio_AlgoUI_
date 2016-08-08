@@ -20,6 +20,7 @@ _TYPES_DICT = {
     PCADiscretizedProjections("rbc", 10, None, 2).__class__: PCA_DISCRETIZED_PROJECTIONS
 }
 
+
 def get_projection_by_type(proj_type):
     return _PROJ_DICT.get(proj_type, None)
 
