@@ -2,6 +2,8 @@ from guidata.qt.QtCore import SIGNAL, pyqtSignal
 from guidata.qt.QtGui import (QStackedWidget, QWidget, QDockWidget,
                               QVBoxLayout, QHBoxLayout,
                               QPushButton, QGroupBox, QComboBox, QLabel, QCheckBox)
+from settings_widget import SettingsWidget
+
 
 class AlgorithmPanel(QDockWidget):
     def __init__(self, parent=None):
@@ -13,7 +15,7 @@ class AlgorithmPanel(QDockWidget):
     def addAlgorithm(self, name, settings_widget=None):
         s_widget = settings_widget
         if settings_widget is None:
-            s_widget = QWidget()
+            s_widget = SettingsWidget()
         s_widget.setParent(self._stacked_widget)
         self._combo_box.addItem(name)
         self._stacked_widget.addWidget(s_widget)

@@ -48,6 +48,7 @@ class BioWindow(QMainWindow):
 
     def init_actions(self):
         file_menu = self.menuBar().addMenu(_("File"))
+        dir_menu = self.menuBar().addMenu(_("Directory"))
         open_action = create_action(self, _("Open..."),
                                     shortcut="Ctrl+O",
                                     icon=get_icon('open.png'),
@@ -61,6 +62,16 @@ class BioWindow(QMainWindow):
                                     icon=get_icon('save.png'),
                                     tip=_("Save an image"),
                                     triggered=self.save_image)
+        save_by_tags_action = create_action(self, _("Save All Images by Tags"),
+                                            shortcut="Ctrl+S+T",
+                                            icon=get_icon('save.png'),
+                                            tip=_("Save an all images by tags"),
+                                            triggered=self.save_images_by_tags)
+        copy_by_tags_action = create_action(self, _("Copy All Images by Tags"),
+                                            shortcut="Ctrl+C+T",
+                                            icon=get_icon('copy.png'),
+                                            tip=_("Copy an all images by tags"),
+                                            triggered=self.copy_images_by_tags)
         close_action = create_action(self, _("Close"),
                                      shortcut="Del",
                                      icon=get_icon('close.png'),
@@ -75,11 +86,13 @@ class BioWindow(QMainWindow):
                                     icon=get_std_icon("DialogCloseButton"),
                                     tip=_("Quit application"),
                                     triggered=self.close)
-        add_actions(file_menu, (open_action, open_dir_action, save_action, close_action, close_all_action,
+        add_actions(file_menu, (open_action, save_action, close_action, close_all_action,
                                 None, quit_action))
+        add_actions(dir_menu, (open_dir_action, save_by_tags_action, copy_by_tags_action))
 
         file_toolbar = self.addToolBar("FileToolBar")
-        add_actions(file_toolbar, (open_action, save_action, close_action, close_all_action))
+        add_actions(file_toolbar, (open_action, save_action, save_by_tags_action,
+                                   close_action, close_all_action))
 
         log_menu = self.menuBar().addMenu(_("Log"))
         clear_action = create_action(self, _("Clear"),
@@ -127,6 +140,20 @@ class BioWindow(QMainWindow):
         sys.stdin, sys.stdout, sys.stderr = saved_in, saved_out, saved_err
         if filename:
             self._imanager.save_image(filename, self._imanager.current_image_index())
+
+    def save_images_by_tags(self):
+        saved_in, saved_out, saved_err = sys.stdin, sys.stdout, sys.stderr
+        dir_name = getexistingdirectory(self, _("Save into Directory..."), "")
+        sys.stdin, sys.stdout, sys.stderr = saved_in, saved_out, saved_err
+        if dir_name:
+            self._imanager.save_images_by_tags(dir_name)
+
+    def copy_images_by_tags(self):
+        saved_in, saved_out, saved_err = sys.stdin, sys.stdout, sys.stderr
+        dir_name = getexistingdirectory(self, _("Copy into Directory..."), "")
+        sys.stdin, sys.stdout, sys.stderr = saved_in, saved_out, saved_err
+        if dir_name:
+            self._imanager.copy_images_by_tags(dir_name)
 
     def close_image(self):
         self._imanager.delete_image(self._imanager.current_image_index())

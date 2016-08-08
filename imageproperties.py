@@ -36,6 +36,7 @@ class ImageProperties:
             self._width = 0
             self._height, self._width = self._data.shape[0], self._data.shape[1]
             self._lut_range = None
+            self._tags = ""
         else:
             self._title = "untitled"
             self._path = ""
@@ -43,6 +44,7 @@ class ImageProperties:
             self._height = 0
             self._width = 0
             self._lut_range = None
+            self._tags = ""
 
     def title(self, str_title=None):
         if str_title is not None:
@@ -68,6 +70,11 @@ class ImageProperties:
         if w is not None:
             self._width = w
         return self._width
+
+    def tags(self, t=None):
+        if t is not None:
+            self._tags = t
+        return self._tags
 
     def lut_range(self, lrange=None):
         if lrange is not None:

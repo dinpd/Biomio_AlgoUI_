@@ -194,7 +194,7 @@ class FaceRecognitionPlugin(QObject, IAlgorithmPlugin):
             inx = 0
             for face in faces:
                 print face
-                img = drawRectangle(img, face, (0, 0, 0))
+                img = drawRectangle(img, face, (0, 0, 255))
                 inx += 1
 
             logger.info("Detection finished.")

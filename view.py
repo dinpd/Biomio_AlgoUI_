@@ -1,18 +1,17 @@
-from guidata.qt.QtCore import QObject
-from guidata.qt.QtGui import QDockWidget, QListWidget
-from guidata.qt.QtCore import (Qt, SIGNAL)
-
-from guiqwt.plot import ImageWidget
-# from guidata.utils import update_dataset
-# from guidata.dataset.qtwidgets import DataSetEditGroupBox
+from guidata.qt.QtGui import QDockWidget, QListWidget, QWidget, QLineEdit, QVBoxLayout
+from biomio.algorithms.cvtools.system import saveNumpyImage
+from guidata.qt.QtCore import QObject, Qt, SIGNAL
+from imageproperties import ImageProperties
 from guiqwt.signals import SIG_LUT_CHANGED
+from viewers import AbstractImageViewer
+from imageviewer import ImageViewer
+from guiqwt.plot import ImageWidget
 from guiqwt.builder import make
 from guiqwt.config import _
-
-from imageproperties import ImageProperties
-from imageviewer import ImageViewer
-from viewers import AbstractImageViewer
-from biomio.algorithms.cvtools.system import saveNumpyImage
+import shutil
+import os
+# from guidata.utils import update_dataset
+# from guidata.dataset.qtwidgets import DataSetEditGroupBox
 
 
 class ImageManager(QObject):
@@ -20,6 +19,7 @@ class ImageManager(QObject):
         QObject.__init__(self, parent)
         self._imagelist = None
         self._imagedocks = None
+        self._taglist = None
         self.imagewidget()
 
         self._images = []  # List of ImageParam instances
@@ -65,6 +65,32 @@ class ImageManager(QObject):
         if image is not None:
             saveNumpyImage(filename, image.data())
 
+    def save_images_by_tags(self, dir_name):
+        if not os.path.exists(dir_name):
+            os.mkdir(dir_name)
+        for image in self._images:
+            tag = image.tags()
+            file_path = os.path.join(dir_name, os.path.basename(image.path()) + ".jpg")
+            if tag is not None and len(tag) > 0:
+                tag_path = os.path.join(dir_name, tag)
+                if not os.path.exists(tag_path):
+                    os.mkdir(tag_path)
+                file_path = os.path.join(tag_path, os.path.basename(image.path()) + ".jpg")
+            saveNumpyImage(file_path, image.data())
+
+    def copy_images_by_tags(self, dir_name):
+        if not os.path.exists(dir_name):
+            os.mkdir(dir_name)
+        for image in self._images:
+            tag = image.tags()
+            file_path = os.path.join(dir_name, os.path.basename(image.path()) + ".jpg")
+            if tag is not None and len(tag) > 0:
+                tag_path = os.path.join(dir_name, tag)
+                if not os.path.exists(tag_path):
+                    os.mkdir(tag_path)
+                file_path = os.path.join(tag_path, os.path.basename(image.path()) + ".jpg")
+            shutil.copyfile(image.path(), file_path)
+
     def get_view(self):
         return self._view
 
@@ -89,16 +115,23 @@ class ImageManager(QObject):
 
     def imagewidget(self):
         self._imagedocks = QDockWidget(_("Image Manager"))
-        self._imagelist = QListWidget(self._imagedocks)
-        self._imagedocks.setWidget(self._imagelist)
+        imagewidget = QWidget(self._imagedocks)
+        self._imagelist = QListWidget(imagewidget)
+        self._taglist = QLineEdit(imagewidget)
+        elLayout = QVBoxLayout()
+        elLayout.addWidget(self._imagelist)
+        elLayout.addWidget(self._taglist)
+        imagewidget.setLayout(elLayout)
+        self._imagedocks.setWidget(imagewidget)
         self.connect(self._imagelist, SIGNAL("currentRowChanged(int)"),
                      self.current_item_changed)
+        self.connect(self._taglist, SIGNAL("editingFinished()"), self.current_tags_modified)
         # self.connect(self._imagelist, SIGNAL("itemSelectionChanged()"),
         #              self.selection_changed)
 
     def refresh_list(self):
         self._imagelist.clear()
-        self._imagelist.addItems([image.title() for image in self._images])
+        self._imagelist.addItems(["[{}] {}".format(image.tags(), image.title()) for image in self._images])
 
     # def selection_changed(self):
     #     print "selection_changed"
@@ -110,10 +143,19 @@ class ImageManager(QObject):
         if len(self._images) > row >= 0:
             image = self._images[row]
             self._view.setImage(image)
+            self._taglist.setText(image.tags())
             # update_dataset(self._properties.dataset, image.toImageParam())
             #  self._properties.get()
         else:
             self._view.setImage(None)
+            self._taglist.setText("")
+
+    def current_tags_modified(self):
+        if (self._imagelist.currentRow() >= 0) and (self._imagelist.currentRow() < len(self._images)):
+            img = self._images[self._imagelist.currentRow()]
+            if img is not None:
+                img.tags(str(self._taglist.text()))
+                self._imagelist.currentItem().setText("[{}] {}".format(img.tags(), img.title()))
 
 
 class GuiQwtImageViewer(ImageWidget, AbstractImageViewer):

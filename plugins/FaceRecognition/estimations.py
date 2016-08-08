@@ -39,7 +39,7 @@ def range_probability_verification_estimation(results):
     count = 0
     for curr in results:
         if curr[1] is not False:
-            for inx in range(1, 20):
+            for inx in range(1, 21):
                 if curr[1] < 5.0 * inx:
                     value = prob.get(str(5 * inx), 0)
                     value += 1
@@ -48,9 +48,10 @@ def range_probability_verification_estimation(results):
                     break
         else:
             false_count += 1
+            count += 1
     logger.debug("False\t= " + str(false_count) + "\t=\t"
                  + str((false_count / (1.0 * count)) * 100) + "%\t")
-    for inx in range(1, 20):
+    for inx in range(1, 21):
         graph = ""
         val = prob.get(str(5 * inx), 0)
         rel = int((val / (1.0 * count)) * 20)

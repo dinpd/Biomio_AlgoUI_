@@ -1,7 +1,10 @@
+import biomio.algorithms.algorithms.images.self_quotient_image as sqi
+import biomio.algorithms.algorithms.images.colour_tools as hsv
+import biomio.algorithms.cvtools.effects as effects
+from biomio.algorithms.algorithms.images.hist_transform import color_normalization
 from guidata.qt.QtCore import SIGNAL, QObject, QCoreApplication, pyqtSignal
 from guidata.qt.QtGui import QAction, QFileDialog, QMenu
 from guidata.configtools import get_icon
-from guiqwt.config import _
 from biomio.algorithms.experimental.experimental import imageDifference
 from biomio.algorithms.cvtools import equalizeHist, grayscale, resize
 from biomio.algorithms.cascades.detectors import OptimalROIDetector
@@ -11,6 +14,8 @@ from ui.algorithm_panel import AlgorithmPanel
 from imageproperties import ImageProperties
 from biomio.algorithms.logger import logger
 from aiplugins import IAlgorithmPlugin
+from guiqwt.config import _
+
 
 EQ_ACTION_TITLE = 'Action: EqualizeHist::'
 GR_ACTION_TITLE = 'Action: Grayscale::'
@@ -18,6 +23,8 @@ DF_ACTION_TITLE = 'Action: Difference::'
 OR_ACTION_TITLE = 'Action: Optimal ROI::'
 
 IMAGE_TRANSFORM_RESIZE = 'ImageTransform.Resize'
+IMAGE_TRANSFORM_NORMALIZE = 'ImageTransform.ColorNormalization'
+IMAGE_TRANSFORM_SQI = 'ImageTransform.SelfQuotientImage'
 
 
 class ImageTransformPlugin(QObject, IAlgorithmPlugin):
@@ -166,6 +173,8 @@ class ImageTransformPlugin(QObject, IAlgorithmPlugin):
         self.settings_opened.connect(self._settings_dock.setVisible)
         self.connect(self._settings_dock, SIGNAL("applied()"), self.image_transform)
         self._settings_dock.addAlgorithm(IMAGE_TRANSFORM_RESIZE, ResizeWidget())
+        self._settings_dock.addAlgorithm(IMAGE_TRANSFORM_NORMALIZE, None)
+        self._settings_dock.addAlgorithm(IMAGE_TRANSFORM_SQI, None)
         return self._settings_dock
 
     def image_transform(self):
@@ -192,6 +201,18 @@ def _resize(image, settings):
     return resize(image, dsize=settings.get('dsize', None), fx=settings.get('fx', None), fy=settings.get('fy', None))
 
 
+def _normalize(image, settings):
+    logger.debug(settings)
+    return color_normalization(image)
+
+
+def _self_quotient_image(image, settings):
+    logger.debug(settings)
+    return effects.grayscale(sqi.self_quotient_image(hsv.hsv_values_extraction(image)))
+
+
 _TRANSFORMATION_LIST = {
-    IMAGE_TRANSFORM_RESIZE: _resize
+    IMAGE_TRANSFORM_RESIZE: _resize,
+    IMAGE_TRANSFORM_NORMALIZE: _normalize,
+    IMAGE_TRANSFORM_SQI: _self_quotient_image
 }
