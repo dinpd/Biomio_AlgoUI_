@@ -54,6 +54,8 @@ def loadScript(file_name, relative=False):
     if os.path.exists(abs_file):
         with open(abs_file, "r") as data_file:
             source = json.load(data_file)
+            if source.get('name', None) is None:
+                source['name'] = os.path.basename(abs_file)
             if source["type"] == "main":
                 stages = source["action"]
                 loaded_stages = []

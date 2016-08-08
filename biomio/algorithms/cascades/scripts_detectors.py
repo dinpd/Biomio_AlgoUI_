@@ -6,6 +6,7 @@ from strategies import StrategyFactory
 
 class DetectorStage:
     def __init__(self):
+        self.name = "default"
         self.type = "main"
         self.stages = []
         self.classifiers = []
@@ -20,11 +21,14 @@ class CascadesDetectionInterface:
         self._template = None
         if len(template_script.keys()) > 0:
             self._template = self.init_stage(template_script)
+        self._backup = {}
+        self._result_backup = True
 
     @staticmethod
     def init_stage(detect_script):
         stage = DetectorStage()
         stage.type = detect_script["type"]
+        stage.name = detect_script["name"]
         stage.strategy = StrategyFactory.get(detect_script["strategy"])
         if detect_script["type"] == "main":
             stages = detect_script["action"]
@@ -46,6 +50,7 @@ class CascadesDetectionInterface:
         return stage
 
     def detect(self, image):
+        self._backup = {}
         temp = []
         if self._template:
             temp = self.apply_stage(image, self._template)
@@ -54,6 +59,8 @@ class CascadesDetectionInterface:
         return image, []
 
     def apply_stage(self, image, stage, template=[]):
+        if self._backup.get(stage.name, None) is not None:
+            return self._backup[stage.name]
         rects = []
         if stage.type == "main":
             for s in stage.stages:
@@ -63,7 +70,10 @@ class CascadesDetectionInterface:
                 classifier.classifierSettings.dump()
                 rects += classifier.detect(image, True)
         new_rects = skipEmptyRectangles(rects)
-        return stage.strategy.apply(new_rects, template)
+        result = stage.strategy.apply(new_rects, template)
+        if self._result_backup:
+            self._backup[stage.name] = result
+        return result
 
 
 class RotatedCascadesDetector(CascadesDetectionInterface):
@@ -74,8 +84,11 @@ class RotatedCascadesDetector(CascadesDetectionInterface):
             self._rotation = self.init_stage(rotate_script)
 
     def detect(self, image):
+        self._backup = {}
         img = self._apply_rotate(image)
-        return CascadesDetectionInterface.detect(self, img)
+        self._backup = {}
+        res = CascadesDetectionInterface.detect(self, img)
+        return res
 
     def _apply_rotate(self, image):
         if self._rotation:
@@ -97,18 +110,22 @@ class RotatedCascadesDetector(CascadesDetectionInterface):
                 r3 = []
                 r4 = []
                 for stage in self._rotation.stages:
+                    self._backup = {}
                     lr1 = self.apply_stage(img, stage)
                     r1 += lr1
                     for lr in lr1:
                         d[str(lr)] = 1
+                    self._backup = {}
                     lr2 = self.apply_stage(img2, stage)
                     r2 += lr2
                     for lr in lr2:
                         d[str(lr)] = 2
+                    self._backup = {}
                     lr3 = self.apply_stage(img3, stage)
                     r3 += lr3
                     for lr in lr3:
                         d[str(lr)] = 3
+                    self._backup = {}
                     lr4 = self.apply_stage(img4, stage)
                     r4 += lr4
                     for lr in lr4:
@@ -123,18 +140,22 @@ class RotatedCascadesDetector(CascadesDetectionInterface):
                     rects.append(skipEmptyRectangles(r4))
             else:
                 stage = self._rotation.stages[0]
+                self._backup = {}
                 r1 = self.apply_stage(img, stage)
                 rects += r1
                 for lr in r1:
                     d[str(lr)] = 1
+                self._backup = {}
                 r2 = self.apply_stage(img2, stage)
                 rects += r2
                 for lr in r2:
                     d[str(lr)] = 2
+                self._backup = {}
                 r3 = self.apply_stage(img3, stage)
                 rects += r3
                 for lr in r3:
                     d[str(lr)] = 3
+                self._backup = {}
                 r4 = self.apply_stage(img4, stage)
                 rects += r4
                 for lr in r4:

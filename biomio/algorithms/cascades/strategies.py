@@ -134,8 +134,6 @@ class ROIPositionStrategy(ROIManagementStrategy):
         res = []
         if len(rects) == 0:
             return [res]
-        if len(rects) == 1:
-            return [[]]
         if numpy.isscalar(rects[0][0]):
             rects = [rects]
         for item in rects:
