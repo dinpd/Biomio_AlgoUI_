@@ -9,8 +9,8 @@ class xMemoryStorage(MemoryStorage):
         bucket_hash = self.buckets.get(hash_name, {})
         new_bucket_hash = {}
         for key in bucket_keys:
-            item = bucket_hash.get(key, None)
-            if item is not None:
+            items = bucket_hash.get(key, None)
+            if items is not None:
                 new_items = []
                 for item in items:
                     if item[1] != data:

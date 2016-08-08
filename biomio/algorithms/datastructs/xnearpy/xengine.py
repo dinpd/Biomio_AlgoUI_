@@ -11,8 +11,12 @@ class xEngine(Engine):
                  storage=None):
         if distance is None:
             distance = ManhattanDistance()
-        Engine.__init__(self, dim, lshashes, distance, [EmptyFilter()],
-                        vector_filters, xMemoryStorage())
+        if fetch_vector_filters is None:
+            fetch_vector_filters = [EmptyFilter()]
+        if storage is None:
+            storage = xMemoryStorage()
+        Engine.__init__(self, dim, lshashes, distance, fetch_vector_filters,
+                        vector_filters, storage)
 
     def store_vector(self, v, data=None):
         """
