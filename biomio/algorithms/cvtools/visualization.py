@@ -11,6 +11,7 @@ from biomio.algorithms.logger import logger
 import scipy as sp
 import random
 import numpy
+import math
 import cv2
 
 
@@ -29,7 +30,7 @@ def showIplImage(image, title=""):
 def showNumpyImage(image):
     """
     OpenCV Tools/Visualization Module
-        Shows numpy.ndarray image object using matplotlib.pyplot.imshow(...) function.
+        Shows numpy.ndarray image object using cv2.imshow(...) function.
 
     :param image: numpy.ndarray image object
     """
@@ -71,6 +72,17 @@ def drawKeypoints(imgobj, key='data'):
     return cv2.drawKeypoints(imgobj[key], imgobj['keypoints'])
 
 
+def drawKeypointsColor(image, keypoints, color):
+    """
+    OpenCV Tools/Visualization Module
+        Draws list of keypoints on the image using OpenCV cv2.drawKeypoints(...) function.
+
+    :param imgobj: image object. For details see algorithms.imgobj
+    :return: numpy.ndarray image with painted image keypoints
+    """
+    return cv2.drawKeypoints(image, keypoints, color=color)
+
+
 def showClusters(clusters, image):
     """
     OpenCV Tools/Visualization Module
@@ -106,9 +118,9 @@ def drawClusters(clusters, image):
     out = image.copy()
     for cluster in clusters:
         out = cv2.drawKeypoints(out, cluster['items'], None,
-                                cv2.cv.Scalar(random.randint(0, 255),
-                                              random.randint(0, 255),
-                                              random.randint(0, 255)))
+                                cv2.cv.Scalar(random.randint(0, 254),
+                                              random.randint(0, 254),
+                                              random.randint(0, 254)))
     return out
 
 
@@ -237,7 +249,7 @@ def drawRectangle(image, rect, color):
     img = image.copy()
     cv2.rectangle(img, (rect[0], rect[1]),
                   (rect[0] + rect[2], rect[1] + rect[3]),
-                  color, 1)
+                  color, 3)
     return img
 
 
@@ -256,7 +268,17 @@ def drawLine(image, line, color):
     return img
 
 
-def drawCircle(image, center, radius, color):
+def drawCircle(image, center, radius, color, thickness=True):
     img = image.copy()
-    cv2.circle(img, center, radius, color)
+    cv2.circle(img, center, radius, color, thickness)
+    return img
+
+
+def drawHexagon(image, center, radius, start=0, color=None, thickness=None):
+    pts = []
+    for inx in range(0, 6, 1):
+        angle = ((60.0 * inx + start) * math.pi) / 180.0
+        pts.append([int(center[0] + radius * math.cos(angle)), int(center[1] + radius * math.sin(angle))])
+    img = image.copy()
+    cv2.polylines(img, numpy.int32([pts]), True, color=color, thickness=thickness)
     return img

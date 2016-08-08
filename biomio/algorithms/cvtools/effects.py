@@ -77,7 +77,7 @@ def rotate90(image):
     """
     rows = image.shape[0]
     cols = image.shape[1]
-    M = cv2.getRotationMatrix2D((cols/2.0, cols/2.0), 90, 1)
+    M = cv2.getRotationMatrix2D((cols/2.0 - 0.5, cols/2.0 - 0.5), 90, 1)
     img = cv2.warpAffine(image, M, (rows, cols))
     return img
 

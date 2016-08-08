@@ -42,7 +42,7 @@ def saveNumpyImage(filename, image):
     :param image: numpy.ndarray image object
     :return: status of save image (bool)
     """
-    return cv2.imwrite(filename, image)
+    return cv2.imwrite(filename, image, [cv2.IMWRITE_JPEG_QUALITY, 100])
 
 
 def saveKeypoints(filename, imgobj):
