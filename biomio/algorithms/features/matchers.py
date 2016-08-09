@@ -1,6 +1,5 @@
 from biomio.algorithms.cvtools.types import listToNumpy_ndarray
 from biomio.algorithms.clustering.tools import distance
-from biomio.algorithms.logger import logger
 import itertools
 import defines
 import numpy
@@ -96,7 +95,7 @@ CROSS_MATCHING_MATCHES = 'cm_matches'
 CROSS_MATCHING_DESCRIPTORS = 'cm_descriptors'
 
 def CrossMatching(descriptors1, descriptors2, matcher, knn, result_type=CROSS_MATCHING_MATCHES):
-    if len(descriptors1) < knn or len(descriptors2) < knn:
+    if len(descriptors1) <= (knn + 1) or len(descriptors2) <= (knn + 1):
         return []
     matches1 = matcher.knnMatch(descriptors1, descriptors2, k=knn)
     matches2 = matcher.knnMatch(descriptors2, descriptors1, k=knn)
@@ -159,6 +158,33 @@ def SelfGraph(keypoints, knn, descriptors=None):
     return edges
 
 
+def SelfGraph2(points, knn, descriptors=None):
+    edges = []
+    for ik, point1 in enumerate(points):
+        pairs = []
+        for idx in range(0, knn, 1):
+            pairs.append((None, None, sys.maxint))
+        for jk, point2 in enumerate(points):
+            if point1 != point2:
+                dist = distance(point1, point2)
+                for idx in range(0, knn, 1):
+                    if pairs[idx][2] > dist:
+                        for i in range(knn - 1, idx, -1):
+                            pairs[i] = (pairs[i - 1][0], pairs[i - 1][1], pairs[i - 1][2])
+                        if descriptors is None:
+                            pairs[idx] = (point2, None, dist)
+                        else:
+                            pairs[idx] = (point2, descriptors[jk], dist)
+                        break
+        for idx in range(0, knn, 1):
+            if pairs[idx][0] is not None:
+                desc = None
+                if descriptors is not None:
+                    desc = descriptors[ik]
+                edges.append([point1, desc, pairs[idx][0], pairs[idx][1], pairs[idx][2]])
+    return edges
+
+
 def SubsetsCalculation(matches):
     sorted_matches = sorted(matches, key=lambda match: match.distance)
     exclude_f = []
@@ -170,3 +196,51 @@ def SubsetsCalculation(matches):
             exclude_f.append(match.queryIdx)
             exclude_s.append(match.trainIdx)
     return subset
+
+
+def SelfGraphRelativeDistance(first_sgraph, second_sgraph, match_pairs):
+    et_normal = 0
+    dt_normal = 0
+    end = False
+    for corr in match_pairs:
+        for et_pair in first_sgraph:
+            if corr['template'][1] == et_pair[0]:
+                for dt_pair in second_sgraph:
+                    if corr['test'][1] == dt_pair[0]:
+                        for c in match_pairs:
+                            if c['template'][1] == et_pair[2] and c['test'][1] == dt_pair[2]:
+                                et_normal = et_pair[4]
+                                dt_normal = dt_pair[4]
+                                end = True
+                                break
+                    if end:
+                        break
+            if end:
+                break
+        if end:
+            break
+    if et_normal != 0 and dt_normal != 0:
+        for et_pair in first_sgraph:
+            et_pair[4] /= 1.0 * et_normal
+        for dt_pair in second_sgraph:
+            dt_pair[4] /= 1.0 * dt_normal
+
+
+def SelfGraphMatching(first_sgraph, second_sgraph, match_pairs):
+    matches = []
+    for et_pair in first_sgraph:
+        end = False
+        for corr in match_pairs:
+            if corr['template'][1] == et_pair[0]:
+                for c in match_pairs:
+                    if c['template'][1] == et_pair[2]:
+                        for dt_pair in second_sgraph:
+                            if corr['test'][1] == dt_pair[0] and c['test'][1] == dt_pair[2]:
+                                matches.append((et_pair, dt_pair))
+                                end = True
+                                break
+                    if end:
+                        break
+            if end:
+                break
+    return matches
