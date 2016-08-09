@@ -4,12 +4,14 @@ from nearpy.distances import CosineDistance
 from biomio.algorithms.cvtools.types import numpy_ndarrayToList
 import numpy as np
 
+
 DEFAULT_NEAR_PY_HASH_SETTINGS = {
     'projections': [(RANDOM_BINARY_PROJECTIONS, {})],
     'projection_name': "rbp",
     'projection_count': 10,
     'dimension': 32
 }
+
 
 class wNearPyHash:
     def __init__(self, settings=DEFAULT_NEAR_PY_HASH_SETTINGS, distance=None, vector_filters=None,
@@ -41,7 +43,6 @@ class wNearPyHash:
     def hash_list(self):
         hashes = [lshash.hash_name for lshash in self.lshashes]
         return hashes
-
 
     def hash_vectors(self, vs, data=None):
         """
