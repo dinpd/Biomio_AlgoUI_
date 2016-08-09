@@ -1,6 +1,7 @@
 from biomio.algorithms.features.features import (FeatureDetector)
 from biomio.algorithms.recognition.kodsettings import KODSettings
 from biomio.algorithms.features import (constructDetector)
+from biomio.algorithms.cvtools.effects import resize
 from biomio.algorithms.logger import logger
 
 
@@ -39,6 +40,7 @@ class KeypointsObjectDetector:
         self._detector = None
         self._eyeROI = None
         self._use_roi = True
+        self._feature_processor = None
         self._sources_preparing = False
         self._last_error = ""
 
@@ -102,6 +104,12 @@ class KeypointsObjectDetector:
             data['roi'] = data['data']
         else:
             data['roi'] = data['data']
+        # logger.debug(data['roi'].shape)
+        from biomio.algorithms.cvtools.visualization import showNumpyImage
+        # showNumpyImage(data['roi'])
+        # c_height = 500
+        # data['roi'] = resize(data['roi'], (int((c_height * data['roi'].shape[1]) / data['roi'].shape[0]), c_height))
+        # showNumpyImage(data['roi'])
         # Keypoints detection
         detector = FeatureDetector(constructDetector(self.kodsettings.detector_type, self.kodsettings.settings))
         try:
@@ -117,7 +125,13 @@ class KeypointsObjectDetector:
         return self._detect(data, detector)
 
     def _detect(self, data, detector):
-        return True
+        res = True
+        if self._feature_processor is not None:
+            res = self._feature_processor.detect(data, detector)
+            if not res:
+                self._last_error = self._feature_processor.last_error()
+                logger.debug(self._last_error)
+        return res
 
     def _prepare_sources(self, data_list):
         self._use_roi = False

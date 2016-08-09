@@ -4,3 +4,6 @@ from biomio.algorithms.recognition.estimation.clusterL0_estimate import ClusterL
 from biomio.algorithms.recognition.estimation.self_graph_estimate import SelfGraphEstimation
 from biomio.algorithms.recognition.estimation.self_graph_cludist_estimate import SelfGraphDistanceEstimation
 from biomio.algorithms.recognition.estimation.self_graph_nocluster_estimate import SelfGraphNoClusterEstimation
+from biomio.algorithms.recognition.estimation.self_graph_db_estimate import SelfGraphDatabaseEstimation
+from biomio.algorithms.recognition.estimation.avg_desc_estimate import AverageDescriptorEstimation
+from biomio.algorithms.recognition.estimation.cluster_self_graph_estimate import ClusterSelfGraphEstimation

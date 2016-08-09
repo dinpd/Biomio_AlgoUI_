@@ -12,6 +12,10 @@ class BaseTemplateEstimation(AlgorithmEstimation):
         self._dtype = dtypeForDetector(detector_type)
 
     @staticmethod
+    def defaultDatabase():
+        return {}
+
+    @staticmethod
     def exportDatabase(data):
         return {
             str(index): {} if cluster is None else {

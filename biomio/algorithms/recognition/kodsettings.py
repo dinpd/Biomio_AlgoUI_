@@ -1,6 +1,5 @@
-from __future__ import absolute_import
 from biomio.algorithms.features import (constructSettings, BRISKDetectorType)
-import logger
+from biomio.algorithms.logger import logger
 
 
 class KODSettings:
@@ -28,8 +27,8 @@ class KODSettings:
         self.settings.importSettings(settings.get('Detector Settings', dict()))
 
     def dump(self):
-        logger.algo_logger.info('Keypoints Objects Detectors Settings')
-        logger.algo_logger.info('Neighbours Distance: %f' % self.neighbours_distance)
-        logger.algo_logger.info('Probability: %f' % self.probability)
-        logger.algo_logger.info('Detector Type: %s' % self.detector_type)
+        logger.info('Keypoints Objects Detectors Settings')
+        logger.info('Neighbours Distance: %f' % self.neighbours_distance)
+        logger.info('Probability: %f' % self.probability)
+        logger.info('Detector Type: %s' % self.detector_type)
         self.settings.dump()

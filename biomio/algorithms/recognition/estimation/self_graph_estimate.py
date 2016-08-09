@@ -15,7 +15,8 @@ class SelfGraphEstimation(BaseTemplateEstimation):
     def exportDatabase(data):
         ser = []
         for cl in data['key_desc']:
-            pairs = [(classKeyPointToArray(pair[0], True), numpy_ndarrayToList(pair[1])) for pair in cl]
+            pairs = [(numpy_ndarrayToList(classKeyPointToArray(pair[0], True)),
+                      numpy_ndarrayToList(pair[1])) for pair in cl]
             ser.append(pairs)
 
         return {
@@ -44,8 +45,10 @@ class SelfGraphEstimation(BaseTemplateEstimation):
                 dt_cluster = data['clusters'][index]
                 if et_cluster is None or len(et_cluster) == 0 or len(et_cluster) < self._knn:
                     template['clusters'][index] = et_cluster
+                    template['key_desc'][index] = database['key_desc']
                 elif dt_cluster is None or len(dt_cluster) == 0 or len(dt_cluster) < self._knn:
                     template['clusters'][index] = et_cluster
+                    template['key_desc'][index] = database['key_desc']
                 else:
                     ml = CrossMatching(listToNumpy_ndarray(et_cluster, self._dtype),
                                        listToNumpy_ndarray(dt_cluster, self._dtype),
@@ -88,8 +91,9 @@ class SelfGraphEstimation(BaseTemplateEstimation):
                 logger.debug("Cluster #" + str(index + 1) + ": " + str(-1) + " Invalid. (Weight: 0)")
                 continue
             if dt_cluster is None or len(dt_cluster) < self._knn:
-                logger.debug("Cluster #" + str(index + 1) + ": " + str(len(et_cluster))
-                             + " Positive: 0 Probability: 0 (Weight: " + str(len(et_cluster) / (1.0 * summ)) + ")")
+                logger.debug("Cluster #" + str(index + 1) + ": " + str(len(et_cluster)) + " Positive: 0"
+                             # + " Probability: 0 (Weight: " + str(len(et_cluster) / (1.0 * summ)) + ")"
+                             )
                 continue
             if len(et_cluster) > 0 and len(dt_cluster) > 0:
                 ml = CrossMatching(listToNumpy_ndarray(et_cluster, self._dtype),
@@ -101,17 +105,28 @@ class SelfGraphEstimation(BaseTemplateEstimation):
                 et_keys = []
                 dt_nodes = []
                 dt_keys = []
+                import cv2
                 for m in corr_nodes:
+                    # logger.debug("============================================")
+                    # logger.debug(m[2])
                     for pair in database['key_desc'][index]:
                         if np.array_equal(m[0], pair[1]):
                             et_nodes.append(m[0])
                             et_keys.append(pair[0])
+                            # logger.debug(pair[0].pt)
+                            # img1 = cv2.drawKeypoints(database['data'], [pair[0]])
+                            # cv2.imshow("Window_database", img1)
                             break
                     for pair in data['key_desc'][index]:
                         if np.array_equal(m[1], pair[1]):
                             dt_nodes.append(m[1])
                             dt_keys.append(pair[0])
+                            # logger.debug(pair[0].pt)
+                            # img2 = cv2.drawKeypoints(data['data'], [pair[0]])
+                            # cv2.imshow("Window_data", img2)
                             break
+                    # logger.debug("============================================")
+                    # cv2.waitKey()
                 et_self_graph = SelfGraph(et_keys, self._knn, et_nodes)
                 dt_self_graph = SelfGraph(dt_keys, self._knn, dt_nodes)
                 summ += len(et_self_graph)
@@ -174,7 +189,7 @@ class SelfGraphEstimation(BaseTemplateEstimation):
                 val = (c_prob / (1.0 * len(et_self_graph))) * 100 # * (len(ml) / (1.0 * len(et_cluster)))
                 logger.debug("Cluster #" + str(index + 1) + ": " + str(len(et_self_graph)) + " Positive: "
                              + str(c_prob) + " Probability: " + str(val)
-                             + " (Weight: " + str(len(et_cluster) / (1.0 * summ)) + ")"
+                             # + " (Weight: " + str(len(et_cluster) / (1.0 * summ)) + ")"
                              )
                 # prob += (len(et_cluster) / (1.0 * summ)) * val
                 prob += c_prob
