@@ -1,3 +1,4 @@
+from openface_verification_test import run_openface_verification_flow
 from structs import RawImagesStruct, ImageDirectory, ImageContainer
 from tests.openface_verify_test import OpenFaceVerificationTest
 from outputs import VerificationTableOutput, OutputConsolePrint
@@ -6,6 +7,8 @@ from tests.face_detect_test import FaceDetectionTest
 from tests.single_image_test import SingleImageTest
 from analysers import VerificationAnalyser
 from tester import Tester
+import argparse
+import time
 import os
 
 
@@ -103,9 +106,9 @@ ZT_TEST_DIR = "./data/Android_Zero_Test/test"
 TE_TEST_SUB = "TE"
 
 
-def run_openface_verification():
-    raw_struct = RawImagesStruct(os.path.join(ZT_TRAIN_DIR, T2_TRAIN_SUB), True)
-    test_img_dir = ImageDirectory(os.path.join(ZT_TEST_DIR, TE_TEST_SUB), True)
+def run_openface_verification(train_data, test_data):
+    raw_struct = RawImagesStruct(train_data, True)
+    test_img_dir = ImageDirectory(test_data, True)
     op_test = OpenFaceVerificationTest(raw_struct)
     tester = Tester(op_test)
     tester_analyser = LinearAlgorithmFlow()
@@ -134,7 +137,17 @@ def run_openface_detection():
 
 
 def run():
-    run_openface_verification()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train_path', type=str, help="Training data directory.", default=VER_TRAIN_DIR)
+    parser.add_argument('--train_data', type=str, help="Training dataset folder.", default=VP07_TRAIN_SUB)
+    parser.add_argument('--test_path', type=str, help="Testing data directory.", default=VER_TEST_DIR)
+    parser.add_argument('--test_data', type=str, help="Testing dataset folder.", default=VP_BFD_100_SUB)
+
+    args = parser.parse_args()
+
+    # run_openface_verification(os.path.join(ZT_TRAIN_DIR, T2_TRAIN_SUB), os.path.join(ZT_TEST_DIR, TE_TEST_SUB))
+    run_openface_verification_flow(os.path.join(args.train_path, args.train_data),
+                                   os.path.join(args.test_path, args.test_data))
     # run_simple_distance_test()
     # run_openface_detection()
 

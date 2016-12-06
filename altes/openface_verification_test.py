@@ -1,24 +1,17 @@
+from tests.openface_verify_time_test import OpenFaceVerificationTimeTest
+from structs.tools import get_all_files
+import time
+import os
 from corealgorithms.flows import IAlgorithm, DLibFaceDetectionAlgorithm, OpenFaceDataRepresentation, \
     INNER_EYES_AND_BOTTOM_LIP, DLIB_PREDICTOR_V2, FirstSuccessFlow, CascadesFaceDetectionAlgorithm, \
-    RotationDetectionAlgorithm
+    RotationDetectionAlgorithm, OpenFaceSimpleDistanceEstimation
 from corealgorithms import DLIB_MODEL_PATH, OPENFACE_AMF_MODEL_PATH, OPENFACE_NN4_MODEL_PATH
-
 
 OPENFACE_MODEL_NAME = OPENFACE_AMF_MODEL_PATH
 IMAGE_DIMENSION = 96
 
 
-class OpenFaceTestAlgorithm(IAlgorithm):
-    """
-    Input:
-        {
-            'img': altes.structs.ImageContainer
-        }
-    Output:
-        {
-            'img': altes.structs.ImageContainer
-        }
-    """
+class OpenFaceRepAlgorithm(IAlgorithm):
     def __init__(self):
         def check_image(data):
             return data is not None and data.get('img', None) is not None
@@ -45,9 +38,29 @@ class OpenFaceTestAlgorithm(IAlgorithm):
 
     def apply(self, data):
         if data is not None:
-            img_obj = data['img']
-            if img_obj.attribute('rep') is None:
-                res = self._data_rep.apply({'path': img_obj.path()})
-                img_obj.attribute('rep', res['rep'])
-            return {'img': img_obj}
+            if data.get('rep', None) is None:
+                res = self._data_rep.apply({'path': data['path']})
+                data.update(res)
+            return data
         return None
+
+
+def run_openface_verification_flow(train_data, test_data):
+    file_list = get_all_files(train_data, True)
+    start = time.time()
+    database = []
+    rep_algo = OpenFaceRepAlgorithm()
+    for file_name in file_list:
+        database.append(rep_algo.apply({'path': file_name}))
+    end = time.time()
+    print("Training Execution Time: {} s".format(end - start))
+    test_file_list = get_all_files(test_data, True)
+    startMain = time.time()
+    for test_file in test_file_list:
+        start = time.time()
+        data = {'train': database, "test": rep_algo.apply({'path': test_file})}
+        end = time.time()
+        print("Testing Execution Time of file {}: {} s".format(test_file, end - start))
+    endMain = time.time()
+    print("Testing Execution Time: {} s".format(endMain - startMain))
+    print("Average Testing Execution Time: {} s".format((endMain - startMain)/(1.0 * len(test_file_list))))
