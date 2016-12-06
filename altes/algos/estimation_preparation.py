@@ -1,4 +1,4 @@
-from server.biomio.algorithms.flows.base import IAlgorithm
+from corealgorithms.flows import IAlgorithm
 
 
 class GeneralEstimationPreparing(IAlgorithm):

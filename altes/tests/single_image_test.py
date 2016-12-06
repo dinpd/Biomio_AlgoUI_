@@ -1,8 +1,8 @@
 from algos import ImageTestDataSeparator, ImageCollector, GeneralEstimationPreparing, \
     EstimationPreparing, RAWSTRUCT_SOURCE
 from outputs import EuclideanDistanceOutput, DistanceTableOutput, TSNEEmbeddingsOutput
-from server.biomio.algorithms.flows.base import IAlgorithm, LinearAlgorithmFlow
 from analysers import EuclideanDistanceAnalyser, DistanceTableAnalyser
+from corealgorithms.flows import IAlgorithm, LinearAlgorithmFlow
 from openfacetests import OpenFaceTestAlgorithm
 from estimates import EuclideanEstimation
 from flows import SeparateProcessingFlow

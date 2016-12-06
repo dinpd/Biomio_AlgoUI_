@@ -1,4 +1,4 @@
-from server.biomio.algorithms.flows.base import AlgorithmFlow
+from corealgorithms.flows import AlgorithmFlow
 
 
 SEPARATION_STAGE = 'flows::separation_stage'

@@ -1,7 +1,7 @@
 from algos import ImageTestDataSeparator, ImageCollector, GeneralEstimationPreparing, RepEmbeddingsAlgorithm, \
     RAWSTRUCT_SOURCE
-from server.biomio.algorithms.flows.base import IAlgorithm, LinearAlgorithmFlow
 from openfacetests import OpenFaceTestAlgorithm, OpenFaceVerificationEstimation
+from corealgorithms.flows import IAlgorithm, LinearAlgorithmFlow
 from estimates import EmbeddingsRepresentationEstimation
 from outputs import OpenFaceDistanceOutput
 from flows import SeparateProcessingFlow

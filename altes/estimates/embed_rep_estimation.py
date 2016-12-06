@@ -1,4 +1,4 @@
-from server.biomio.algorithms.flows.base import AlgorithmFlow
+from corealgorithms.flows import AlgorithmFlow
 import scipy.spatial.distance as distance
 
 BASIC_ESTIMATION_STAGE = 'flows:basic_estimation'

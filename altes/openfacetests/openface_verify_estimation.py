@@ -1,5 +1,4 @@
-from server.biomio.algorithms.openface.openface_simple_dist_estimate import OpenFaceSimpleDistanceEstimation
-from server.biomio.algorithms.flows.base import AlgorithmFlow
+from corealgorithms.flows import AlgorithmFlow, OpenFaceSimpleDistanceEstimation
 
 
 class OpenFaceVerificationEstimation(AlgorithmFlow):

@@ -1,4 +1,4 @@
-from server.biomio.algorithms.flows.base import IAlgorithm
+from corealgorithms.flows import IAlgorithm
 from decorators import analyze_result
 from operator import add
 import scipy.spatial.distance as distance

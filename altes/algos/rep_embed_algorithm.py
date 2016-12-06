@@ -1,4 +1,4 @@
-from server.biomio.algorithms.flows.base import IAlgorithm
+from corealgorithms.flows import IAlgorithm
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE, MDS
 from sklearn.random_projection import SparseRandomProjection

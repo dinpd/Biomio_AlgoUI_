@@ -1,7 +1,7 @@
 from structs import RawImagesStruct, ImageDirectory, ImageContainer
-from server.biomio.algorithms.flows.base import LinearAlgorithmFlow
 from tests.openface_verify_test import OpenFaceVerificationTest
 from outputs import VerificationTableOutput, OutputConsolePrint
+from corealgorithms.flows import LinearAlgorithmFlow
 from tests.face_detect_test import FaceDetectionTest
 from tests.single_image_test import SingleImageTest
 from analysers import VerificationAnalyser
@@ -81,9 +81,31 @@ VP_WEB_26_SUB = "VP_web_26"
 VP_WEB_G_SUB = "VP_web_glasses"
 
 
+PL_TRAIN_DIR = "./data/OpenFace_iOS_Android/train"
+DI_I_TRAIN_SUB = "DI_iOS"
+DI_A_TRAIN_SUB = "DI_Android"
+DI_IA_TRAIN_SUB = "DI_iOS_Android"
+VH_I_TRAIN_SUB = "VH_iOS"
+VH_A_TRAIN_SUB = "VH_Android"
+VH_IA_TRAIN_SUB = "VH_iOS_Android"
+PL_TEST_DIR = "./data/OpenFace_iOS_Android/test"
+DI_I_TEST_SUB = "DI_iOS"
+N_I_TEST_SUB = "N_iOS"
+N_A_TEST_SUB = "N_Android"
+VH_A_TEST_SUB = "VH_Android"
+N2_A_TEST_SUB = "N2_Android"
+
+
+ZT_TRAIN_DIR = "./data/Android_Zero_Test/train"
+T1_TRAIN_SUB = "T1"
+T2_TRAIN_SUB = "T2"
+ZT_TEST_DIR = "./data/Android_Zero_Test/test"
+TE_TEST_SUB = "TE"
+
+
 def run_openface_verification():
-    raw_struct = RawImagesStruct(os.path.join(VER_TRAIN_DIR, VP0713_TRAIN_SUB), True)
-    test_img_dir = ImageDirectory(os.path.join(VER_TEST_DIR, NG_BFD_300_SUB), True)
+    raw_struct = RawImagesStruct(os.path.join(ZT_TRAIN_DIR, T2_TRAIN_SUB), True)
+    test_img_dir = ImageDirectory(os.path.join(ZT_TEST_DIR, TE_TEST_SUB), True)
     op_test = OpenFaceVerificationTest(raw_struct)
     tester = Tester(op_test)
     tester_analyser = LinearAlgorithmFlow()

@@ -1,4 +1,4 @@
-from server.biomio.algorithms.flows.base import IAlgorithm
+from corealgorithms.flows import IAlgorithm
 from defs import SEPARATOR_LINE
 
 
