@@ -12,6 +12,7 @@ import time
 import os
 
 
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = "./data/BFD/small"
 TEST_DIR = "./data/BFD/test"
 TEST_IMG = os.path.join(TEST_DIR, "VP", "VP0101.png")
