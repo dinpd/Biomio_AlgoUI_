@@ -15,7 +15,7 @@
 		{
 			"Minimum Size": [100, 100], 
 			"Maximum Size": [1000, 1000],
-			"Minimum Neighbors": 3, 
+			"Minimum Neighbors": 2, 
 			"Scale Factor": 1.10
 		}
 	}

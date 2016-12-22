@@ -70,6 +70,7 @@ class ROIUnionStrategy(ROIManagementStrategy):
             return rects
         if len(rects) == 1:
             return rects[0]
+
         half = len(rects) / 2
         left = self._merge(rects[:half])
         right = self._merge(rects[half:])
@@ -315,6 +316,32 @@ class ROISizingStrategy(ROIManagementStrategy):
             return [temp]
 
 
+class ROIScaleStrategy(ROIManagementStrategy):
+    def __init__(self, settings=dict()):
+        ROIManagementStrategy.__init__(self, settings)
+
+    @staticmethod
+    def type():
+        return "scale"
+
+    def apply(self, rects, template=[]):
+        return self._scale(rects)
+
+    def _scale(self, rects):
+        res = []
+        if len(rects) == 0:
+            return [res]
+        factor = self._settings.get("factor", 1.0)
+        temp = None
+        for item in rects:
+            if temp is None:
+                temp = item
+            else:
+                if item[2] <= factor * temp[2] and item[3] <= factor * temp[3]:
+                    res.append(item)
+        return res
+
+
 class StrategyFactory:
     strategies = {
         ROIIntersectionStrategy.type(): ROIIntersectionStrategy,
@@ -325,6 +352,7 @@ class StrategyFactory:
         ROISizingStrategy.type(): ROISizingStrategy,
         ROICenterStrategy.type(): ROICenterStrategy,
         ROIUnionStrategy.type(): ROIUnionStrategy,
+        ROIScaleStrategy.type(): ROIScaleStrategy,
         "": ROIManagementStrategy
     }
 

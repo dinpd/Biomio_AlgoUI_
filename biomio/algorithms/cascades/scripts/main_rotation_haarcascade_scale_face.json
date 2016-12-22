@@ -2,17 +2,15 @@
     "type": "main",
 	"strategy": 
 	{
-		"type": "position",
+		"type": "scale",
 		"settings": 
 		{
-			"kind": "min",
-			"pos": 0.4,
-			"template": 1
+			"factor": 0.8
 		}
 	},
 	"action": 
 	[
 		"rotation_haarcascade_face.json",
-		"main_rotation_haarcascade_scale_face.json"
+		"main_haarcascade_eyes.json"
 	]
 }
