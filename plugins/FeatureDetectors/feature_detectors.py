@@ -16,6 +16,7 @@ from imageproperties import ImageProperties
 import biomio.algorithms.cvtools.dsp as dsp
 from biomio.algorithms.logger import logger
 from aiplugins import IAlgorithmPlugin
+import cv2
 
 ACTION_TITLE = 'Action: %s Features Detector::'
 GF_ACTION_TITLE = 'Action: Gabor Filtering::'
@@ -315,9 +316,13 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
         detectAll = QPushButton(roi_widget)
         detectAll.setText('Detect All')
         self.connect(detectAll, SIGNAL("clicked()"), self.roiAll)
+        detectAllSave = QPushButton(roi_widget)
+        detectAllSave.setText('Detect All and Save')
+        self.connect(detectAllSave, SIGNAL("clicked()"), self.roiAllandSave)
         buttons_layout = QHBoxLayout()
         buttons_layout.addWidget(detect)
         buttons_layout.addWidget(detectAll)
+        buttons_layout.addWidget(detectAllSave)
         rotation_layout = QHBoxLayout()
         rotation_layout.addWidget(self._rotation_edit)
         rotation_layout.addWidget(browse_rotation)
@@ -387,3 +392,15 @@ class FeatureDetectorsPlugin(QObject, IAlgorithmPlugin):
                     image.height(curr.height())
                     image.width(curr.width())
                     self._imanager.add_image(image)
+
+    def roiAllandSave(self):
+        if self._imanager:
+            detector = RotatedCascadesDetector(loadScript(str(self._rotation_edit.text())),
+                                               loadScript(str(self._script_edit.text())))
+            images = []
+            for curr in self._imanager.images():
+                images.append(curr)
+            for curr in images:
+                img, rois = detector.detect(curr.data())
+                for roi in rois:
+                    cv2.imwrite(curr.title(), getROIImage(img, roi))
