@@ -1,0 +1,3 @@
+[submodule "corealgoritms"]
+	path = corealgoritms
+	url = https://vitaliusparubochyi@bitbucket.org/biomio/biomiocorealgorithms
