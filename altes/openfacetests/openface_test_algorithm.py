@@ -1,6 +1,6 @@
 from corealgorithms.flows import IAlgorithm, DLibFaceDetectionAlgorithm, OpenFaceDataRepresentation, \
     INNER_EYES_AND_BOTTOM_LIP, DLIB_PREDICTOR_V2, FirstSuccessFlow, CascadesFaceDetectionAlgorithm, \
-    RotationDetectionAlgorithm
+    RotationDetectionAlgorithm, OUTER_EYES_AND_NOSE
 from corealgorithms import DLIB_MODEL_PATH, OPENFACE_AMF_MODEL_PATH, OPENFACE_NN4_MODEL_PATH
 
 

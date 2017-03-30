@@ -87,6 +87,7 @@ VP_WEB_G_SUB = "VP_web_glasses"
 
 PL_TRAIN_DIR = "./data/OpenFace_iOS_Android/train"
 DI_I_TRAIN_SUB = "DI_iOS"
+DI_I2_TRAIN_SUB = "DI_iOS2"
 DI_A_TRAIN_SUB = "DI_Android"
 DI_IA_TRAIN_SUB = "DI_iOS_Android"
 VH_I_TRAIN_SUB = "VH_iOS"
@@ -126,10 +127,19 @@ ERR_OF_PL = "openface_pl"
 ERR_OF_VP = "openface_vp"
 ERR_PD_PH = "prod_photo"
 
+ANDROID_DIR = "./data/Android_Cut"
+OVER_BORDER = "tmpZLahYG"
+NORMAL_SONY = "tmp7_O0hc"
+TABLE_BASE = "tmphI1jHa"
+SMALLER = "tmpD52FJe"
+AVG_MEIZU = "tmpNQlgyW"
+NORMAL_MEIZU = "tmpZqTxnT"
+OV_MEIZU = "tmpWCg0_a"
+ETC_MEIZU = "tmpzLfCoi"
+T1_SONY = "tmpgOpMoj"
 
 def run_openface_detection():
-    test_img_dir = ImageDirectory(os.path.join(ERR_TEST_DIR, ERR_OF_PL), True)
-    # test_img_dir = ImageDirectory(os.path.join(VER_TEST_DIR, VP_BFD_G_SUB), True)
+    test_img_dir = ImageDirectory(os.path.join(ANDROID_DIR, T1_SONY), True)
     test = FaceDetectionTest()
     tester = Tester(test)
     tester.run(test_img_dir)
@@ -141,14 +151,15 @@ def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_path', type=str, help="Training data directory.", default=VER_TRAIN_DIR)
     parser.add_argument('--train_data', type=str, help="Training dataset folder.", default=VP07_TRAIN_SUB)
-    parser.add_argument('--test_path', type=str, help="Testing data directory.", default=VER_TEST_DIR)
-    parser.add_argument('--test_data', type=str, help="Testing dataset folder.", default=VP_BFD_100_SUB)
+    parser.add_argument('--test_path', type=str, help="Testing data directory.", default=ANDROID_DIR)
+    parser.add_argument('--test_data', type=str, help="Testing dataset folder.", default=T1_SONY)
 
     args = parser.parse_args()
 
-    # run_openface_verification(os.path.join(ZT_TRAIN_DIR, T2_TRAIN_SUB), os.path.join(ZT_TEST_DIR, TE_TEST_SUB))
-    run_openface_verification_flow(os.path.join(args.train_path, args.train_data),
-                                   os.path.join(args.test_path, args.test_data))
+    run_openface_verification(os.path.join(args.train_path, args.train_data),
+                              os.path.join(args.test_path, args.test_data))
+    # run_openface_verification_flow(os.path.join(args.train_path, args.train_data),
+    #                                os.path.join(args.test_path, args.test_data))
     # run_simple_distance_test()
     # run_openface_detection()
 
