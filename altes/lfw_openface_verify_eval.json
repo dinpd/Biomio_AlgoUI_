@@ -1,0 +1,17 @@
+{
+    "test": "OpenFaceVerificationEvaluation",
+    "options":
+    {
+         "database_size": 10,
+         "threshold": 0.8,
+         "normal_negatives": false
+    },
+    "stages":
+    {
+    },
+	"data":
+	{
+        "load_path": "/home/user/projects/databases/LFW40_representation_map.dat",
+        "store_path": "/home/user/projects/databases/LFW40_results_map10_08.dat"
+	}
+}

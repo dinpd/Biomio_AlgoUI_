@@ -1,0 +1,14 @@
+{
+    "test": "OpenFaceVerificationPreparation",
+    "options":
+    {
+    },
+    "stages":
+    {
+    },
+	"data":
+	{
+		"path": "/home/user/projects/databases/LFW10",
+        "store_path": "/home/user/projects/databases/LFW10_representation_map.dat"
+	}
+}

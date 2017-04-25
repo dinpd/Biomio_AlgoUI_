@@ -1,0 +1,14 @@
+{
+    "test": "OpenFaceVerificationPreparation",
+    "options":
+    {
+    },
+    "stages":
+    {
+    },
+	"data":
+	{
+		"path": "/home/user/projects/databases/BFD",
+        "store_path": "/home/user/projects/databases/BFD_representation_map.dat"
+	}
+}

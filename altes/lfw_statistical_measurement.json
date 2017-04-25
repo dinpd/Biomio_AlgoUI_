@@ -1,0 +1,17 @@
+{
+    "test": "StatisticalMeasurement",
+    "options":
+    {
+    },
+    "stages":
+    {
+        "PRECISION": "PrecisionMeasure",
+        "RECALL": "RecallMeasure",
+        "F": "FMeasure"
+    },
+	"data":
+    {
+        "load_path": "/home/user/projects/databases/LFW40_results_map10_08.dat",
+        "result_path": "/home/user/projects/databases/LFW40_estimates10_08.log"
+	}
+}

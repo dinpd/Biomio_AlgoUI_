@@ -1,0 +1,17 @@
+{
+    "test": "StatisticalMeasurement",
+    "options":
+    {
+    },
+    "stages":
+    {
+        "PRECISION": "PrecisionMeasure",
+        "RECALL": "RecallMeasure",
+        "F": "FMeasure"
+    },
+	"data":
+    {
+        "load_path": "/home/user/projects/databases/BFD_results_map5_08.dat",
+        "result_path": "/home/user/projects/databases/BFD_estimates5_08.log"
+	}
+}
