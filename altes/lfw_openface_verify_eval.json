@@ -11,7 +11,7 @@
     },
 	"data":
 	{
-        "load_path": "/home/user/projects/databases/LFW40_representation_map.dat",
-        "store_path": "/home/user/projects/databases/LFW40_results_map10_08.dat"
+        "load_path": "/home/user/projects/databases/LFW10_representation_map_test.dat",
+        "store_path": "/home/user/projects/databases/LFW10_results_map10_08_test.dat"
 	}
 }

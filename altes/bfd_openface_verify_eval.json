@@ -3,7 +3,8 @@
     "options":
     {
          "database_size": 5,
-         "threshold": 0.8
+         "threshold": 0.8,
+         "normal_negatives": false
     },
     "stages":
     {
